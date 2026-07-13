@@ -1,0 +1,28 @@
+# Secrets
+.env
+
+# Brainstorming reference material (Tahap 2 code copy, design docs) — not part of the MVP build
+brainstorming result/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# Docker / data volumes
+postgres_data/
+qdrant_data/
+
+# Local storage (CVs, interview audio — never commit real candidate data)
+storage/
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
