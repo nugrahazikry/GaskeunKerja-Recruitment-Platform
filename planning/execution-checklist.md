@@ -72,7 +72,7 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 
 ---
 
-## Area 4 — Cost / Tooling (Dev Environment)  ·  Status: 🟡 In progress (env + API verification done; Docker + client code not started)
+## Area 4 — Cost / Tooling (Dev Environment)  ·  Status: 🟢 Done (T1-T3d, T8 all verified; T4 deferred)
 
 > Set up FIRST — Areas 2/3 build on this. Cost story: keep it local + cache SumoPod calls.
 > **Locked:** LLM=SumoPod (OpenAI-compat), STT=Groq whisper-large-v3 API, embeddings=local
