@@ -118,7 +118,9 @@ export function ShortlistPage() {
                     onClick={() => setExpandedId(isExpanded ? null : c.candidate_id)}
                   >
                     <span>{c.rank}</span>
-                    <span>{c.alias}</span>
+                    <Link to={`/jobs/${jobId}/candidates/${c.candidate_id}`} onClick={(e) => e.stopPropagation()}>
+                      {c.alias}
+                    </Link>
                     <span>{c.overall_score.toFixed(2)}</span>
                     <Badge tone={status.tone}>{status.label}</Badge>
                     <Button

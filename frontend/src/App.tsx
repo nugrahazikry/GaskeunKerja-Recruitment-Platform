@@ -5,6 +5,7 @@ import { JobsListPage } from "./pages/JobsListPage";
 import { JobFormPage } from "./pages/JobFormPage";
 import { ShortlistPage } from "./pages/ShortlistPage";
 import { QuestionsPage } from "./pages/QuestionsPage";
+import { CandidateDetailPage } from "./pages/CandidateDetailPage";
 import { CandidateConsentPage } from "./pages/CandidateConsentPage";
 import { CandidateInterviewPage } from "./pages/CandidateInterviewPage";
 import { InvalidLinkPage } from "./pages/InvalidLinkPage";
@@ -52,6 +53,14 @@ function App() {
           element={
             <HrAuthGuard>
               <QuestionsPage />
+            </HrAuthGuard>
+          }
+        />
+        <Route
+          path="/jobs/:jobId/candidates/:candidateId"
+          element={
+            <HrAuthGuard>
+              <CandidateDetailPage />
             </HrAuthGuard>
           }
         />

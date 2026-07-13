@@ -10,6 +10,7 @@ from db.session import create_all
 from db.vector_store import create_collections
 from routers import (
     auth,
+    candidate_detail,
     candidates,
     decisions,
     interview_answers,
@@ -24,14 +25,29 @@ logger = logging.getLogger("gaskeun")
 
 app = FastAPI(title="GaskeunKerja for Business — MVP")
 
+_ALLOWED_ORIGIN = "http://localhost:5173"
+
 # Local-only MVP: frontend (Vite dev server) and backend run on different ports/origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[_ALLOWED_ORIGIN],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _cors_headers(request: Request) -> dict:
+    """FastAPI's @app.exception_handler responses bypass CORSMiddleware's normal
+    response-wrapping (a known Starlette interaction) — verified directly during Area 1
+    T7: a real 500 from a route dispatched via run_in_threadpool came back with zero
+    Access-Control-Allow-* headers, which the browser then reports as a CORS error,
+    masking the real 500 and its error_id from the frontend entirely. Every custom
+    exception handler must attach these headers explicitly."""
+    origin = request.headers.get("origin")
+    if origin == _ALLOWED_ORIGIN:
+        return {"Access-Control-Allow-Origin": origin, "Access-Control-Allow-Credentials": "true"}
+    return {}
 
 app.include_router(auth.router)
 app.include_router(jobs.router)
@@ -42,13 +58,16 @@ app.include_router(interview_answers.router)
 app.include_router(rubric.router)
 app.include_router(decisions.router)
 app.include_router(report.router)
+app.include_router(candidate_detail.router)
 
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     """Deliberate passthrough for our own intentional HTTPExceptions (404/400/401/403 etc.) —
     these already carry a safe, purposeful detail message, not a leaked internal."""
-    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    return JSONResponse(
+        status_code=exc.status_code, content={"detail": exc.detail}, headers=_cors_headers(request)
+    )
 
 
 @app.exception_handler(Exception)
@@ -66,6 +85,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content={"detail": "An unexpected error occurred.", "error_id": error_id},
+        headers=_cors_headers(request),
     )
 
 

@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -38,5 +39,10 @@ def send_report(db: Session, candidate_id: int) -> dict:
         chat_id, pdf_path, caption=f"Laporan pengembangan untuk {candidate.alias}"
     )
     telegram_client.send_message(chat_id, report["gap_summary"])
+
+    decisions = repo.hr_decisions.list(db, candidate_id=candidate_id)
+    if decisions:
+        decisions[0].report_sent_at = datetime.now(timezone.utc)
+        db.commit()
 
     return {"pdf_path": pdf_path, "chat_id": chat_id}

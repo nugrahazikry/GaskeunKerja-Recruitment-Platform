@@ -15,3 +15,4 @@ class HRDecision(Base):
     decided_by: Mapped[int] = mapped_column(ForeignKey("hr_users.id"), nullable=False)
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    report_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

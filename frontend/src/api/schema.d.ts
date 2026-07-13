@@ -410,6 +410,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/candidates/{candidate_id}/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Candidate Full Detail
+         * @description HR-facing candidate detail screen (Area 1 T7): parsed CV + skill-gap, per-answer
+         *     audio/transcript/rubric, interview summary, decision status, report/Telegram state —
+         *     everything the decision + report-delivery screen needs in one call.
+         */
+        get: operations["get_candidate_full_detail_candidates__candidate_id__detail_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/candidates/{candidate_id}/answers/{answer_id}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Answer Audio
+         * @description Streams the stored answer audio file for the HR-facing player. HR-scoped like
+         *     every other candidate-detail endpoint — never publicly reachable.
+         */
+        get: operations["get_answer_audio_candidates__candidate_id__answers__answer_id__audio_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -431,6 +474,19 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AnswerDetailOut */
+        AnswerDetailOut: {
+            /** Answer Id */
+            answer_id: number;
+            /** Question Text */
+            question_text: string;
+            /** Audio Url */
+            audio_url: string;
+            /** Transcript Text */
+            transcript_text: string;
+            /** Rubric Scores */
+            rubric_scores: components["schemas"]["RubricScoreOut"][];
+        };
         /** AnswerOut */
         AnswerOut: {
             /** Answer Id */
@@ -485,6 +541,35 @@ export interface components {
             token: string | null;
             /** Token Expires At */
             token_expires_at: string | null;
+        };
+        /** CandidateFullDetailOut */
+        CandidateFullDetailOut: {
+            /** Candidate Id */
+            candidate_id: number;
+            /** Alias */
+            alias: string;
+            /** Job Id */
+            job_id: number;
+            /** Job Title */
+            job_title: string;
+            /** Skills */
+            skills: string[];
+            /** Experience */
+            experience: unknown[];
+            /** Qualifications */
+            qualifications: unknown[];
+            skill_gap: components["schemas"]["SkillGapOut"] | null;
+            /** Answers */
+            answers: components["schemas"]["AnswerDetailOut"][];
+            /** Interview Summary Text */
+            interview_summary_text: string | null;
+            /** Interview Overall Score */
+            interview_overall_score: number | null;
+            decision: components["schemas"]["routers__candidate_detail__DecisionOut"] | null;
+            /** Has Telegram Link */
+            has_telegram_link: boolean;
+            /** Report Sent */
+            report_sent: boolean;
         };
         /** CandidateOut */
         CandidateOut: {
@@ -543,17 +628,6 @@ export interface components {
             token: string;
             /** Consent Text Version */
             consent_text_version: string;
-        };
-        /** DecisionOut */
-        DecisionOut: {
-            /** Id */
-            id: number;
-            /** Candidate Id */
-            candidate_id: number;
-            /** Decision */
-            decision: string;
-            /** Decided By */
-            decided_by: number;
         };
         /** DecisionRequest */
         DecisionRequest: {
@@ -687,6 +761,15 @@ export interface components {
             /** Questions */
             questions: components["schemas"]["QuestionUpdateItem"][];
         };
+        /** RubricScoreOut */
+        RubricScoreOut: {
+            /** Criterion Name */
+            criterion_name: string;
+            /** Score */
+            score: number;
+            /** Rationale */
+            rationale: string;
+        };
         /** ScoreOut */
         ScoreOut: {
             /** Clarity */
@@ -698,6 +781,15 @@ export interface components {
             /** Summary */
             summary: string;
         };
+        /** SkillGapOut */
+        SkillGapOut: {
+            /** Gap Summary */
+            gap_summary: string;
+            /** Missing Competencies */
+            missing_competencies: string[];
+            /** Development Priority */
+            development_priority: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -706,6 +798,24 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** DecisionOut */
+        routers__candidate_detail__DecisionOut: {
+            /** Decision */
+            decision: string;
+            /** Notes */
+            notes: string | null;
+        };
+        /** DecisionOut */
+        routers__decisions__DecisionOut: {
+            /** Id */
+            id: number;
+            /** Candidate Id */
+            candidate_id: number;
+            /** Decision */
+            decision: string;
+            /** Decided By */
+            decided_by: number;
         };
     };
     responses: never;
@@ -1445,7 +1555,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DecisionOut"];
+                    "application/json": components["schemas"]["routers__decisions__DecisionOut"];
                 };
             };
             /** @description Validation Error */
@@ -1500,6 +1610,73 @@ export interface operations {
             };
             path: {
                 candidate_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_candidate_full_detail_candidates__candidate_id__detail_get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                candidate_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateFullDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_answer_audio_candidates__candidate_id__answers__answer_id__audio_get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                candidate_id: number;
+                answer_id: number;
             };
             cookie?: never;
         };
