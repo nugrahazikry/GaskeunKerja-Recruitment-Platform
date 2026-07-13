@@ -132,14 +132,14 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
   - [x] Deep-link handler: `t.me/<bot>?start=<token>` → bot receives `/start <token>` → capture `chat_id`, link it to the candidate session — `extract_start_token()` parses a `getUpdates` entry into `(chat_id, token)`
   - ✅ Done when: opening the deep-link from the token page links a `chat_id`; a test send delivers a file + message to that chat — **verified live end-to-end**: user opened `https://t.me/GaskeunkerjaBot?start=test123`, `getUpdates` correctly captured `chat_id=1304618784` + `token='test123'`; `sendMessage` and `sendDocument` (a test `.txt` "report") both confirmed received in the user's actual Telegram app
 
-- [ ] **T3d. Vision-LLM client (scanned-PDF image captioning).** — *Depends: T2 · Flow: 3 (CV parsing)*
+- [x] **T3d. Vision-LLM client (scanned-PDF image captioning). — DONE 2026-07-13.** — *Depends: T2 · Flow: 3 (CV parsing)*
   - [ ] **Reference (2026-07-12 Tahap 2 audit):** `backend/config/utils.py::_ocr_pdf_with_gemini()` in the Tahap 2 code is a working version of this exact pattern (rasterize page → send to vision model) — same idea, different provider (Gemini vs SumoPod/Groq) and different trigger (whole-page rasterization vs NalarX's per-embedded-image approach we're using) — read it for validation, don't copy verbatim
   - [x] **Verify first — DONE 2026-07-13:** sent a test image to SumoPod's `deepseek-v4-pro` as an `image_url` content block. **Confirmed NOT supported** — model's own `reasoning_content` showed it reasoning "no image was provided," `prompt_tokens` too low to have ingested image data, returned empty (`finish_reason: length`)
   - [x] ~~If SumoPod supports vision~~ — ruled out by the verification above
   - [x] **Groq vision model selected + verified 2026-07-13:** `meta-llama/llama-4-scout-17b-16e-instruct` — sent the same test image, correctly read back the embedded text (`prompt_tokens: 174`, correct output). Pinned in `.env`/`.env.example` as `VISION_MODEL`, `VISION_PROVIDER=groq` (now primary, not fallback). Reuses the Groq STT client/key from T3b
-  - [ ] Client call: image bytes → base64 → `image_url` content block, same pattern as NalarX `image_captioning.py` — **not yet built as reusable module code** (only a one-off test script exists)
-  - [ ] Two prompt modes: **transcribe** (verbatim read-out, for images on empty-text pages) and **describe** (caption, for images on pages with existing text)
-  - ✅ Done when: a sample scanned-CV image returns an accurate verbatim transcription, via whichever provider passed the Day-1 verification — **verification sub-step done; module code + two-mode prompting still to build**
+  - [x] Client call: image bytes → base64 → `image_url` content block — `backend/services/vision_client.py`, reuses the STT client's Groq `base_url`/`api_key` from `config.py`
+  - [x] Two prompt modes: **transcribe** (verbatim read-out) and **describe** (caption) — `transcribe_image()` / `describe_image()`, both wrapping a shared `_caption()` helper with mode-specific Indonesian-language prompts
+  - ✅ Done when: a sample scanned-CV image returns an accurate verbatim transcription — **verified**: a synthetic "scanned CV page" image (name/role/experience/education/skills as rendered text, simulating a scanned page) transcribed with 100% accuracy via `transcribe_image()`; `describe_image()` on the same image correctly produced a short summary instead, confirming the two modes genuinely behave differently
 
 - [ ] **T8. True minimal cost estimate.** — *Depends: T3, T3b · Flow: reporting*
   - [ ] Tally a full demo run from usage logs (SumoPod tokens + Groq minutes)
@@ -815,7 +815,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | T3 LLM client + caching + bypass | 🟢 Done 2026-07-13 | 2.5 | 🟡 | Cache-key design + new bypass param — Tahap 2 uses Gemini/LangChain, zero code transfers |
 | T3b STT client (Groq) | 🟢 Done 2026-07-13 | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
 | T3c Telegram bot client | 🟢 Done 2026-07-13 | 2.0 | 🟡 | Deep-link + chat_id capture logic — no Tahap 2 equivalent |
-| T3d Vision-LLM client + fallback | 🟡 Provider decided — Groq confirmed primary 2026-07-13 (SumoPod vision confirmed non-functional), no client module yet | **2.0** ↓ *(was 2.5)* | 🟠 | **Tahap 2 reuse**: its Gemini-vision OCR fallback (`_ocr_pdf_with_gemini`, PyMuPDF rasterize→vision call) is a working, validated version of this exact pattern — reduces implementation risk even though the provider (SumoPod/Groq vs Gemini) and technique (per-image vs whole-page) differ |
+| T3d Vision-LLM client + fallback | 🟢 Done 2026-07-13 | **2.0** ↓ *(was 2.5)* | 🟠 | **Tahap 2 reuse**: its Gemini-vision OCR fallback (`_ocr_pdf_with_gemini`, PyMuPDF rasterize→vision call) is a working, validated version of this exact pattern — reduces implementation risk even though the provider (SumoPod/Groq vs Gemini) and technique (per-image vs whole-page) differ |
 | T8 Cost estimate | ⚪ Not started | 0.5 | 🟢 | Arithmetic + a paragraph |
 | **Subtotal** | | **~11.0h** *(was 11.5h)* | | vs. **8h** scheduled (Day 1) |
 

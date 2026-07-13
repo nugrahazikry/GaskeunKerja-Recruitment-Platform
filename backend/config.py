@@ -33,6 +33,9 @@ STT_LOCAL_MODEL = os.environ.get("STT_LOCAL_MODEL", "small")
 STT_LOCAL_DEVICE = os.environ.get("STT_LOCAL_DEVICE", "cuda")
 STT_LOCAL_COMPUTE_TYPE = os.environ.get("STT_LOCAL_COMPUTE_TYPE", "float16")
 
+VISION_PROVIDER = os.environ.get("VISION_PROVIDER", "groq")
+VISION_MODEL = os.environ.get("VISION_MODEL")
+
 STORAGE_DIR = str(REPO_ROOT / os.environ.get("STORAGE_DIR", "./storage").lstrip("./"))
 CACHE_DIR = str(Path(STORAGE_DIR) / "llm_cache")
 
