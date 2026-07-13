@@ -497,7 +497,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | T10. Answer intake + STT | ✅ **Final result** | Consent gate + real audio transcription verified via live HTTP; token-impersonation attempt correctly rejected. | 2.0 | 🟡 | No STT in Tahap 2 |
 | T11. Rubric scoring + summary | ✅ **Final result** | Verified against a real transcript; caught and fixed a design gap around interview-summary text sourcing. | 2.5 | 🟡 | No rubric/interview scoring in Tahap 2 |
 | T12. HR decision endpoints | ✅ **Final result** | Verified end-to-end; grep-confirmed no auto-finalize path exists anywhere in the codebase. | 1.0 | 🟢 | No employer-decision flow in Tahap 2 |
-| T13. Report generation | 📝 **To do** | Deterministic report assembly, gated on a decision existing. | 2.5 | 🟡 | Different approach from Tahap 2's LLM-free-generated content, no code reuse |
+| T13. Report generation | ✅ **Final result** | Verified end-to-end: gating, real curated resource citations, and determinism all confirmed. | 2.5 | 🟡 | Different approach from Tahap 2's LLM-free-generated content, no code reuse |
 | T14. Report delivery | 📝 **To do** | PDF via adapted ReportLab code, sent through Telegram. | **2.0** ↓ *(was 3.0, weasyprint)* | 🟡 *(was 🟠)* | **Tahap 2 reuse, biggest single win**: `_build_report_pdf()` fully-working ReportLab generator, also retires the weasyprint Windows dependency risk |
 | T15. Async wiring + error handling | 📝 **To do** | Cross-cutting orchestration/retry/caching layer. | **1.75** ↓ *(was 2.0)* | 🟡 | Tahap 2's async-job pattern is a minor reference; do not copy its traceback-leaking exception handler |
 | T16. OpenAPI contract | 📝 **To do** | FastAPI auto-generated, no dedicated work beyond typed endpoints. | 0.5 | 🟢 | FastAPI-generated regardless |
@@ -606,12 +606,12 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - ✅ Done when: inspection shows no auto-finalize path; QA T6 passes — **verified**: invalid decision value correctly 400s; valid `advance` succeeds; re-posting `reject` for the same candidate correctly overwrites (DB confirms exactly one row, the latest); decision for a nonexistent/wrong-company candidate correctly 404s; grep-based inspection confirms no other write path exists
 
 ### Report & delivery
-- [ ] **T13. Deterministic development report.** — *Depends: T12, T8, DB T6, DB T7 · Flow: 8*
-  - [ ] **Gated on a decision existing (resolved 2026-07-12):** only generatable once `hr_decisions` has a row for the candidate — not just because skill-gap (T8) exists. Matches the actual flow (interview → decision → report) and reflects reality: only the 1 live (+2-3 synthetic) candidates have interview data to build a meaningful report from
-  - [ ] From skill-gap (T8) + competency framework + resource library
-  - [ ] Assemble by **selecting/ordering** curated items (no free generation)
-  - [ ] Produce for **every decided** candidate (pass or fail — a decision either way triggers a report)
-  - ✅ Done when: same skill-gap input → identical report (QA T4); report cites real curated resources; no report exists for a candidate with no `hr_decisions` row
+- [x] **T13. Deterministic development report. — DONE 2026-07-13.** — *Depends: T12, T8, DB T6, DB T7 · Flow: 8*
+  - [x] **Gated on a decision existing (resolved 2026-07-12):** only generatable once `hr_decisions` has a row for the candidate — `backend/routers/report.py` checks this explicitly, 400s otherwise
+  - [x] From skill-gap (T8) + competency framework + resource library — `backend/services/report.py::build_report()`
+  - [x] Assemble by **selecting/ordering** curated items (no free generation) — for each missing competency (from T8's grounded gap analysis), looks up the matching `competency_framework` row by name and its `resource_library` rows — a deterministic dict lookup, never invented content; unmatched competency names are skipped, not fabricated
+  - [x] Produce for **every decided** candidate (pass or fail — a decision either way triggers a report) — gate only checks a decision *exists*, not its value
+  - ✅ Done when: same skill-gap input → identical report (QA T4); report cites real curated resources; no report exists for a candidate with no `hr_decisions` row — **verified end-to-end**: report request before any decision correctly 400s; after recording a decision, the report correctly identified the missing competencies (Framework Frontend, Backend Development) and cited their exact real curated resources from the Web Developer framework/resource library seeded in Area 3 T6/T7 (e.g. "React untuk Pemula sampai Mahir", "Membangun REST API dengan Node.js/Express") — not invented text; repeated calls returned byte-identical JSON, confirming determinism
 
 - [ ] **T14. Report delivery — automated via Telegram (only channel).** — *Depends: T13, DB T8, Area4 T3c · Flow: 8*
   - [ ] **PDF library swapped to ReportLab (resolved 2026-07-12, Tahap 2 audit)**: ~~weasyprint~~ — Tahap 2's `agent_function/agent_4_recommendation_report.py::_build_report_pdf()` is a fully-working ~700-line ReportLab generator with custom flowables (including skill chips). Adapt it to our report schema (skill-gap + curated resource selections from Area 3 T6/T7) instead of building weasyprint from scratch — eliminates the Windows Pango/Cairo dependency risk entirely (ReportLab is pure Python) and reuses real, working rendering code + store for download in HR view

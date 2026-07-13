@@ -11,6 +11,7 @@ from routers import (
     interview_questions,
     jobs,
     matching,
+    report,
     rubric,
 )
 
@@ -23,6 +24,7 @@ app.include_router(interview_questions.router)
 app.include_router(interview_answers.router)
 app.include_router(rubric.router)
 app.include_router(decisions.router)
+app.include_router(report.router)
 
 
 @app.on_event("startup")
