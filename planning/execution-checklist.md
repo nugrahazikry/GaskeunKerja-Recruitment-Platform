@@ -692,7 +692,7 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 |---|---|---|---|---|---|
 | T1. Audit Tahap 2 frontend | ✅ **Final result** | Confirmed no React code exists to reuse — only the visual language, already captured in the design artifacts. | 0.5 | 🟢 | |
 | T2. Design system | ✅ **Final result** | 9 shared components built and verified via a real Playwright screenshot — correct teal/gold/Georgia-serif styling, zero console errors. | 3.0 | 🟡 | Design locked/previewed 2026-07-12 |
-| T3. Vite structure + route guards | 🔄 **In progress** | Vite scaffold done 2026-07-13; route guards not started. | 1.5 | 🟡 | |
+| T3. Vite structure + route guards | ✅ **Final result** | React Router + typed OpenAPI client wired; both guard screens verified via real Playwright runs against the live backend. | 1.5 | 🟡 | Required 2 backend gap-fills: CORS middleware (missing entirely) + 3 new candidate-facing endpoints |
 | T4. HR login | 📝 **To do** | Recruiter-only login; no candidate account exists. | 1.0 | 🟢 | |
 | T4b. JD CRUD UI | 📝 **To do** | Structured-field create/edit/delete/list for job descriptions. | 2.5 | 🟡 | |
 | T5. Shortlist | 📝 **To do** | Ranked candidates with per-competency explainability + tier status pills. | 3.0 | 🟡 | |
@@ -715,11 +715,12 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
   - [x] Removed default Vite boilerplate (`App.css`, `index.css`, react/vite logo assets) — replaced with the real token file
   - ✅ Done when: shared components exist (not a full system), built in React matching the locked direction — **verified visually via a real Playwright screenshot** (installed `playwright` + Chromium, since no browser-automation tool was otherwise available on this machine): booted the real Vite dev server, rendered a preview page exercising every component, screenshot confirms correct teal/gold/Georgia-serif Enterprise Trust styling, zero console errors. Screenshot showed one demo-data sloppiness (both table rows showed the same badge tone) — a throwaway preview-page bug, not a component bug, harmless since this file gets replaced by real routing in T3+
 
-- [ ] **T3. Vite structure + route guards.** — *Depends: none*
-  - [ ] Routing + minimal state
-  - [ ] API client generated/typed from OpenAPI (Area 2 T16)
-  - [ ] **Route guards**: candidate interview route redirects to consent if no consent record; a shared "link tidak valid / sudah kadaluarsa" screen for expired (72h) or malformed tokens
-  - ✅ Done when: app boots on host (Vite dev server); an expired/invalid token and a consent-skip both land on the right guard screen
+- [x] **T3. Vite structure + route guards. — DONE 2026-07-13.** — *Depends: none*
+  - [x] Routing + minimal state — `react-router-dom`, routes: `/login`, `/jobs` (HR-guarded), `/candidate/:id/consent`, `/candidate/:id/interview`, catch-all → invalid-link
+  - [x] API client generated/typed from OpenAPI (Area 2 T16) — `openapi-typescript` generates `frontend/src/api/schema.d.ts` from the live `/openapi.json`; `openapi-fetch`-based client in `frontend/src/api/client.ts` auto-attaches the HR bearer token
+  - [x] **Route guards**: `HrAuthGuard` (frontend/src/lib/HrAuthGuard.tsx) redirects to `/login` with no HR token; `CandidateTokenGuard` (frontend/src/lib/CandidateTokenGuard.tsx) resolves the token via the new `GET /candidates/{id}/self`, redirects to consent if `has_consent=false`, renders the shared `InvalidLinkPage` on any 401 (expired/malformed/unknown token)
+  - [x] **Backend gap found + fixed while building this**: no CORS middleware existed at all (confirmed via a real Playwright run — every frontend fetch to the backend failed with a CORS error, silently manifesting as "invalid token" in the UI, not an obvious CORS message). Added `CORSMiddleware` in `main.py` allowing `http://localhost:5173`. Also added 3 candidate-facing endpoints that didn't exist yet but were required for the guard to have anything to call: `GET /candidates/{id}/self` (token-gated self-info: job title, consent/telegram/interview-completion flags), `POST /candidates/{id}/consent`, `GET /candidates/{id}/questions` (approved-only, token-gated, for T6)
+  - ✅ Done when: app boots on host (Vite dev server); an expired/invalid token and a consent-skip both land on the right guard screen — **verified with a real Playwright run against the live backend + a real seeded candidate token** (id 32): (1) `/` → `/login` render confirmed, (2) `/jobs` with no HR token → redirected to `/login`, (3) garbage token on the interview route → real "Link tidak valid" screen (screenshot confirms Enterprise Trust styling), (4) real valid-but-no-consent token → correctly redirected to `/candidate/32/consent`, screen fetched and displayed the real job title ("Web Developer") from the live backend
 
 - [ ] **T4. HR login screen (recruiter only).** — *Depends: Area2 T3*
   - [ ] Login for HR/recruiter → HR home

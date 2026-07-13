@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 
 from db import repositories as repo
 from db.session import get_db
-from routers.auth import get_current_hr
+from routers.auth import get_candidate_by_token, get_current_hr
 from services import auth
 from services.candidate_ingest import ingest_cv
+from services.consent import has_consent, record_consent
 
 router = APIRouter(prefix="/candidates", tags=["candidates"])
 
@@ -24,6 +25,27 @@ class InviteOut(BaseModel):
     candidate_id: int
     token: str
     token_expires_at: str
+
+
+class CandidateSelfOut(BaseModel):
+    """Candidate-facing self-info, resolved by token — powers Area 1 T3's route guards
+    (expired/invalid token, consent-required redirect) without exposing HR-only fields."""
+
+    id: int
+    job_title: str
+    has_consent: bool
+    has_telegram_link: bool
+    interview_completed: bool
+
+
+class ConsentRequest(BaseModel):
+    token: str
+    consent_text_version: str
+
+
+class ConsentOut(BaseModel):
+    candidate_id: int
+    consent_given: bool
 
 
 def _job_belongs_to_company(db: Session, job_id: int, company_id: int) -> bool:
@@ -78,3 +100,37 @@ def invite_candidate(candidate_id: int, hr=Depends(get_current_hr), db: Session 
     return InviteOut(
         candidate_id=candidate.id, token=candidate.token, token_expires_at=candidate.token_expires_at.isoformat()
     )
+
+
+@router.get("/{candidate_id}/self", response_model=CandidateSelfOut)
+def get_candidate_self(candidate_id: int, token: str, db: Session = Depends(get_db)):
+    """Token-authenticated candidate self-info. A 401 here (invalid/expired token) is what
+    Area 1 T3's frontend route guard renders as the shared 'link tidak valid / sudah
+    kadaluarsa' screen."""
+    candidate = get_candidate_by_token(token, db)
+    if candidate.id != candidate_id:
+        raise HTTPException(status_code=401, detail="Token does not match this candidate")
+
+    job = repo.jobs.get(db, candidate.job_id)
+    answers = repo.interview_answers.list(db, candidate_id=candidate_id)
+
+    return CandidateSelfOut(
+        id=candidate.id,
+        job_title=job.title if job else "?",
+        has_consent=has_consent(db, candidate_id),
+        has_telegram_link=candidate.telegram_chat_id is not None,
+        interview_completed=len(answers) > 0,
+    )
+
+
+@router.post("/{candidate_id}/consent", response_model=ConsentOut)
+def submit_consent(candidate_id: int, body: ConsentRequest, db: Session = Depends(get_db)):
+    """Token-authenticated. Records PDP consent before the candidate can start the
+    interview (Area 1 T8 gate; enforced server-side already via services.consent in the
+    interview-answer submit path)."""
+    candidate = get_candidate_by_token(body.token, db)
+    if candidate.id != candidate_id:
+        raise HTTPException(status_code=401, detail="Token does not match this candidate")
+
+    record_consent(db, candidate_id, body.consent_text_version)
+    return ConsentOut(candidate_id=candidate_id, consent_given=True)

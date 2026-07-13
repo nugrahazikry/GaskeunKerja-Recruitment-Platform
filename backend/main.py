@@ -2,6 +2,7 @@ import logging
 import uuid
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 import models  # noqa: F401  (registers all models on Base.metadata)
@@ -22,6 +23,16 @@ from routers import (
 logger = logging.getLogger("gaskeun")
 
 app = FastAPI(title="GaskeunKerja for Business — MVP")
+
+# Local-only MVP: frontend (Vite dev server) and backend run on different ports/origins.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(auth.router)
 app.include_router(jobs.router)
 app.include_router(candidates.router)
