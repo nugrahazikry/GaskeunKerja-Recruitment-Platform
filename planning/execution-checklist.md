@@ -487,7 +487,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | T4. JD full CRUD + extraction | **Final result** | Full CRUD verified end-to-end with real SumoPod extraction calls; company isolation confirmed via 404, not leakage. |
 | T5. CV parse + PII redaction | **Final result** | Full pipeline verified end-to-end with a real CV upload; caught and fixed a real regex false-positive bug in PII redaction along the way. |
 | T6. Embeddings → Qdrant | **Final result** | Verified with real semantic matching — a JD correctly found its matching candidate at 0.805 similarity. |
-| T7. Matching engine | **To do** | Weighted semantic + competency-graph score, explainable per-competency detail. |
+| T7. Matching engine | **Final result** | Verified with a real strong/mid/weak scenario — scores and ranks correctly discriminated. |
 | T8. Skill-gap analysis | **To do** | Deepseek Pro candidate-vs-JD gap output, grounded via a deterministic seed. |
 | T9. Interview question gen | **To do** | 2-3 Indonesian questions generated from the JD. |
 | T9b. Recruiter edit/approve | **To do** | Human-in-the-loop approval gate before candidates see questions. |
@@ -548,12 +548,13 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - ✅ Done when: vectors present for JD + all candidates; query returns neighbors — **verified against real data**: seeded a JD (JavaScript/React/Node.js competencies) and a matching candidate (JavaScript/React/HTML/CSS skills), embedded both via real SumoPod calls, confirmed both vectors exist in Qdrant with 1536 dimensions and correct payloads; queried `candidate_vectors` using the JD's own vector — correctly returned the matching candidate as the top (and only) neighbor with a strong 0.805 similarity score, confirming genuine semantic matching rather than keyword overlap. Test data cleaned up
 
 ### Matching & analysis
-- [ ] **T7. Matching engine — semantic + lightweight competency-graph.** — *Depends: T6, DB T6 · Flow: 4*
-  - [ ] Qdrant similarity as base score
-  - [ ] Boost using competency-graph relations from the framework (related-competency credit)
-  - [ ] **Combine via weighted sum (resolved 2026-07-12)**: `overall_score = 0.7 × semantic_similarity + 0.3 × graph_boost`
-  - [ ] **Retain per-competency match detail** for explainability (Q17)
-  - ✅ Done when: ranked shortlist; each score expands to which competencies drove it; formula is the documented weighted sum
+- [x] **T7. Matching engine — semantic + lightweight competency-graph. — DONE 2026-07-13.** — *Depends: T6, DB T6 · Flow: 4*
+  - [x] Qdrant similarity as base score — `backend/services/matching.py::compute_match_score()`; computed as direct cosine similarity between the candidate's and JD's own retrieved vectors (numpy), not a Qdrant filtered search — simpler and avoids depending on Qdrant's query-filter dict/model syntax
+  - [x] Boost using competency-graph relations from the framework (related-competency credit) — `compute_graph_boost()`: for each JD competency, credit either an exact skill match or a candidate skill that's a `related_competency_ids` neighbor in `competency_framework`
+  - [x] **Combine via weighted sum (resolved 2026-07-12)**: `overall_score = 0.7 × semantic_similarity + 0.3 × graph_boost` — `SEMANTIC_WEIGHT`/`GRAPH_WEIGHT` constants
+  - [x] **Retain per-competency match detail** for explainability (Q17) — `competency_breakdown` JSONB stores `semantic_similarity`, `graph_boost`, and `matched_competencies` (the actual competency names that drove the score)
+  - [x] `backend/routers/matching.py::GET /jobs/{id}/candidates` — ranked shortlist endpoint, company-scoped
+  - ✅ Done when: ranked shortlist; each score expands to which competencies drove it; formula is the documented weighted sum — **verified against a realistic 3-candidate scenario** (strong/mid/weak fit vs. a JavaScript/React/Node.js/Database JD): scores correctly discriminated (Strong 0.79 > Mid 0.58 > Weak 0.44), ranks assigned 1/2/3 correctly, `matched_competencies` correctly showed `["JavaScript","React","Node.js"]` for the strong candidate vs. `[]` for the mismatched one. Verified via real HTTP call to `GET /jobs/7/candidates` — full ranked JSON returned with per-candidate breakdown. All test data cleaned up
 
 - [ ] **T8. Skill-gap per candidate (Deepseek Pro).** — *Depends: T7 · Flow: 4→8*
   - [ ] **Tahap 2 reuse (2026-07-12 audit):** `agent_4_recommendation_report.py::_build_seed_gap()`/`_is_skill_match()` implement a deterministic token-overlap "seed" that grounds/filters the LLM's gap output — adapt this technique (compute a cheap deterministic gap first, use it to constrain/validate the LLM's structured output) even though the underlying comparison there is candidate-vs-market, here it's candidate-vs-JD
@@ -930,7 +931,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | T4 JD full CRUD + extraction + soft-delete | 🟢 Done 2026-07-13 | 3.0 | 🟡 | No JD/employer concept exists in Tahap 2 (jobseeker-focused app) |
 | T5 CV parse (text + vision fallback + PII redaction) | 🟢 Done 2026-07-13 | **3.75** ↓ *(was 5.0)* | 🔴 | **Tahap 2 reuse**: the `pdfplumber` text-extraction + empty-page-detection pattern is validated working code — adopt it directly for the text-extraction step. Still 🔴: PII redaction, SumoPod integration, and proper (non-regex) structured-output validation are all new work Tahap 2 doesn't have (its own JSON parsing is explicitly fragile — a pattern to avoid, not copy) |
 | T6 Embeddings → Qdrant | 🟢 Done 2026-07-13 | 1.5 | 🟡 | No embeddings code in Tahap 2 |
-| T7 Matching engine (semantic + graph + formula) | ⚪ Not started | 3.0 | 🟠 | Tahap 2's "matching" is a token-overlap heuristic — a different technique entirely, doesn't transfer to our semantic+graph approach |
+| T7 Matching engine (semantic + graph + formula) | 🟢 Done 2026-07-13 | 3.0 | 🟠 | Tahap 2's "matching" is a token-overlap heuristic — a different technique entirely, doesn't transfer to our semantic+graph approach |
 | T8 Skill-gap analysis | ⚪ Not started | **1.0** ↓ *(was 1.5)* | 🟡 | **Tahap 2 reuse**: `_build_seed_gap()`/`_is_skill_match()`'s deterministic-seed-grounds-LLM-output pattern is a legitimate technique to adapt here, even though it's candidate-vs-market there and candidate-vs-JD here |
 | T9 Interview question gen | ⚪ Not started | 1.0 | 🟡 | No interview module in Tahap 2 (the whole "new component" premise from the original pivot) |
 | T9b Recruiter edit/approve | ⚪ Not started | 1.0 | 🟢 | |
