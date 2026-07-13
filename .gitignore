@@ -22,6 +22,10 @@ qdrant_data/
 # Local storage (CVs, interview audio — never commit real candidate data)
 storage/
 
+# Seed source CVs — real third-party resumes (personal data), never commit to a public repo.
+# The 2 test audio clips in seed/raw/audio/ (the user's own voice) are the one exception, already tracked.
+seed/raw/cv/
+
 # Editor / OS
 .vscode/
 .DS_Store

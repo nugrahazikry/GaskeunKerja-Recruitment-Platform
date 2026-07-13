@@ -1,126 +1,126 @@
-"""Competency framework + resource library content for the Data Analyst demo role (Area 3 T6/T7).
+"""Competency framework + resource library content for the Web Developer demo role (Area 3 T6/T7).
 
 Ten competencies, each with a level description (used by the report to describe proficiency)
 and lightweight relations to related competencies (feeds Area 2 T7's matching graph boost).
 Three curated resources per competency (feeds the deterministic development report).
 """
 
-JOB_ROLE = "Data Analyst"
+JOB_ROLE = "Web Developer"
 
 # key -> (competency_name, level_description, related_keys)
 COMPETENCIES = {
-    "sql": (
-        "SQL",
-        "1=belum bisa menulis query dasar; 3=bisa JOIN, GROUP BY, dan subquery sederhana; "
-        "5=mahir window functions, query tuning, dan desain skema.",
-        ["data_cleaning", "dashboarding"],
+    "html_css": (
+        "HTML & CSS",
+        "1=hanya bisa membuat halaman statis sederhana; 3=mahir layout responsif dengan Flexbox/Grid dan "
+        "CSS terstruktur; 5=mahir animasi CSS, aksesibilitas, dan cross-browser compatibility tingkat lanjut.",
+        ["javascript", "responsive_design"],
     ),
-    "excel": (
-        "Excel/Spreadsheet",
-        "1=hanya bisa input data manual; 3=mahir pivot table, VLOOKUP/XLOOKUP, dan formula bersyarat; "
-        "5=mampu membangun model data kompleks dengan Power Query/Power Pivot.",
-        ["data_visualization", "data_cleaning"],
+    "javascript": (
+        "JavaScript",
+        "1=baru paham sintaks dasar; 3=mahir manipulasi DOM, async/await, dan fetch API; "
+        "5=mahir arsitektur aplikasi kompleks, optimasi performa, dan debugging tingkat lanjut.",
+        ["frontend_framework", "html_css"],
     ),
-    "data_visualization": (
-        "Data Visualization",
-        "1=hanya bisa membuat grafik dasar; 3=mampu memilih jenis visualisasi yang tepat untuk audiens; "
-        "5=mahir membangun dashboard interaktif dengan storytelling data yang jelas.",
-        ["dashboarding", "business_communication"],
+    "frontend_framework": (
+        "Framework Frontend (React/Vue/Angular)",
+        "1=belum pernah membangun aplikasi dengan framework; 3=mahir component-based development, "
+        "state management dasar, dan routing; 5=mahir arsitektur skala besar, optimasi render, dan custom hooks/composables.",
+        ["javascript", "state_management"],
     ),
-    "statistics": (
-        "Statistik",
-        "1=paham statistik deskriptif dasar; 3=mampu melakukan uji hipotesis dan interpretasi korelasi; "
-        "5=mahir regresi, analisis prediktif, dan menjelaskan signifikansi statistik ke non-teknis.",
-        ["python_r", "data_cleaning"],
+    "backend_development": (
+        "Backend Development (Node.js/Python/PHP)",
+        "1=belum bisa membangun API dasar; 3=mahir membangun REST API dengan validasi dan autentikasi; "
+        "5=mahir arsitektur backend skalabel, microservices, dan optimasi query database.",
+        ["database", "api_design"],
     ),
-    "python_r": (
-        "Python/R",
-        "1=belum bisa menulis skrip analisis dasar; 3=mampu menggunakan pandas/dplyr untuk manipulasi data; "
-        "5=mahir membangun pipeline analisis end-to-end dan otomatisasi laporan.",
-        ["statistics", "data_cleaning"],
+    "database": (
+        "Database (SQL/NoSQL)",
+        "1=hanya paham query SELECT dasar; 3=mahir desain skema, JOIN, dan indexing; "
+        "5=mahir optimasi query kompleks, replikasi, dan pemilihan database sesuai use-case.",
+        ["backend_development", "api_design"],
     ),
-    "data_cleaning": (
-        "Data Cleaning",
-        "1=sering melewatkan data kotor/duplikat; 3=konsisten menangani missing values dan outlier; "
-        "5=mahir merancang proses validasi data otomatis untuk pipeline berskala besar.",
-        ["sql", "python_r"],
+    "api_design": (
+        "API Design & Integration",
+        "1=belum pernah merancang/mengonsumsi API; 3=mahir REST API design, dokumentasi, dan integrasi pihak ketiga; "
+        "5=mahir GraphQL, versioning API, dan desain API untuk skala tinggi.",
+        ["backend_development", "database"],
     ),
-    "dashboarding": (
-        "Dashboarding",
-        "1=hanya bisa menyusun tabel statis; 3=mampu membangun dashboard dasar di Tableau/Power BI/Looker; "
-        "5=mahir merancang dashboard real-time dengan drill-down dan filter interaktif.",
-        ["data_visualization", "sql"],
+    "version_control": (
+        "Version Control (Git)",
+        "1=hanya bisa commit dan push dasar; 3=mahir branching, merge, dan resolve conflict; "
+        "5=mahir workflow tim skala besar (Git Flow), code review, dan rebase/cherry-pick tingkat lanjut.",
+        ["deployment", "responsive_design"],
     ),
-    "business_communication": (
-        "Komunikasi Bisnis",
-        "1=kesulitan menjelaskan temuan data ke non-teknis; 3=mampu menyusun ringkasan insight yang jelas; "
-        "5=mahir mempresentasikan rekomendasi berbasis data ke level manajemen dengan storytelling kuat.",
-        ["data_visualization"],
+    "responsive_design": (
+        "Responsive & Mobile-First Design",
+        "1=hanya membuat layout untuk satu ukuran layar; 3=mahir mendesain untuk berbagai breakpoint dan perangkat; "
+        "5=mahir pendekatan mobile-first, performa loading di perangkat rendah, dan progressive web app.",
+        ["html_css", "version_control"],
     ),
-    "domain_knowledge": (
-        "Pemahaman Domain Bisnis",
-        "1=belum memahami konteks industri/perusahaan; 3=paham metrik bisnis utama dan KPI relevan; "
-        "5=mahir mengaitkan analisis data langsung ke keputusan strategis bisnis.",
-        ["business_communication", "statistics"],
+    "deployment": (
+        "Deployment & DevOps Dasar",
+        "1=belum pernah men-deploy aplikasi sendiri; 3=mahir deploy ke platform cloud dasar (Vercel/Netlify/VPS) "
+        "dan konfigurasi CI/CD sederhana; 5=mahir containerization (Docker), monitoring produksi, dan skalabilitas infrastruktur.",
+        ["version_control", "backend_development"],
     ),
-    "critical_thinking": (
-        "Berpikir Kritis & Problem Solving",
-        "1=hanya mengikuti instruksi analisis tanpa validasi; 3=mampu memvalidasi asumsi dan mencari akar masalah; "
-        "5=mahir merumuskan pertanyaan analisis yang tepat dari masalah bisnis ambigu.",
-        ["statistics", "domain_knowledge"],
+    "state_management": (
+        "State Management",
+        "1=hanya menggunakan state lokal komponen; 3=mahir state management global (Redux/Zustand/Pinia/Context); "
+        "5=mahir arsitektur state kompleks, caching data, dan optimasi re-render skala besar.",
+        ["frontend_framework", "javascript"],
     ),
 }
 
 # competency_key -> [(title, duration, milestone_description, url), ...]
 RESOURCES = {
-    "sql": [
-        ("SQL for Data Analysis (Mode Analytics)", "6 jam", "Mampu menulis JOIN dan agregasi multi-tabel", None),
-        ("Advanced SQL: Window Functions", "3 jam", "Mampu menggunakan ROW_NUMBER, RANK, dan LAG/LEAD", None),
-        ("Query Performance Tuning Basics", "2 jam", "Memahami cara membaca query execution plan", None),
+    "html_css": [
+        ("Responsive Web Design dengan Flexbox & Grid", "6 jam", "Mampu membangun layout responsif tanpa framework CSS", None),
+        ("CSS Animation Fundamentals", "3 jam", "Mampu membuat transisi dan animasi CSS yang halus", None),
+        ("Web Accessibility (a11y) Basics", "3 jam", "Memahami prinsip aksesibilitas dasar untuk halaman web", None),
     ],
-    "excel": [
-        ("Excel Pivot Tables Masterclass", "3 jam", "Mampu membangun pivot table multi-dimensi", None),
-        ("Power Query untuk Analis Data", "4 jam", "Mampu menggabungkan dan membersihkan data dari banyak sumber", None),
-        ("Formula Excel Tingkat Lanjut", "2 jam", "Mahir XLOOKUP, INDEX-MATCH, dan formula array", None),
+    "javascript": [
+        ("Modern JavaScript (ES6+) Deep Dive", "8 jam", "Mahir async/await, destructuring, dan module system", None),
+        ("DOM Manipulation & Events Praktis", "4 jam", "Mampu membangun interaksi UI dinamis tanpa framework", None),
+        ("Debugging JavaScript di Browser DevTools", "2 jam", "Mampu menelusuri dan memperbaiki bug secara sistematis", None),
     ],
-    "data_visualization": [
-        ("Storytelling with Data", "5 jam", "Mampu memilih visualisasi yang sesuai konteks audiens", None),
-        ("Prinsip Desain Dashboard yang Efektif", "3 jam", "Memahami hierarki visual dan penggunaan warna", None),
-        ("Data Visualization dengan Python (matplotlib/seaborn)", "4 jam", "Mampu membuat visualisasi custom dari data mentah", None),
+    "frontend_framework": [
+        ("React untuk Pemula sampai Mahir", "10 jam", "Mampu membangun aplikasi multi-halaman dengan komponen reusable", None),
+        ("Vue.js Fundamentals", "8 jam", "Mampu membangun aplikasi reaktif dengan Composition API", None),
+        ("Component Design Patterns", "4 jam", "Mampu merancang komponen yang scalable dan mudah dites", None),
     ],
-    "statistics": [
-        ("Statistik Dasar untuk Analis Data", "6 jam", "Memahami mean, median, variansi, dan distribusi", None),
-        ("Uji Hipotesis Praktis", "4 jam", "Mampu melakukan t-test dan interpretasi p-value", None),
-        ("Pengantar Regresi Linear", "5 jam", "Mampu membangun dan menginterpretasi model regresi sederhana", None),
+    "backend_development": [
+        ("Membangun REST API dengan Node.js/Express", "8 jam", "Mampu membangun API CRUD lengkap dengan validasi", None),
+        ("Autentikasi & Otorisasi (JWT)", "4 jam", "Mampu mengimplementasikan sistem login yang aman", None),
+        ("Backend Architecture Fundamentals", "5 jam", "Memahami pemisahan layer controller/service/repository", None),
     ],
-    "python_r": [
-        ("Python untuk Analisis Data (Pandas)", "8 jam", "Mampu memanipulasi dataframe untuk analisis harian", None),
-        ("Automating Reports with Python", "4 jam", "Mampu membangun skrip laporan otomatis terjadwal", None),
-        ("R untuk Data Analyst", "6 jam", "Mampu melakukan analisis data dasar dengan dplyr/tidyr", None),
+    "database": [
+        ("SQL untuk Web Developer", "6 jam", "Mampu menulis query JOIN dan agregasi untuk aplikasi web", None),
+        ("Desain Skema Database yang Efisien", "4 jam", "Mampu merancang relasi dan indexing yang tepat", None),
+        ("Pengantar NoSQL (MongoDB)", "4 jam", "Mampu memilih antara SQL dan NoSQL sesuai kebutuhan aplikasi", None),
     ],
-    "data_cleaning": [
-        ("Data Cleaning Fundamentals", "4 jam", "Mampu menangani missing values dan duplikasi data", None),
-        ("Outlier Detection Techniques", "3 jam", "Mampu mengidentifikasi dan menangani outlier secara tepat", None),
-        ("Data Validation Pipelines", "5 jam", "Mampu merancang aturan validasi data otomatis", None),
+    "api_design": [
+        ("RESTful API Design Best Practices", "4 jam", "Mampu merancang endpoint API yang konsisten dan terdokumentasi", None),
+        ("Integrasi API Pihak Ketiga (Payment Gateway, dll)", "3 jam", "Mampu mengintegrasikan layanan eksternal ke aplikasi", None),
+        ("Pengantar GraphQL", "5 jam", "Memahami perbedaan REST dan GraphQL serta kapan menggunakannya", None),
     ],
-    "dashboarding": [
-        ("Tableau untuk Pemula", "6 jam", "Mampu membangun dashboard dasar dengan filter interaktif", None),
-        ("Power BI Dashboard Design", "6 jam", "Mampu membangun dashboard multi-halaman dengan drill-down", None),
-        ("Looker Studio Praktis", "3 jam", "Mampu menghubungkan sumber data dan membangun laporan real-time", None),
+    "version_control": [
+        ("Git & GitHub Fundamentals", "3 jam", "Mampu melakukan branching, merge, dan resolve conflict dasar", None),
+        ("Git Workflow untuk Tim (Git Flow)", "3 jam", "Mampu mengikuti alur kerja kolaborasi tim skala menengah", None),
+        ("Code Review Best Practices", "2 jam", "Mampu memberikan dan menerima review kode secara konstruktif", None),
     ],
-    "business_communication": [
-        ("Menyampaikan Insight Data ke Non-Teknis", "3 jam", "Mampu menyusun ringkasan eksekutif dari analisis data", None),
-        ("Presentasi Data yang Efektif", "4 jam", "Mampu membangun narasi presentasi berbasis data", None),
-        ("Menulis Laporan Analisis yang Jelas", "2 jam", "Mampu menyusun laporan terstruktur dan actionable", None),
+    "responsive_design": [
+        ("Mobile-First Design Principles", "4 jam", "Mampu mendesain UI dengan pendekatan mobile-first", None),
+        ("Progressive Web Apps (PWA) Dasar", "5 jam", "Mampu membangun aplikasi web yang bisa diinstal dan offline-ready", None),
+        ("Optimasi Performa Loading Halaman Web", "4 jam", "Mampu mengukur dan meningkatkan kecepatan loading halaman", None),
     ],
-    "domain_knowledge": [
-        ("Memahami KPI Bisnis Umum", "3 jam", "Mampu mengaitkan metrik data dengan tujuan bisnis", None),
-        ("Business Analytics Fundamentals", "5 jam", "Memahami bagaimana data mendukung keputusan strategis", None),
-        ("Studi Kasus Analisis Bisnis Industri", "4 jam", "Mampu menganalisis studi kasus bisnis nyata", None),
+    "deployment": [
+        ("Deploy Aplikasi Web ke Vercel/Netlify", "3 jam", "Mampu men-deploy aplikasi frontend ke produksi dengan cepat", None),
+        ("Docker untuk Web Developer", "6 jam", "Mampu containerize aplikasi web untuk deployment yang konsisten", None),
+        ("Pengantar CI/CD Pipeline", "4 jam", "Mampu mengatur pipeline testing dan deployment otomatis dasar", None),
     ],
-    "critical_thinking": [
-        ("Problem Solving untuk Data Analyst", "4 jam", "Mampu merumuskan pertanyaan analisis dari masalah ambigu", None),
-        ("Validating Data Assumptions", "3 jam", "Mampu memverifikasi asumsi sebelum menganalisis data", None),
-        ("Root Cause Analysis Techniques", "3 jam", "Mampu menelusuri akar masalah dari anomali data", None),
+    "state_management": [
+        ("State Management dengan Redux/Zustand", "6 jam", "Mampu mengelola state global aplikasi secara terstruktur", None),
+        ("React Context API Praktis", "3 jam", "Mampu menggunakan Context API untuk state skala menengah", None),
+        ("Optimasi Re-render pada Aplikasi Frontend", "4 jam", "Mampu mengidentifikasi dan memperbaiki re-render yang tidak perlu", None),
     ],
 }

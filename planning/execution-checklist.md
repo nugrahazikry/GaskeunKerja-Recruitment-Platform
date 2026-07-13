@@ -172,9 +172,9 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 
 | Aspect | Decision | Detail / rationale |
 |---|---|---|
-| Demo role | **Data Analyst** (IT category) | JD, competency framework (T6), resource library (T7) all target this one title |
-| CV source | **Kaggle `snehaanbhawal/resume-dataset`**, category `INFORMATION-TECHNOLOGY` | Adjacent categories as fallback if analyst-specific resumes are thin. Real PDF files included in the dataset |
-| Candidate count | **30, manually curated** | Deliberate strong / mid / weak-or-mismatched spread — not a random pull — so the ranked shortlist visibly discriminates on camera |
+| Demo role | ~~Data Analyst~~ → **Web Developer** (changed 2026-07-13) | JD (`backend/seed/job_description_data.py`), competency framework (T6), resource library (T7) all re-targeted to this title |
+| CV source | **30 PDFs added by user to `seed/raw/cv/`** (changed 2026-07-13) | **⚠️ Confirmed random, NOT curated/tiered** — user's words: "for testing purposes only." Not verified to be IT/web-dev-relevant, not filtered by category |
+| Candidate count | **30, random (not curated)** (changed 2026-07-13) | Original plan called for a deliberate strong/mid/weak spread; user explicitly chose to skip this and use the random batch as-is. **Risk**: the ranked shortlist may not visibly discriminate on camera the way the original plan intended — revisit before the demo recording if this matters |
 | PII → LLM | **Redacted before the LLM ever sees the CV** | Extracted text has name/email/phone replaced with a placeholder alias prior to the Deepseek parse call (Area 2 T5); only skill-relevant content reaches the LLM |
 | PII → stored file | **Raw original PDF stays HR-facing as-is** | Redaction applies to the LLM input + structured DB fields only, not the stored file itself — accepted tradeoff for build speed |
 | CV parsing | **Text extraction + vision-LLM caption fallback** (replaces Tesseract/OCR — see below) | Must handle text PDFs, image/scanned PDFs, and mixed pages (Area 2 T5) |
@@ -236,7 +236,7 @@ scannable index of what exists, used by T1-T3.
 | `hr_decisions` | HR's final human decision per candidate — separate from any AI score |
 | `consent_records` | Candidate's PDP consent record, gates interview processing |
 | `audit_log` | Every AI decision point + candidate-data access, for auditability |
-| `competency_framework` | `[content]` Skill taxonomy for the demo role (Data Analyst), with lightweight relations |
+| `competency_framework` | `[content]` Skill taxonomy for the demo role (Web Developer), with lightweight relations |
 | `resource_library` | `[content]` Curated learning resources keyed to competencies, powers the deterministic report |
 
 **Qdrant collections (2)**
@@ -336,7 +336,7 @@ scannable index of what exists, used by T1-T3.
 | `audit_log` | `metadata` | Extra context, jsonb |
 | `audit_log` | `created_at` | Row creation timestamp |
 | `competency_framework` | `id` | Primary key |
-| `competency_framework` | `job_role` | `"Data Analyst"` (the one demo role) |
+| `competency_framework` | `job_role` | `"Web Developer"` (the one demo role, changed 2026-07-13 from Data Analyst) |
 | `competency_framework` | `competency_name` | Name of the competency |
 | `competency_framework` | `level_description` | Description of proficiency levels |
 | `competency_framework` | `related_competency_ids` | Lightweight graph relations feeding Area 2 T7's matching boost |
@@ -356,11 +356,11 @@ scannable index of what exists, used by T1-T3.
 | T3. Qdrant collections | **Final result** | `candidate_vectors` + `jd_vectors` collections created and verified with a real upsert/query round-trip. |
 | T4. File storage layout | **Final result** | Isolated per-candidate folders for CV + audio verified — layout, isolation, and round-trip all confirmed. |
 | T5. Repository layer | **Final result** | Generic Repository class + one instance per entity, verified with real get/list/create calls. |
-| T6. Competency framework `[content]` | **Final result** | 10 competencies curated for Data Analyst with level descriptions + verified relations, loaded via an idempotent seed script. |
+| T6. Competency framework `[content]` | **Final result** | 10 competencies curated for **Web Developer** (re-curated 2026-07-13 after the role switch) with level descriptions + verified relations, loaded via an idempotent seed script. |
 | T7. Resource library `[content]` | **Final result** | 30 resources (3/competency) curated and verified — every competency has full coverage. |
 | T8. Consent + audit write paths | **Final result** | Audit-log helper + consent gate verified — blocks without consent, allows once recorded. |
 | T9. Retention policy | **Final result** | 30-day retention rule + manual cleanup helper verified — deletes expired audio, correctly leaves recent audio untouched. |
-| T10. Seed data | **To do** | Kaggle-sourced, curated, anonymized, tiered 30-candidate seed set — the single biggest time sink in the plan. |
+| T10. Seed data | **Blocked** | Role changed to Web Developer + CVs are random/untiered (user's call) + still needs Area 2 T5 (CV parsing) to exist before it can actually run. |
 
 - [x] **T1. DB connection locked: PostgreSQL (Docker). — DONE 2026-07-13.** — *Depends: Area4 T2 · Flow: all persistence*
   - [x] SQLAlchemy engine + session factory from `DATABASE_URL` — `backend/db/session.py` (`engine`, `SessionLocal`, `Base`, `get_db()`); `DATABASE_URL` added to `backend/config.py`
@@ -393,16 +393,16 @@ scannable index of what exists, used by T1-T3.
   - [x] Thin repositories/CRUD over SQLAlchemy (no Alembic) — `backend/db/repository.py` (generic `Repository[ModelType]`: `get`/`list`/`create`), `backend/db/repositories.py` (one instance per entity, all 17)
   - ✅ Done when: each entity has get/create used by services — **verified**: created a `Company` + a linked `HRUser` through the repositories, fetched the company back by id, listed `hr_users` filtered by `company_id` (correct single result), confirmed `get()` on a nonexistent id returns `None` rather than raising; test rows cleaned up afterward (children deleted before parents, respecting FKs)
 
-- [x] **T6. `[content]` Competency framework — ONE demo role: Data Analyst (IT). — DONE 2026-07-13.** — *Depends: T2 · Flow: 4, 8*
-  - [x] List ~8-12 competencies with levels — **10 competencies curated**: SQL, Excel/Spreadsheet, Data Visualization, Statistik, Python/R, Data Cleaning, Dashboarding, Komunikasi Bisnis, Pemahaman Domain Bisnis, Berpikir Kritis & Problem Solving — each with a 1/3/5-anchored Indonesian level description (`backend/seed/competency_framework_data.py`)
-  - [x] Encode lightweight relations (parent/related) feeding the matching graph (Area 2 T7) — each competency has 1-2 related competencies, internally consistent (e.g. SQL↔Data Cleaning↔Dashboarding cross-reference correctly)
-  - [x] Store as seed rows in the reference table — `backend/seed/load_competency_framework.py`, idempotent (two-pass: create rows, then fill `related_competency_ids` once all ids exist)
-  - ✅ Done when: one role fully covered; relations queryable; used by matching + report — **verified**: ran the loader (10 competencies + 30 resources created), re-ran to confirm idempotency (correctly skipped), queried `related_competency_ids` directly — all populated and cross-referencing correctly
+- [x] **T6. `[content]` Competency framework — ONE demo role: ~~Data Analyst~~ → Web Developer. — DONE 2026-07-13, RE-CURATED 2026-07-13 after the role switch.** — *Depends: T2 · Flow: 4, 8*
+  - [x] List ~8-12 competencies with levels — **10 competencies curated for Web Developer**: HTML & CSS, JavaScript, Framework Frontend (React/Vue/Angular), Backend Development, Database (SQL/NoSQL), API Design & Integration, Version Control (Git), Responsive & Mobile-First Design, Deployment & DevOps Dasar, State Management — each with a 1/3/5-anchored Indonesian level description (`backend/seed/competency_framework_data.py`). The original Data Analyst set (SQL, Excel, Statistics, etc.) was deleted from the DB and fully replaced, not appended
+  - [x] Encode lightweight relations (parent/related) feeding the matching graph (Area 2 T7) — each competency has 1-2 related competencies, internally consistent (e.g. HTML&CSS↔JavaScript↔Responsive Design cross-reference correctly)
+  - [x] Store as seed rows in the reference table — `backend/seed/load_competency_framework.py`, idempotent (two-pass: create rows, then fill `related_competency_ids` once all ids exist); unchanged code, just re-run against the new content
+  - ✅ Done when: one role fully covered; relations queryable; used by matching + report — **verified twice**: first for Data Analyst (10 competencies + 30 resources), then re-verified identically after the Web Developer re-curation — re-ran the loader (10 + 30 created), queried `related_competency_ids` directly, all populated and cross-referencing correctly
 
-- [x] **T7. `[content]` Curated resource library — same role. — DONE 2026-07-13.** — *Depends: T6 · Flow: 8*
-  - [x] ~3 resources per competency (title, duration, milestone), keyed to competency ids — exactly 3 per competency, 30 total, Indonesian titles/milestones (`backend/seed/competency_framework_data.py::RESOURCES`)
+- [x] **T7. `[content]` Curated resource library — same role. — DONE 2026-07-13, RE-CURATED 2026-07-13 after the role switch.** — *Depends: T6 · Flow: 8*
+  - [x] ~3 resources per competency (title, duration, milestone), keyed to competency ids — exactly 3 per Web Developer competency, 30 total, Indonesian titles/milestones (`backend/seed/competency_framework_data.py::RESOURCES`)
   - [x] Enough to assemble a deterministic report — same loader as T6, `backend/seed/load_competency_framework.py`
-  - ✅ Done when: every competency has ≥1 mapped resource; report can select/order from it — **verified**: `LEFT JOIN` query confirms all 10 competencies have exactly 3 resources each, none with zero
+  - ✅ Done when: every competency has ≥1 mapped resource; report can select/order from it — **verified**: `LEFT JOIN` query confirms all 10 Web Developer competencies have exactly 3 resources each, none with zero
 
 - [x] **T8. Consent + audit write paths. — DONE 2026-07-13.** — *Depends: T2 · Flow: 5, 6*
   - [x] Helper writes an `audit_log` row at every AI decision point + candidate-data access — `backend/services/audit.py::log()`
@@ -416,18 +416,19 @@ scannable index of what exists, used by T1-T3.
   - [x] Provide a callable manual cleanup helper — `cleanup_expired_audio(db, storage_root)`, returns the list of cleaned-up candidate ids
   - ✅ Done when: policy documented + cleanup callable exists (supports UU PDP) — **verified**: created two candidates with real audio files — one with a 35-day-old consent record (past the 30-day retention window), one with a 5-day-old record. Ran cleanup: the expired candidate's audio file was deleted, the recent candidate's audio was correctly left untouched; all test data cleaned up afterward
 
-- [ ] **T10. Seed data for demo — Kaggle-sourced, curated, anonymized, tiered.** — *Depends: T2, T6, T7 · Flow: all*
-  - [ ] 1 company + 1 seeded HR account (JD itself created via the in-app CRUD flow, Area 2 T4/Area 1 T4b — not a raw DB insert). **Single company for MVP** (resolved 2026-07-12: no second company/isolation demo — isolation logic still exists in code, Area 2 T3, just not shown on camera)
-  - [ ] **Manual for now (resolved 2026-07-12):** download `snehaanbhawal/resume-dataset` from Kaggle by hand (no Kaggle API/credential this week), filter category `INFORMATION-TECHNOLOGY` (+ adjacent categories if Data Analyst resumes are thin), and place the **30 curated candidate PDFs** into `../seed/raw/cv/` — the seed script reads from that folder
-  - [ ] **Manually curate 30 candidate PDFs** for a spread: clear strong-fit tier, mid tier, weak/mismatched tier — so the ranking visibly discriminates
-  - [ ] **Record the intended match-quality tier per candidate in the seed manifest itself (resolved 2026-07-12)** — a simple dict/CSV column (`candidate_id → strong|mid|weak`) alongside the seed script, not just a curation-time judgment call that's lost afterward. This is what QA Area 5 T5 asserts against — without it, the matching test has no ground truth to check
-  - [ ] Run each through the anonymization + parse pipeline (Area 2 T5) before seeding — structured DB/LLM input never holds raw Kaggle PII (raw PDF file itself is kept as-is, HR-facing)
-  - [ ] **Candidate interview-data tiers** (resolved 2026-07-12): of the 30 —
+- [ ] **T10. Seed data for demo — role/CV plan changed 2026-07-13, see notes below.** — *Depends: T2, T6, T7, **Area2 T5 (CV parsing, not yet built)** · Flow: all*
+  - ⚠️ **2026-07-13 changes from the original plan**: (1) demo role is now **Web Developer**, not Data Analyst (T6/T7 already re-curated); (2) the 30 CVs the user added to `seed/raw/cv/` are **confirmed random, not curated/tiered** — user's own words: "for testing purposes only." The strong/mid/weak tiering below is **not being done** on this batch; (3) only **2** synthetic interview candidates (not 2-3) — user is reusing the 2 existing test recordings (`Recording 50 tahun pengalaman.m4a`, `Recording dari web.mp3`) rather than recording a 3rd. Sub-items below are left as the **original** plan text for reference, but items marked ⚠️ above no longer apply as written — needs a fresh look before this task is actually run
+  - [ ] 1 company + 1 seeded HR account (JD itself created via the in-app CRUD flow, Area 2 T4/Area 1 T4b — not a raw DB insert). **Single company for MVP** (resolved 2026-07-12: no second company/isolation demo — isolation logic still exists in code, Area 2 T3, just not shown on camera). **JD content drafted 2026-07-13**: `backend/seed/job_description_data.py` (Web Developer, structured fields, Bahasa Indonesia) — written by AI per user request, not yet inserted into `jobs`
+  - [x] ~~Manual Kaggle download, filter INFORMATION-TECHNOLOGY, curate 30~~ — **superseded 2026-07-13**: user added 30 CVs directly to `seed/raw/cv/` already; confirmed random/uncurated, not filtered by category or fit
+  - [x] ~~Manually curate 30 candidate PDFs for a strong/mid/weak spread~~ — **explicitly skipped 2026-07-13** per user decision; the 30 CVs are random test data, no intended tier exists for them
+  - [x] ~~Record the intended match-quality tier per candidate~~ — **not applicable**: no tiering was done, so there's no ground truth to record. **Flags a real gap**: QA Area 5 T5 (matching/tier check) has nothing to assert against unless this is revisited before that test runs
+  - [ ] Run each through the anonymization + parse pipeline (Area 2 T5) before seeding — structured DB/LLM input never holds raw Kaggle PII (raw PDF file itself is kept as-is, HR-facing) — **blocked**: Area 2 T5 doesn't exist yet
+  - [ ] **Candidate interview-data tiers (revised 2026-07-13, was 27+2-3+1)**: of the 30 —
     - **27 profile-only**: `parsed_profiles` + `match_scores` only, no interview data at all (demonstrates matching/ranking)
-    - **2-3 pre-seeded synthetic interviews**: get real distinct `.webm` audio clips (manually pre-recorded once, placed in `../seed/raw/audio/` — see Area 4 banner) + `transcripts` + `rubric_scores` + `interview_summaries`, written directly to DB (not run through the live pipeline) — populates the HR-review screen (Area 1 T7) across multiple candidates with genuinely playable, non-duplicated audio. **Also seed an `hr_decisions` row for each (resolved 2026-07-12)** — advance/reject already recorded — so their candidate-detail page shows a completed "decided, report sent" state instead of a live, clickable-but-broken send-report button (they have no `telegram_chat_id`)
+    - **2 pre-seeded synthetic interviews** (was 2-3): the 2 existing test `.webm`-equivalent recordings (`.m4a`/`.mp3`, already in `seed/raw/audio/`, transcription-verified in Area 4 T3b) + `transcripts` + `rubric_scores` + `interview_summaries`, written directly to DB (not run through the live pipeline). **Also seed an `hr_decisions` row for each** — advance/reject already recorded — so their candidate-detail page shows a completed "decided, report sent" state instead of a live, clickable-but-broken send-report button (they have no `telegram_chat_id`)
     - **1 live candidate**: NO interview data pre-seeded — this candidate is walked through the real flow during demo recording (consent → Telegram link → record real audio → real STT/rubric/summary → HR review → decision → Telegram delivery)
-  - [ ] Competency + resource rows (from T6/T7)
-  - ✅ Done when: one command loads a demo-ready DB (30 curated, anonymized-for-LLM candidates, correctly tiered) with no manual DB fiddling
+  - [ ] Competency + resource rows (from T6/T7) — **done**, Web Developer framework already seeded
+  - ✅ Done when: one command loads a demo-ready DB (30 candidates, anonymized-for-LLM, Web Developer JD) with no manual DB fiddling — **not yet run**: blocked on Area 2 T5 existing; tiering explicitly out of scope for this batch per user decision
 
 ---
 
@@ -839,7 +840,8 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - ✅ Done when: all 5 genuinely independent runs produce identical report **data** (PDF rendering itself is not the thing being asserted)
 
 - [ ] **T5. Matching formula / curated-tier check (promoted from manual-only).** — *Depends: Area2 T7, DB T10 · **Run: Day 5** (re-baselined 2026-07-12), right after matching is built*
-  - [ ] Read the **intended tier per candidate from the seed manifest** (Area 3 T10 now tags strong/mid/weak per candidate at curation time — not re-derived here)
+  - ⚠️ **Blocked by a 2026-07-13 scope change**: Area 3 T10's CVs are now confirmed random/untiered (user's decision, "for testing purposes only" — see Area 3 T10 notes), so **there is no strong/mid/weak ground truth for this test to assert against**. As written, this test cannot run. **Needs a decision before Day 5**: either (a) go back and actually tier a subset of the 30 for this test's sake, (b) curate a small separate tiered fixture just for this test, decoupled from the demo's main 30, or (c) demote this to a lighter manual sanity-check instead of an asserted test. Not yet decided — flag to revisit when Area 5 build starts
+  - [ ] Read the **intended tier per candidate from the seed manifest** (Area 3 T10 now tags strong/mid/weak per candidate at curation time — not re-derived here) — **no longer possible on the current 30 CVs, see blocker above**
   - [ ] **Aggregate comparison (resolved 2026-07-12)**: assert the strong-tier **average** score is meaningfully higher than the weak-tier **average** — not a strict per-candidate ordering, which would be brittle against natural noise in real, manually-curated CV data
   - ✅ Done when: the average-score gap confirms the ranking visibly discriminates — catches a formula bug or bad curation before it's on camera, without false alarms from one ambiguous real-world CV
 
@@ -853,7 +855,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - ✅ Done when: both cases behave correctly — this is the exact test Area 2 T10 already assumes exists
 
 - [ ] **T10. Full e2e happy-path run — rewritten to match the current flow.** — *Depends: all core · **Run: Day 12** (re-baselined 2026-07-12; this one genuinely needs everything built; T3/T3b/T4/T5/T6/T8 above are re-run here as a confirmation pass, not run for the first time)*
-  - [ ] Seed data loads: 1 company, 1 JD (Data Analyst), **30 candidates correctly tiered** (27 profile-only, 2-3 synthetic-interview, 1 live) — verify all 30 have `parsed_profiles` (catches a silent partial-parse failure)
+  - [ ] Seed data loads: 1 company, 1 JD (**Web Developer**, changed 2026-07-13 from Data Analyst), **30 candidates** (27 profile-only, 2 synthetic-interview — was 2-3, 1 live) — ⚠️ "correctly tiered" no longer applies as written, the 30 CVs are confirmed random/untiered per the user's 2026-07-13 decision (see Area 3 T10) — verify all 30 have `parsed_profiles` (catches a silent partial-parse failure)
   - [ ] HR: create/view JD (structured fields) → view Shortlist (instant, pre-computed scores + tier status pills)
   - [ ] HR: edit/approve interview questions (T5b) → **invite the live candidate (T5c/T9c)**, copy the token link
   - [ ] Candidate: open token link → consent + **link Telegram** → record + submit **each** audio answer (per-question upload) → completion screen
