@@ -6,6 +6,7 @@ import { Button } from "../components/Button";
 import { SkeletonLoader } from "../components/SkeletonLoader";
 import { ErrorState } from "../components/ErrorState";
 import { EmptyState } from "../components/EmptyState";
+import { InviteModal } from "../components/InviteModal";
 import { api } from "../api/client";
 
 type CandidateMatch = {
@@ -39,6 +40,7 @@ export function ShortlistPage() {
   const [state, setState] = useState<State>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [inviteModalFor, setInviteModalFor] = useState<{ candidateId: number; alreadyInvited: boolean } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,7 +125,7 @@ export function ShortlistPage() {
                       variant={c.invited ? "secondary" : "primary"}
                       onClick={(e) => {
                         e.stopPropagation();
-                        alert(c.invited ? "T5c: Lihat Link Undangan (belum dibangun)" : "T5c: Undang ke Interview (belum dibangun)");
+                        setInviteModalFor({ candidateId: c.candidate_id, alreadyInvited: c.invited });
                       }}
                     >
                       {c.invited ? "Lihat Link Undangan" : "Undang ke Interview"}
@@ -160,6 +162,15 @@ export function ShortlistPage() {
           </div>
         )}
       </Card>
+
+      {inviteModalFor && (
+        <InviteModal
+          candidateId={inviteModalFor.candidateId}
+          alreadyInvited={inviteModalFor.alreadyInvited}
+          onClose={() => setInviteModalFor(null)}
+          onInvited={() => setReloadKey((k) => k + 1)}
+        />
+      )}
     </div>
   );
 }

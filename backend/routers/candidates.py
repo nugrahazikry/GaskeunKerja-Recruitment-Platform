@@ -29,6 +29,19 @@ class InviteOut(BaseModel):
     token_expires_at: str
 
 
+class CandidateDetailOut(BaseModel):
+    """HR-facing candidate detail, used by Area 1 T5c to re-view an existing invite link
+    without calling POST /invite again — that endpoint always issues a fresh token, which
+    would silently invalidate a link already shared with the candidate mid-demo."""
+
+    id: int
+    job_id: int
+    alias: str
+    invited: bool
+    token: str | None
+    token_expires_at: str | None
+
+
 class CandidateSelfOut(BaseModel):
     """Candidate-facing self-info, resolved by token — powers Area 1 T3's route guards
     (expired/invalid token, consent-required redirect) without exposing HR-only fields."""
@@ -110,6 +123,25 @@ def invite_candidate(candidate_id: int, hr=Depends(get_current_hr), db: Session 
 
     return InviteOut(
         candidate_id=candidate.id, token=candidate.token, token_expires_at=candidate.token_expires_at.isoformat()
+    )
+
+
+@router.get("/{candidate_id}", response_model=CandidateDetailOut)
+def get_candidate_detail(candidate_id: int, hr=Depends(get_current_hr), db: Session = Depends(get_db)):
+    """HR-facing, read-only. Lets the Shortlist's invite modal re-display an existing
+    link (Area 1 T5c) without ever calling POST /invite again just to view it."""
+    candidate = repo.candidates.get(db, candidate_id)
+    if not candidate or not _job_belongs_to_company(db, candidate.job_id, hr["company_id"]):
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    invited = candidate.invited_at is not None
+    return CandidateDetailOut(
+        id=candidate.id,
+        job_id=candidate.job_id,
+        alias=candidate.alias,
+        invited=invited,
+        token=candidate.token if invited else None,
+        token_expires_at=candidate.token_expires_at.isoformat() if invited else None,
     )
 
 

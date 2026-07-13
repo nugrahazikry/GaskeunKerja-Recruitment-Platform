@@ -127,6 +127,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/candidates/{candidate_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Candidate Detail
+         * @description HR-facing, read-only. Lets the Shortlist's invite modal re-display an existing
+         *     link (Area 1 T5c) without ever calling POST /invite again just to view it.
+         */
+        get: operations["get_candidate_detail_candidates__candidate_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/candidates/{candidate_id}/self": {
         parameters: {
             query?: never;
@@ -444,6 +465,26 @@ export interface components {
              * Format: binary
              */
             file: string;
+        };
+        /**
+         * CandidateDetailOut
+         * @description HR-facing candidate detail, used by Area 1 T5c to re-view an existing invite link
+         *     without calling POST /invite again — that endpoint always issues a fresh token, which
+         *     would silently invalidate a link already shared with the candidate mid-demo.
+         */
+        CandidateDetailOut: {
+            /** Id */
+            id: number;
+            /** Job Id */
+            job_id: number;
+            /** Alias */
+            alias: string;
+            /** Invited */
+            invited: boolean;
+            /** Token */
+            token: string | null;
+            /** Token Expires At */
+            token_expires_at: string | null;
         };
         /** CandidateOut */
         CandidateOut: {
@@ -965,6 +1006,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InviteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_candidate_detail_candidates__candidate_id__get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                candidate_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateDetailOut"];
                 };
             };
             /** @description Validation Error */
