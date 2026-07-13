@@ -163,7 +163,7 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 
 ---
 
-## Area 3 — Database + Reference Datasets  ·  Status: 🟡 In progress (T1 done)
+## Area 3 — Database + Reference Datasets  ·  Status: 🟡 In progress (T1-T9 done; T10 blocked on Kaggle CV/audio seed material)
 
 > **Blocks Area 2.** Schema early; datasets are `[content]` and gate the report (Area 2 T13) — start Day 2, don't slip.
 > Resolved: **PostgreSQL in Docker, via SQLAlchemy, NO Alembic** (`create_all` on fresh demo DB).
@@ -359,7 +359,7 @@ scannable index of what exists, used by T1-T3.
 | T6. Competency framework `[content]` | **Final result** | 10 competencies curated for Data Analyst with level descriptions + verified relations, loaded via an idempotent seed script. |
 | T7. Resource library `[content]` | **Final result** | 30 resources (3/competency) curated and verified — every competency has full coverage. |
 | T8. Consent + audit write paths | **Final result** | Audit-log helper + consent gate verified — blocks without consent, allows once recorded. |
-| T9. Retention policy | **To do** | Light retention rule scoped to the 1 live candidate's real consented audio. |
+| T9. Retention policy | **Final result** | 30-day retention rule + manual cleanup helper verified — deletes expired audio, correctly leaves recent audio untouched. |
 | T10. Seed data | **To do** | Kaggle-sourced, curated, anonymized, tiered 30-candidate seed set — the single biggest time sink in the plan. |
 
 - [x] **T1. DB connection locked: PostgreSQL (Docker). — DONE 2026-07-13.** — *Depends: Area4 T2 · Flow: all persistence*
@@ -410,11 +410,11 @@ scannable index of what exists, used by T1-T3.
   - [x] Consent is only ever written for candidates who actually go through the interview-gate step (the 1 live demo candidate) — **seed-only candidates get no `consent_records` row** (resolved 2026-07-12: they never reach the gate, so a record would be fabricated, not real) — enforced by design: nothing calls `record_consent()` except the real consent-gate flow
   - ✅ Done when: each AI stage leaves an audit row; no interview processing without consent — **verified**: created a real company→job→candidate chain, wrote an audit row and confirmed it's readable with correct action/metadata; confirmed `require_consent()` raises for a candidate with no consent record; confirmed it passes once `record_consent()` has run; all test rows cleaned up
 
-- [ ] **T9. Audio + CV retention/cleanup policy (light).** — *Depends: T4, T8 · Flow: 5 (PDP)*
-  - [ ] Define a simple retention rule tied to the consent record (audio)
-  - [ ] **Scope note:** the policy applies to real, consented recordings — i.e. only the 1 live demo candidate's audio. The 2-3 synthetic candidates' pre-made `.webm` clips are seed fixtures, not personal data collected under consent, so they're exempt (no consent record exists for them to tie a retention rule to — see T8)
-  - [ ] Provide a callable manual cleanup helper
-  - ✅ Done when: policy documented + cleanup callable exists (supports UU PDP)
+- [x] **T9. Audio + CV retention/cleanup policy (light). — DONE 2026-07-13.** — *Depends: T4, T8 · Flow: 5 (PDP)*
+  - [x] Define a simple retention rule tied to the consent record (audio) — `backend/services/retention.py`: `RETENTION_DAYS = 30`, `is_audio_expired(consented_at)`
+  - [x] **Scope note:** the policy applies to real, consented recordings — i.e. only the 1 live demo candidate's audio. The 2-3 synthetic candidates' pre-made `.webm` clips are seed fixtures, not personal data collected under consent, so they're exempt (no consent record exists for them to tie a retention rule to — see T8) — enforced structurally: `cleanup_expired_audio()` only ever iterates candidates with a real `consent_records` row, nothing else is reachable
+  - [x] Provide a callable manual cleanup helper — `cleanup_expired_audio(db, storage_root)`, returns the list of cleaned-up candidate ids
+  - ✅ Done when: policy documented + cleanup callable exists (supports UU PDP) — **verified**: created two candidates with real audio files — one with a 35-day-old consent record (past the 30-day retention window), one with a 5-day-old record. Ran cleanup: the expired candidate's audio file was deleted, the recent candidate's audio was correctly left untouched; all test data cleaned up afterward
 
 - [ ] **T10. Seed data for demo — Kaggle-sourced, curated, anonymized, tiered.** — *Depends: T2, T6, T7 · Flow: all*
   - [ ] 1 company + 1 seeded HR account (JD itself created via the in-app CRUD flow, Area 2 T4/Area 1 T4b — not a raw DB insert). **Single company for MVP** (resolved 2026-07-12: no second company/isolation demo — isolation logic still exists in code, Area 2 T3, just not shown on camera)
