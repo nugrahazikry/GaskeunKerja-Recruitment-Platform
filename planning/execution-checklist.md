@@ -496,7 +496,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | T9c. Invite candidate | ✅ **Final result** | Invite verified end-to-end; caught and resolved a real design conflict with T5's placeholder token. | 1.0 | 🟢 | |
 | T10. Answer intake + STT | ✅ **Final result** | Consent gate + real audio transcription verified via live HTTP; token-impersonation attempt correctly rejected. | 2.0 | 🟡 | No STT in Tahap 2 |
 | T11. Rubric scoring + summary | ✅ **Final result** | Verified against a real transcript; caught and fixed a design gap around interview-summary text sourcing. | 2.5 | 🟡 | No rubric/interview scoring in Tahap 2 |
-| T12. HR decision endpoints | 📝 **To do** | Records the human pass/reject decision, no auto-finalize path. | 1.0 | 🟢 | No employer-decision flow in Tahap 2 |
+| T12. HR decision endpoints | ✅ **Final result** | Verified end-to-end; grep-confirmed no auto-finalize path exists anywhere in the codebase. | 1.0 | 🟢 | No employer-decision flow in Tahap 2 |
 | T13. Report generation | 📝 **To do** | Deterministic report assembly, gated on a decision existing. | 2.5 | 🟡 | Different approach from Tahap 2's LLM-free-generated content, no code reuse |
 | T14. Report delivery | 📝 **To do** | PDF via adapted ReportLab code, sent through Telegram. | **2.0** ↓ *(was 3.0, weasyprint)* | 🟡 *(was 🟠)* | **Tahap 2 reuse, biggest single win**: `_build_report_pdf()` fully-working ReportLab generator, also retires the weasyprint Windows dependency risk |
 | T15. Async wiring + error handling | 📝 **To do** | Cross-cutting orchestration/retry/caching layer. | **1.75** ↓ *(was 2.0)* | 🟡 | Tahap 2's async-job pattern is a minor reference; do not copy its traceback-leaking exception handler |
@@ -599,11 +599,11 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - [x] `backend/routers/rubric.py` — `POST /candidates/{id}/answers/{answer_id}/score`, `POST /candidates/{id}/interview-summary`
   - ✅ Done when: same transcript → identical score across runs (QA T3); recruiter gets a readable summary — **verified**: real scoring against a real transcript produced sensible, differentiated scores (clarity=4, relevance=3, technical_depth=2) with genuine per-criterion rationale reflecting the transcript's actual thin content; repeated calls returned identical results; `rubric_scores` confirmed persisted correctly (one row per criterion); `interview-summary` endpoint correctly aggregated `overall_score=3.0` (average) with a real, non-placeholder summary text — confirming the design-gap fix above actually works, not just compiles
 
-- [ ] **T12. Human-in-the-loop endpoints — no auto-reject.** — *Depends: T11, DB T8 · Flow: 6→7*
-  - [ ] HR reads AI score/summary
-  - [ ] `POST /decisions` records the final outcome
-  - [ ] **No code path finalizes a candidate without HR action** — enforce in code, not just UI
-  - ✅ Done when: inspection shows no auto-finalize path; QA T6 passes
+- [x] **T12. Human-in-the-loop endpoints — no auto-reject. — DONE 2026-07-13.** — *Depends: T11, DB T8 · Flow: 6→7*
+  - [x] HR reads AI score/summary — already exposed via T11's `GET`-able rubric/summary data
+  - [x] `POST /decisions` records the final outcome — `backend/routers/decisions.py`, validates `decision ∈ {advance, reject}`, company-scoped, overwrites any prior decision for the same candidate (one current decision per candidate, not a stacked history)
+  - [x] **No code path finalizes a candidate without HR action** — enforce in code, not just UI — verified by direct code search: `grep -rn "hr_decisions.create"` across the entire backend returns exactly one hit, this endpoint
+  - ✅ Done when: inspection shows no auto-finalize path; QA T6 passes — **verified**: invalid decision value correctly 400s; valid `advance` succeeds; re-posting `reject` for the same candidate correctly overwrites (DB confirms exactly one row, the latest); decision for a nonexistent/wrong-company candidate correctly 404s; grep-based inspection confirms no other write path exists
 
 ### Report & delivery
 - [ ] **T13. Deterministic development report.** — *Depends: T12, T8, DB T6, DB T7 · Flow: 8*
