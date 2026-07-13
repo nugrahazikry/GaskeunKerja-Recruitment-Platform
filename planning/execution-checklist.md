@@ -141,10 +141,10 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
   - [x] Two prompt modes: **transcribe** (verbatim read-out) and **describe** (caption) — `transcribe_image()` / `describe_image()`, both wrapping a shared `_caption()` helper with mode-specific Indonesian-language prompts
   - ✅ Done when: a sample scanned-CV image returns an accurate verbatim transcription — **verified**: a synthetic "scanned CV page" image (name/role/experience/education/skills as rendered text, simulating a scanned page) transcribed with 100% accuracy via `transcribe_image()`; `describe_image()` on the same image correctly produced a short summary instead, confirming the two modes genuinely behave differently
 
-- [ ] **T8. True minimal cost estimate.** — *Depends: T3, T3b · Flow: reporting*
-  - [ ] Tally a full demo run from usage logs (SumoPod tokens + Groq minutes)
-  - [ ] Write the one-line honest figure into `plan.md`
-  - ✅ Done when: a defensible cost number exists for the pitch
+- [x] **T8. True minimal cost estimate. — DONE 2026-07-13 (projected, pre-seed-data).** — *Depends: T3, T3b · Flow: reporting*
+  - [x] **Projected** (not yet a real logged run — Area 3 seed data doesn't exist yet) a full demo run: 30 candidates (27 profile-only, 2-3 synthetic interviews, 1 live), using real per-call token counts observed during T3/T3d testing today plus published DeepSeek/Groq rates as the pricing basis (SumoPod's own rate card wasn't publicly findable — DeepSeek direct pricing used as a defensible proxy)
+  - [x] Write the one-line honest figure into `plan.md` — see decision log 2026-07-13
+  - ✅ Done when: a defensible cost number exists for the pitch — **≈ $0.07 per full demo run, ≈ $0.20 with dev-cycle re-runs** — **re-verify with real usage logs once Area 3 seed data + a live end-to-end run exist** (this task's original intent was a post-hoc tally from logs; that's not yet possible, so this is a pre-build projection instead, worth confirming later)
 
 - [ ] `[deferred]` **T4. Local-LLM substitution** — cut: negligible saving, real solo hours. (STT is API too, per decision.)
 
@@ -816,7 +816,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | T3b STT client (Groq) | 🟢 Done 2026-07-13 | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
 | T3c Telegram bot client | 🟢 Done 2026-07-13 | 2.0 | 🟡 | Deep-link + chat_id capture logic — no Tahap 2 equivalent |
 | T3d Vision-LLM client + fallback | 🟢 Done 2026-07-13 | **2.0** ↓ *(was 2.5)* | 🟠 | **Tahap 2 reuse**: its Gemini-vision OCR fallback (`_ocr_pdf_with_gemini`, PyMuPDF rasterize→vision call) is a working, validated version of this exact pattern — reduces implementation risk even though the provider (SumoPod/Groq vs Gemini) and technique (per-image vs whole-page) differ |
-| T8 Cost estimate | ⚪ Not started | 0.5 | 🟢 | Arithmetic + a paragraph |
+| T8 Cost estimate | 🟢 Done 2026-07-13 (projected; re-verify against real logs post-seed) | 0.5 | 🟢 | Arithmetic + a paragraph |
 | **Subtotal** | | **~11.0h** *(was 11.5h)* | | vs. **8h** scheduled (Day 1) |
 
 ### Area 3 — Database + Datasets (Day 2-3)
