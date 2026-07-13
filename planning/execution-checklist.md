@@ -100,13 +100,14 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
   - [x] Commit exact versions — `requirements.txt` (top-level pins) + `requirements.lock.txt` (full resolved tree) + `frontend/package-lock.json`, no floating `latest` anywhere
   - ✅ Done when: a fresh clone documents exact versions across `requirements.txt` + `package.json` — **verified**: `uvicorn main:app` booted clean, `GET /health` returned `200 {"status":"ok"}`
 
-- [ ] **T2. Docker Compose (DBs) + run modes.** — *Depends: T1 · Flow: infra*
-  - [ ] Compose services: `postgres` + `qdrant` with named volumes + healthchecks
-  - [ ] Wire `.env` (copy from `.env.example`) into the backend
-  - [ ] **Dev mode:** backend `uvicorn --reload` on host + frontend `npm run dev` on host
-  - [ ] **Finalization mode:** add backend (+ optionally frontend) to Compose for a one-command run
-  - [ ] Document both run modes
-  - ✅ Done when: dev = `docker compose up` (DBs) + `uvicorn` + `npm run dev` works; finalization = full `docker compose up` works
+- [x] **T2. Docker Compose (DBs) + run modes — dev mode DONE 2026-07-13; finalization mode deferred.** — *Depends: T1 · Flow: infra*
+  - [x] Compose services: `postgres:16` + `qdrant:latest` with named volumes (`postgres_data`, `qdrant_data`) + healthchecks (`pg_isready`, TCP check) — `docker-compose.yml` at repo root
+  - [x] **Port conflict found + fixed**: a native PostgreSQL 17 Windows service was already listening on host port 5432 (unrelated pre-existing install), silently intercepting connections meant for the container (auth failures traced to `psycopg` connecting to the wrong server). **Remapped Docker Postgres to host port 5433** — `POSTGRES_PORT`/`DATABASE_URL` updated in `.env` + `.env.example`
+  - [x] Wire `.env` into the backend — verified via `psycopg` direct connect AND SQLAlchemy engine (`SELECT 1` succeeds) against `localhost:5433`; Qdrant verified via `GET /collections` on `localhost:6333`
+  - [x] **Dev mode verified**: `docker compose up -d` (both containers healthy) + `uvicorn main:app --reload` on host (`/health` → 200) — confirmed working together
+  - [ ] `[deferred]` **Finalization mode**: adding backend (+ optionally frontend) to Compose for a one-command run — postponed until closer to the demo per `README.md`, dev mode is the working mode for now
+  - [x] Document both run modes — `README.md` created at repo root (prereqs, dev-mode steps, the port-5433 note, stop/reset commands)
+  - ✅ Done when: dev = `docker compose up` (DBs) + `uvicorn` + `npm run dev` works — **verified**; finalization = full `docker compose up` works — **deferred, not yet attempted**
 
 - [ ] **T3. Unified LLM client (SumoPod) + response caching.** — *Depends: T2 · Flow: 2,3,5*
   - [x] **API key + model access verified 2026-07-13** (one-off test script, not yet the real client module): new `LLM_API_KEY` confirmed working against `gpt-4o-mini`, `deepseek-v4-flash`, `deepseek-v4-pro`, and embeddings (`gemini/gemini-embedding-001`, 1536-dim truncation confirmed)
@@ -809,7 +810,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | Task | Status | Est. hours | Difficulty | Note |
 |---|---|---|---|---|
 | T1 Lock stack + versions | 🟢 Done 2026-07-13 | 1.0 | 🟢 | Boilerplate |
-| T2 Docker Compose + run modes | ⚪ Not started | 2.0 | 🟢 | Standard Compose work; Tahap 2's compose has no DB services, minimal reference value |
+| T2 Docker Compose + run modes | 🟢 Dev mode done 2026-07-13 (finalization mode deferred) | 2.0 | 🟢 | Standard Compose work; Tahap 2's compose has no DB services, minimal reference value. Hit + fixed a real port-5432 collision with a pre-existing native Postgres service |
 | T3 LLM client + caching + bypass | ⚪ Not started (API access verified, no client module yet) | 2.5 | 🟡 | Cache-key design + new bypass param — Tahap 2 uses Gemini/LangChain, zero code transfers |
 | T3b STT client (Groq) | ⚪ Not started (Groq STT call verified working, no client module yet) | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
 | T3c Telegram bot client | ⚪ Not started | 2.0 | 🟡 | Deep-link + chat_id capture logic — no Tahap 2 equivalent |
