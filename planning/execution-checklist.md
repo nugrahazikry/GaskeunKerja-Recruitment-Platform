@@ -693,8 +693,8 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 | T1. Audit Tahap 2 frontend | ✅ **Final result** | Confirmed no React code exists to reuse — only the visual language, already captured in the design artifacts. | 0.5 | 🟢 | |
 | T2. Design system | ✅ **Final result** | 9 shared components built and verified via a real Playwright screenshot — correct teal/gold/Georgia-serif styling, zero console errors. | 3.0 | 🟡 | Design locked/previewed 2026-07-12 |
 | T3. Vite structure + route guards | ✅ **Final result** | React Router + typed OpenAPI client wired; both guard screens verified via real Playwright runs against the live backend. | 1.5 | 🟡 | Required 2 backend gap-fills: CORS middleware (missing entirely) + 3 new candidate-facing endpoints |
-| T4. HR login | 📝 **To do** | Recruiter-only login; no candidate account exists. | 1.0 | 🟢 | |
-| T4b. JD CRUD UI | 📝 **To do** | Structured-field create/edit/delete/list for job descriptions. | 2.5 | 🟡 | |
+| T4. HR login | ✅ **Final result** | Login + error state + persisted session verified live against the real seeded HR account. | 1.0 | 🟢 | |
+| T4b. JD CRUD UI | ✅ **Final result** | List/create/edit/close verified end-to-end live, including validation error + competency re-extraction on save. | 2.5 | 🟡 | |
 | T5. Shortlist | 📝 **To do** | Ranked candidates with per-competency explainability + tier status pills. | 3.0 | 🟡 | |
 | T5b. Question edit/approve UI | 📝 **To do** | HR edits/approves AI-generated interview questions. | 1.5 | 🟡 | |
 | T5c. Invite modal | 📝 **To do** | Copyable token-link modal, re-viewable after first generation. | 1.0 | 🟡 | |
@@ -722,16 +722,16 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
   - [x] **Backend gap found + fixed while building this**: no CORS middleware existed at all (confirmed via a real Playwright run — every frontend fetch to the backend failed with a CORS error, silently manifesting as "invalid token" in the UI, not an obvious CORS message). Added `CORSMiddleware` in `main.py` allowing `http://localhost:5173`. Also added 3 candidate-facing endpoints that didn't exist yet but were required for the guard to have anything to call: `GET /candidates/{id}/self` (token-gated self-info: job title, consent/telegram/interview-completion flags), `POST /candidates/{id}/consent`, `GET /candidates/{id}/questions` (approved-only, token-gated, for T6)
   - ✅ Done when: app boots on host (Vite dev server); an expired/invalid token and a consent-skip both land on the right guard screen — **verified with a real Playwright run against the live backend + a real seeded candidate token** (id 32): (1) `/` → `/login` render confirmed, (2) `/jobs` with no HR token → redirected to `/login`, (3) garbage token on the interview route → real "Link tidak valid" screen (screenshot confirms Enterprise Trust styling), (4) real valid-but-no-consent token → correctly redirected to `/candidate/32/consent`, screen fetched and displayed the real job title ("Web Developer") from the live backend
 
-- [ ] **T4. HR login screen (recruiter only).** — *Depends: Area2 T3*
-  - [ ] Login for HR/recruiter → HR home
-  - [ ] Candidate pages are **not** behind login — reached via token link (see T6/T8)
-  - ✅ Done when: HR logs in; no candidate login exists
+- [x] **T4. HR login screen (recruiter only). — DONE 2026-07-13.** — *Depends: Area2 T3*
+  - [x] Login for HR/recruiter → HR home — `frontend/src/pages/LoginPage.tsx`, calls `POST /auth/login`, stores the JWT in localStorage via `frontend/src/api/client.ts`
+  - [x] Candidate pages are **not** behind login — reached via token link (see T6/T8) — separate `CandidateTokenGuard` path, no shared auth state
+  - ✅ Done when: HR logs in; no candidate login exists — **verified with a real Playwright run against the live backend and the real seeded HR account** (`hr@gaskeundemo.test`): wrong password shows the correct inline error (screenshot confirms Enterprise Trust styling), correct credentials redirect to `/jobs` with the JWT persisted in localStorage, a full page reload stays logged in (HR guard sees the token, no bounce to `/login`)
 
-- [ ] **T4b. 💎 Job description CRUD (list + structured create/edit/delete).** — *Depends: Area2 T4 · Flow: 1*
-  - [ ] JD list view, scoped to the logged-in HR's company
-  - [ ] Create/edit form: **structured fields** — title, responsibilities, requirements, qualifications (separate inputs, not one free-text box) — easier for reliable competency extraction (Area 2 T4) and clearer guidance for HR
-  - [ ] Delete action (MVP: simple, no cascade-guard)
-  - ✅ Done when: HR can list, create, edit, and delete JDs from the UI using the structured form
+- [x] **T4b. 💎 Job description CRUD (list + structured create/edit/delete). — DONE 2026-07-13.** — *Depends: Area2 T4 · Flow: 1*
+  - [x] JD list view, scoped to the logged-in HR's company — `frontend/src/pages/JobsListPage.tsx`, calls `GET /jobs` (backend already scopes by `hr["company_id"]`)
+  - [x] Create/edit form: **structured fields** — title, responsibilities, requirements, qualifications (separate inputs, not one free-text box) — `frontend/src/pages/JobFormPage.tsx`, shared between `/jobs/new` and `/jobs/:jobId/edit`
+  - [x] Delete action (MVP: simple, no cascade-guard) — backend `DELETE /jobs/{id}` is a soft-delete (`status='closed'`), matches the existing anti-FK-error design; UI shows a "Tutup Lowongan" button, not a destructive delete
+  - ✅ Done when: HR can list, create, edit, and delete JDs from the UI using the structured form — **verified with a real Playwright run against the live backend**: empty-title validation blocks submit with the correct inline error, a real JD (`POST /jobs`, which also triggers real competency extraction) appears in the list immediately, editing pre-fills the structured fields correctly and persists changes, closing flips the status badge to "Ditutup." Zero console errors throughout. Test JDs and their `jd_competencies` rows cleaned up from the DB afterward so the seed data stays clean.
 
 - [ ] **T5. 💎 HR shortlist w/ explainability + tier status.** — *Depends: Area2 T7 · Flow: 4*
   - [ ] Ranked list + match score

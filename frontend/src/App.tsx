@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { HrAuthGuard } from "./lib/HrAuthGuard";
 import { LoginPage } from "./pages/LoginPage";
 import { JobsListPage } from "./pages/JobsListPage";
+import { JobFormPage } from "./pages/JobFormPage";
 import { CandidateConsentPage } from "./pages/CandidateConsentPage";
 import { CandidateInterviewPage } from "./pages/CandidateInterviewPage";
 import { InvalidLinkPage } from "./pages/InvalidLinkPage";
@@ -17,6 +18,22 @@ function App() {
           element={
             <HrAuthGuard>
               <JobsListPage />
+            </HrAuthGuard>
+          }
+        />
+        <Route
+          path="/jobs/new"
+          element={
+            <HrAuthGuard>
+              <JobFormPage />
+            </HrAuthGuard>
+          }
+        />
+        <Route
+          path="/jobs/:jobId/edit"
+          element={
+            <HrAuthGuard>
+              <JobFormPage />
             </HrAuthGuard>
           }
         />
