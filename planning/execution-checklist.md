@@ -806,93 +806,93 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 
 ### Area 4 — Cost / Tooling (Day 1)
 
-| Task | Est. hours | Difficulty | Note |
-|---|---|---|---|
-| T1 Lock stack + versions | 1.0 | 🟢 | Boilerplate |
-| T2 Docker Compose + run modes | 2.0 | 🟢 | Standard Compose work; Tahap 2's compose has no DB services, minimal reference value |
-| T3 LLM client + caching + bypass | 2.5 | 🟡 | Cache-key design + new bypass param — Tahap 2 uses Gemini/LangChain, zero code transfers |
-| T3b STT client (Groq) | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
-| T3c Telegram bot client | 2.0 | 🟡 | Deep-link + chat_id capture logic — no Tahap 2 equivalent |
-| T3d Vision-LLM client + fallback | **2.0** ↓ *(was 2.5)* | 🟠 | **Tahap 2 reuse**: its Gemini-vision OCR fallback (`_ocr_pdf_with_gemini`, PyMuPDF rasterize→vision call) is a working, validated version of this exact pattern — reduces implementation risk even though the provider (SumoPod/Groq vs Gemini) and technique (per-image vs whole-page) differ |
-| T8 Cost estimate | 0.5 | 🟢 | Arithmetic + a paragraph |
-| **Subtotal** | **~11.0h** *(was 11.5h)* | | vs. **8h** scheduled (Day 1) |
+| Task | Status | Est. hours | Difficulty | Note |
+|---|---|---|---|---|
+| T1 Lock stack + versions | 🟡 In progress — folders + frontend deps done, backend deps not installed | 1.0 | 🟢 | Boilerplate |
+| T2 Docker Compose + run modes | ⚪ Not started | 2.0 | 🟢 | Standard Compose work; Tahap 2's compose has no DB services, minimal reference value |
+| T3 LLM client + caching + bypass | ⚪ Not started (API access verified, no client module yet) | 2.5 | 🟡 | Cache-key design + new bypass param — Tahap 2 uses Gemini/LangChain, zero code transfers |
+| T3b STT client (Groq) | ⚪ Not started (Groq STT call verified working, no client module yet) | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
+| T3c Telegram bot client | ⚪ Not started | 2.0 | 🟡 | Deep-link + chat_id capture logic — no Tahap 2 equivalent |
+| T3d Vision-LLM client + fallback | 🟡 Provider decided — Groq confirmed primary 2026-07-13 (SumoPod vision confirmed non-functional), no client module yet | **2.0** ↓ *(was 2.5)* | 🟠 | **Tahap 2 reuse**: its Gemini-vision OCR fallback (`_ocr_pdf_with_gemini`, PyMuPDF rasterize→vision call) is a working, validated version of this exact pattern — reduces implementation risk even though the provider (SumoPod/Groq vs Gemini) and technique (per-image vs whole-page) differ |
+| T8 Cost estimate | ⚪ Not started | 0.5 | 🟢 | Arithmetic + a paragraph |
+| **Subtotal** | | **~11.0h** *(was 11.5h)* | | vs. **8h** scheduled (Day 1) |
 
 ### Area 3 — Database + Datasets (Day 2-3)
 
-| Task | Est. hours | Difficulty | Note |
-|---|---|---|---|
-| T1 DB connection | 0.5 | 🟢 | Tahap 2 has **zero** DB/ORM code — fully from scratch |
-| T2 Schema (17 tables) | 2.0 | 🟡 | Many tables, mechanically straightforward; no models to reference |
-| T3 Qdrant collections | 1.0 | 🟢 | No vector DB in Tahap 2 |
-| T4 File storage layout | 1.0 | 🟢 | Tahap 2 only has a temp-file + in-memory dict, no structured layout to borrow |
-| T5 Repository layer | 1.5 | 🟡 | |
-| T6 Competency framework `[content]` | 2.0 | 🟡 | Domain judgment, not code |
-| T7 Resource library `[content]` | 1.5 | 🟡 | Domain judgment |
-| T8 Consent + audit write paths | 1.5 | 🟡 | No Tahap 2 equivalent |
-| T9 Retention policy | 0.5 | 🟢 | |
-| T10 Seed data (Kaggle curate 30 + tier tag + anonymize + 2-3 synthetic audio + decisions) | **4.5** | 🟠 | **The real time sink** — manual curation labor across 30 real CVs, not code complexity |
-| **Subtotal** | **~16h** | | vs. **16h** scheduled (Day 2-3) — tight but plausible IF T10 doesn't overrun |
+| Task | Status | Est. hours | Difficulty | Note |
+|---|---|---|---|---|
+| T1 DB connection | ⚪ Not started | 0.5 | 🟢 | Tahap 2 has **zero** DB/ORM code — fully from scratch |
+| T2 Schema (17 tables) | ⚪ Not started | 2.0 | 🟡 | Many tables, mechanically straightforward; no models to reference |
+| T3 Qdrant collections | ⚪ Not started | 1.0 | 🟢 | No vector DB in Tahap 2 |
+| T4 File storage layout | ⚪ Not started | 1.0 | 🟢 | Tahap 2 only has a temp-file + in-memory dict, no structured layout to borrow |
+| T5 Repository layer | ⚪ Not started | 1.5 | 🟡 | |
+| T6 Competency framework `[content]` | ⚪ Not started | 2.0 | 🟡 | Domain judgment, not code |
+| T7 Resource library `[content]` | ⚪ Not started | 1.5 | 🟡 | Domain judgment |
+| T8 Consent + audit write paths | ⚪ Not started | 1.5 | 🟡 | No Tahap 2 equivalent |
+| T9 Retention policy | ⚪ Not started | 0.5 | 🟢 | |
+| T10 Seed data (Kaggle curate 30 + tier tag + anonymize + 2-3 synthetic audio + decisions) | ⚪ Not started | **4.5** | 🟠 | **The real time sink** — manual curation labor across 30 real CVs, not code complexity |
+| **Subtotal** | | **~16h** | | vs. **16h** scheduled (Day 2-3) — tight but plausible IF T10 doesn't overrun |
 
 ### Area 2 — Backend & AI (Day 4-7)
 
-| Task | Est. hours | Difficulty | Note |
-|---|---|---|---|
-| T1 Audit Tahap 2 backend | **0.25** ↓ *(was 1.0)* | 🟢 | **Effectively done** — this session's deep audit (10-point code inventory) already produced the "keep/rebuild/drop" verdict this task asks for; remaining work is just formalizing it |
-| T2 Project structure | 1.0 | 🟢 | Tahap 2's structure is a LangGraph agent pipeline, not our routers/services pattern — not directly reusable |
-| T3 Auth (JWT + token link) | 2.0 | 🟡 | **Confirmed** (not just "verify"): Tahap 2 has zero auth code — fully from scratch |
-| T4 JD full CRUD + extraction + soft-delete | 3.0 | 🟡 | No JD/employer concept exists in Tahap 2 (jobseeker-focused app) |
-| T5 CV parse (text + vision fallback + PII redaction) | **3.75** ↓ *(was 5.0)* | 🔴 | **Tahap 2 reuse**: the `pdfplumber` text-extraction + empty-page-detection pattern is validated working code — adopt it directly for the text-extraction step. Still 🔴: PII redaction, SumoPod integration, and proper (non-regex) structured-output validation are all new work Tahap 2 doesn't have (its own JSON parsing is explicitly fragile — a pattern to avoid, not copy) |
-| T6 Embeddings → Qdrant | 1.5 | 🟡 | No embeddings code in Tahap 2 |
-| T7 Matching engine (semantic + graph + formula) | 3.0 | 🟠 | Tahap 2's "matching" is a token-overlap heuristic — a different technique entirely, doesn't transfer to our semantic+graph approach |
-| T8 Skill-gap analysis | **1.0** ↓ *(was 1.5)* | 🟡 | **Tahap 2 reuse**: `_build_seed_gap()`/`_is_skill_match()`'s deterministic-seed-grounds-LLM-output pattern is a legitimate technique to adapt here, even though it's candidate-vs-market there and candidate-vs-JD here |
-| T9 Interview question gen | 1.0 | 🟡 | No interview module in Tahap 2 (the whole "new component" premise from the original pivot) |
-| T9b Recruiter edit/approve | 1.0 | 🟢 | |
-| T9c Invite candidate | 1.0 | 🟢 | |
-| T10 Answer intake + STT + consent check | 2.0 | 🟡 | No STT in Tahap 2 |
-| T11 Rubric scoring + summary (+ rubric content) | 2.5 | 🟡 | No rubric/interview scoring in Tahap 2 |
-| T12 HR decision endpoints | 1.0 | 🟢 | No employer-decision flow in Tahap 2 |
-| T13 Report generation (gated, deterministic) | 2.5 | 🟡 | Tahap 2's report content is LLM-free-generated (by design, ours is deterministic-selection) — different approach, no code reuse, only content-shape learning |
-| T14 Report delivery — **PDF library swapped to ReportLab** (resolved 2026-07-12) | **2.0** ↓ *(was 3.0, weasyprint)* | 🟡 *(was 🟠)* | **Tahap 2 reuse, biggest single win**: `_build_report_pdf()` is a fully-working ~700-line ReportLab generator with custom flowables for skill chips. Adapting it to our schema retires both the hardest part of this task AND the weasyprint Windows Pango/Cairo dependency risk (ReportLab is pure Python, no system libs) |
-| T15 Async wiring + error handling + caching | **1.75** ↓ *(was 2.0)* | 🟡 | Tahap 2's in-memory async-job/polling pattern (`threading.Lock` + background thread) is a minor reference; **do not copy its exception handler** — it leaks raw Python tracebacks in 500 responses |
-| T16 OpenAPI contract | 0.5 | 🟢 | FastAPI-generated regardless |
-| **Subtotal** | **~29.75h** *(was 33.5h)* | | vs. **32h** scheduled (Day 4-7, 4 days × 8h) — now roughly fits |
+| Task | Status | Est. hours | Difficulty | Note |
+|---|---|---|---|---|
+| T1 Audit Tahap 2 backend | 🟢 Done 2026-07-12 | **0.25** ↓ *(was 1.0)* | 🟢 | **Effectively done** — this session's deep audit (10-point code inventory) already produced the "keep/rebuild/drop" verdict this task asks for; remaining work is just formalizing it |
+| T2 Project structure | ⚪ Not started | 1.0 | 🟢 | Tahap 2's structure is a LangGraph agent pipeline, not our routers/services pattern — not directly reusable |
+| T3 Auth (JWT + token link) | ⚪ Not started | 2.0 | 🟡 | **Confirmed** (not just "verify"): Tahap 2 has zero auth code — fully from scratch |
+| T4 JD full CRUD + extraction + soft-delete | ⚪ Not started | 3.0 | 🟡 | No JD/employer concept exists in Tahap 2 (jobseeker-focused app) |
+| T5 CV parse (text + vision fallback + PII redaction) | ⚪ Not started | **3.75** ↓ *(was 5.0)* | 🔴 | **Tahap 2 reuse**: the `pdfplumber` text-extraction + empty-page-detection pattern is validated working code — adopt it directly for the text-extraction step. Still 🔴: PII redaction, SumoPod integration, and proper (non-regex) structured-output validation are all new work Tahap 2 doesn't have (its own JSON parsing is explicitly fragile — a pattern to avoid, not copy) |
+| T6 Embeddings → Qdrant | ⚪ Not started (embeddings API access verified 2026-07-13) | 1.5 | 🟡 | No embeddings code in Tahap 2 |
+| T7 Matching engine (semantic + graph + formula) | ⚪ Not started | 3.0 | 🟠 | Tahap 2's "matching" is a token-overlap heuristic — a different technique entirely, doesn't transfer to our semantic+graph approach |
+| T8 Skill-gap analysis | ⚪ Not started | **1.0** ↓ *(was 1.5)* | 🟡 | **Tahap 2 reuse**: `_build_seed_gap()`/`_is_skill_match()`'s deterministic-seed-grounds-LLM-output pattern is a legitimate technique to adapt here, even though it's candidate-vs-market there and candidate-vs-JD here |
+| T9 Interview question gen | ⚪ Not started | 1.0 | 🟡 | No interview module in Tahap 2 (the whole "new component" premise from the original pivot) |
+| T9b Recruiter edit/approve | ⚪ Not started | 1.0 | 🟢 | |
+| T9c Invite candidate | ⚪ Not started | 1.0 | 🟢 | |
+| T10 Answer intake + STT + consent check | ⚪ Not started | 2.0 | 🟡 | No STT in Tahap 2 |
+| T11 Rubric scoring + summary (+ rubric content) | ⚪ Not started | 2.5 | 🟡 | No rubric/interview scoring in Tahap 2 |
+| T12 HR decision endpoints | ⚪ Not started | 1.0 | 🟢 | No employer-decision flow in Tahap 2 |
+| T13 Report generation (gated, deterministic) | ⚪ Not started | 2.5 | 🟡 | Tahap 2's report content is LLM-free-generated (by design, ours is deterministic-selection) — different approach, no code reuse, only content-shape learning |
+| T14 Report delivery — **PDF library swapped to ReportLab** (resolved 2026-07-12) | ⚪ Not started | **2.0** ↓ *(was 3.0, weasyprint)* | 🟡 *(was 🟠)* | **Tahap 2 reuse, biggest single win**: `_build_report_pdf()` is a fully-working ~700-line ReportLab generator with custom flowables for skill chips. Adapting it to our schema retires both the hardest part of this task AND the weasyprint Windows Pango/Cairo dependency risk (ReportLab is pure Python, no system libs) |
+| T15 Async wiring + error handling + caching | ⚪ Not started | **1.75** ↓ *(was 2.0)* | 🟡 | Tahap 2's in-memory async-job/polling pattern (`threading.Lock` + background thread) is a minor reference; **do not copy its exception handler** — it leaks raw Python tracebacks in 500 responses |
+| T16 OpenAPI contract | ⚪ Not started | 0.5 | 🟢 | FastAPI-generated regardless |
+| **Subtotal** | | **~29.75h** *(was 33.5h)* | | vs. **32h** scheduled (Day 4-7, 4 days × 8h) — now roughly fits |
 
 ### Area 1 — Frontend UI/UX (Day 8-11)
 
 No changes from the Tahap 2 backend audit (Area 1 was already corrected in its own session — no
 React code exists to reuse, only visual language, already captured in T1/T2 below).
 
-| Task | Est. hours | Difficulty | Note |
-|---|---|---|---|
-| T1 Audit (corrected scope) | 0.5 | 🟢 | |
-| T2 Design system (port Enterprise Trust to React) | 3.0 | 🟡 | |
-| T3 Vite structure + route guards | 1.5 | 🟡 | |
-| T4 HR login | 1.0 | 🟢 | |
-| T4b JD CRUD UI | 2.5 | 🟡 | |
-| T5 Shortlist (explainability + tier status + instant read) | 3.0 | 🟡 | |
-| T5b Question edit/approve UI | 1.5 | 🟡 | |
-| T5c Invite modal (re-viewable) | 1.0 | 🟡 | |
-| T6 Candidate AUDIO interview | **5.5** | 🔴 | **Flagged highest-risk in the plan itself** — 8-state machine, browser permission handling, per-question upload |
-| T7 HR decision + detail + report delivery | **4.0** | 🟠 | Audio player, transcript, rubric display, 2 disabled-state variants, send-error handling |
-| T8 Candidate consent + Telegram linking | 1.5 | 🟡 | |
-| T9 Cross-cutting UX (loading/error/empty/refresh) | 2.5 | 🟡 | Touches every screen |
-| **Subtotal** | **~28h** | | vs. **32h** scheduled (Day 8-11, 4 days × 8h) — now fits with room to spare |
+| Task | Status | Est. hours | Difficulty | Note |
+|---|---|---|---|---|
+| T1 Audit (corrected scope) | 🟢 Done 2026-07-12 | 0.5 | 🟢 | |
+| T2 Design system (port Enterprise Trust to React) | ⚪ Not started (design locked/previewed 2026-07-12, not yet built in code) | 3.0 | 🟡 | |
+| T3 Vite structure + route guards | 🟡 In progress — Vite scaffold done 2026-07-13, route guards not started | 1.5 | 🟡 | |
+| T4 HR login | ⚪ Not started | 1.0 | 🟢 | |
+| T4b JD CRUD UI | ⚪ Not started | 2.5 | 🟡 | |
+| T5 Shortlist (explainability + tier status + instant read) | ⚪ Not started | 3.0 | 🟡 | |
+| T5b Question edit/approve UI | ⚪ Not started | 1.5 | 🟡 | |
+| T5c Invite modal (re-viewable) | ⚪ Not started | 1.0 | 🟡 | |
+| T6 Candidate AUDIO interview | ⚪ Not started | **5.5** | 🔴 | **Flagged highest-risk in the plan itself** — 8-state machine, browser permission handling, per-question upload |
+| T7 HR decision + detail + report delivery | ⚪ Not started | **4.0** | 🟠 | Audio player, transcript, rubric display, 2 disabled-state variants, send-error handling |
+| T8 Candidate consent + Telegram linking | ⚪ Not started | 1.5 | 🟡 | |
+| T9 Cross-cutting UX (loading/error/empty/refresh) | ⚪ Not started | 2.5 | 🟡 | Touches every screen |
+| **Subtotal** | | **~28h** | | vs. **32h** scheduled (Day 8-11, 4 days × 8h) — now fits with room to spare |
 
 ### Area 5 — QA (Day 4-12, shifted left)
 
 No changes from the Tahap 2 backend audit (Tahap 2 has no test suite to reference).
 
-| Task | Est. hours | Difficulty | Note |
-|---|---|---|---|
-| T3 Determinism test | 1.5 | 🟡 | |
-| T3b PII redaction test (mocked) | 2.0 | 🟡 | Mock setup adds time |
-| T4 Report consistency test | 1.5 | 🟡 | |
-| T5 Matching/tier check | 1.0 | 🟢 | |
-| T6 Human-in-loop test | 1.0 | 🟢 | |
-| T8 Consent-gate test | 1.0 | 🟢 | |
-| T10 Full e2e run | 2.0 | 🟡 | Manual scripted walkthrough |
-| T12 Demo-readiness checklist | 2.5 | 🟡 | Rehearsal + edge states + Telegram check |
-| **Subtotal** | **~12.5h** | | Spread across Day 4-12 alongside build work — same person, same hours pool |
+| Task | Status | Est. hours | Difficulty | Note |
+|---|---|---|---|---|
+| T3 Determinism test | ⚪ Not started | 1.5 | 🟡 | |
+| T3b PII redaction test (mocked) | ⚪ Not started | 2.0 | 🟡 | Mock setup adds time |
+| T4 Report consistency test | ⚪ Not started | 1.5 | 🟡 | |
+| T5 Matching/tier check | ⚪ Not started | 1.0 | 🟢 | |
+| T6 Human-in-loop test | ⚪ Not started | 1.0 | 🟢 | |
+| T8 Consent-gate test | ⚪ Not started | 1.0 | 🟢 | |
+| T10 Full e2e run | ⚪ Not started | 2.0 | 🟡 | Manual scripted walkthrough |
+| T12 Demo-readiness checklist | ⚪ Not started | 2.5 | 🟡 | Rehearsal + edge states + Telegram check |
+| **Subtotal** | | **~12.5h** | | Spread across Day 4-12 alongside build work — same person, same hours pool |
 
 ### Revised headline: totals after the Tahap 2 reuse audit
 
