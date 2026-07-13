@@ -92,12 +92,12 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 > new TTS dependency.
 
 - [ ] **T1. Lock the local-first stack + versions.** — *Depends: none · Flow: infra*
-  - [x] **Folders scaffolded 2026-07-13**: `backend/` (routers/services/models/db/tests, each a Python package) + `frontend/` (real Vite React-TS app via `npm create vite@5`, not hand-written — `create-vite@latest` requires Node ≥20.19, this machine has 18.16, used `@5` instead; `npm install` succeeded, 175 packages, only non-fatal engine warnings)
+  - [x] **Folders scaffolded 2026-07-13**: `backend/` (routers/services/models/db/tests, each a Python package) + `frontend/` (real Vite React-TS app via `npm create vite@5`)
   - [x] Pin frontend deps: React 18.3 + Vite 5.4 + TypeScript 5.6, generated in `frontend/package.json` by the scaffolder
+  - [x] **Node upgraded 2026-07-13**: was 18.16 (2023), now **22.23.1** via freshly reinstalled `nvm-windows` (first install attempt silently removed the old Node without completing its own setup — required a clean admin-mode reinstall). `frontend/` deps reinstalled clean under Node 22 — **0 engine warnings** (previously 2). Confirmed `npm run dev` boots Vite on port 5173, matching `.env`'s `FRONTEND_PORT`
   - [ ] Pin backend deps: draft `requirements.txt` written (fastapi, uvicorn, sqlalchemy, psycopg, qdrant-client, openai, pyjwt, pypdf, Pillow, httpx) — **not yet `pip install`-ed or version-verified to actually resolve together**
   - [ ] Pin PDF deps: `pypdf` + `Pillow` already in the draft `requirements.txt` above — **no OCR binary needed** (replicated from NalarX: vision-LLM captioning instead of Tesseract; see Area 3 T5 note)
   - [ ] Commit exact versions — no floating `latest` (frontend done via lockfile; backend still needs a `pip freeze` pass after first install)
-  - ⚠️ **Open item**: Node is 18.16 (2023), current Vite/ESLint tooling wants 18.18+/20.9+/21.1+ — user is installing `nvm-windows` + Node 22 to close this gap; re-verify `npm install` cleanly (no engine warnings) once done
   - ✅ Done when: a fresh clone documents exact versions across `requirements.txt` + `package.json` — **frontend done, backend pending first real `pip install`**
 
 - [ ] **T2. Docker Compose (DBs) + run modes.** — *Depends: T1 · Flow: infra*
