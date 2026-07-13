@@ -696,7 +696,7 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 | T4. HR login | ✅ **Final result** | Login + error state + persisted session verified live against the real seeded HR account. | 1.0 | 🟢 | |
 | T4b. JD CRUD UI | ✅ **Final result** | List/create/edit/close verified end-to-end live, including validation error + competency re-extraction on save. | 2.5 | 🟡 | |
 | T5. Shortlist | ✅ **Final result** | Ranked list + expandable explainability + tier status verified live on the real 30-candidate seed data. | 3.0 | 🟡 | Required 1 backend gap-fill: `invited_at` column (placeholder tokens made "invited" unrecoverable from `token` alone) |
-| T5b. Question edit/approve UI | 📝 **To do** | HR edits/approves AI-generated interview questions. | 1.5 | 🟡 | |
+| T5b. Question edit/approve UI | ✅ **Final result** | Generate/edit/add/remove/approve verified live end-to-end; post-approval read-only lock confirmed. | 1.5 | 🟡 | |
 | T5c. Invite modal | 📝 **To do** | Copyable token-link modal, re-viewable after first generation. | 1.0 | 🟡 | |
 | T6. Candidate audio interview | 📝 **To do** | Full 8-state recorder machine — flagged as the single highest-risk component in the plan. | **5.5** | 🔴 | **Flagged highest-risk in the plan itself** — 8-state machine, browser permission handling, per-question upload |
 | T7. HR decision + detail + delivery | 📝 **To do** | Audio player, transcript, rubric, decision action, report send. | **4.0** | 🟠 | 2 disabled-state variants, send-error handling |
@@ -741,10 +741,10 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
   - [x] **Instant read (resolved 2026-07-12)**: reads pre-computed `match_scores` — no live matching call, no "run ranking" button
   - ✅ Done when: a viewer can see *why* a candidate ranks AND which stage each of the 30 is at; the ranked list appears instantly with no wait — **verified live against the real 30-candidate Web Developer seed data**: all 30 rows render sorted by score, the 2 synthetic interview candidates (WD-29/WD-30) correctly show "Selesai wawancara" while the other 28 show "Belum diundang" (confirmed against direct DB state, not just the UI), expanding a row shows real semantic-similarity/graph-boost percentages and matched-competency badges (e.g. HTML/CSS/JavaScript). Zero console errors.
 
-- [ ] **T5b. 💎 Recruiter question edit/approve.** — *Depends: Area2 T9b · Flow: 5*
-  - [ ] View AI-generated questions; edit/add/remove
-  - [ ] Approve → unlocks candidate invite
-  - ✅ Done when: HR approves before any candidate can start
+- [x] **T5b. 💎 Recruiter question edit/approve. — DONE 2026-07-13.** — *Depends: Area2 T9b · Flow: 5*
+  - [x] View AI-generated questions; edit/add/remove — `frontend/src/pages/QuestionsPage.tsx`, linked from the Shortlist page
+  - [x] Approve → unlocks candidate invite — fields lock read-only and edit/remove/save controls disappear once approved (backend already rejects edits to approved questions; the invite endpoint already requires approved questions to exist)
+  - ✅ Done when: HR approves before any candidate can start — **verified live on a real disposable test job**: empty state → "Buat Pertanyaan (AI)" generates real Deepseek-Flash questions, edited text persists through save, add/remove both work and persist correctly, approve flips to a read-only "Disetujui" view with zero edit affordances left. Zero console errors. Test job and its questions deleted afterward.
 
 - [ ] **T5c. 💎 Invite candidate modal (NEW — closes the Area 2 T9c UI gap).** — *Depends: Area2 T9c, T5 · Flow: 4→5*
   - [ ] Modal opened from the Shortlist row action: calls `POST /candidates/{id}/invite`, only enabled once questions are approved (T5b)

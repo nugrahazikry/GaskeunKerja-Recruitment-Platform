@@ -62,9 +62,14 @@ export function ShortlistPage() {
     <div style={{ maxWidth: 900, margin: "40px auto", padding: "0 16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <h1>Kandidat</h1>
-        <Link to="/jobs">
-          <Button variant="secondary">Kembali ke Daftar Lowongan</Button>
-        </Link>
+        <div style={{ display: "flex", gap: 12 }}>
+          <Link to={`/jobs/${jobId}/questions`}>
+            <Button variant="secondary">Pertanyaan Wawancara</Button>
+          </Link>
+          <Link to="/jobs">
+            <Button variant="secondary">Kembali ke Daftar Lowongan</Button>
+          </Link>
+        </div>
       </div>
 
       <Card>
