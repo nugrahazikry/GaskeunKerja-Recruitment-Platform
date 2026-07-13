@@ -91,7 +91,20 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 > built, or any recorder that outputs webm/opus) — real distinct audio, not a duplicated file, no
 > new TTS dependency.
 
-- [x] **T1. Lock the local-first stack + versions. — DONE 2026-07-13.** — *Depends: none · Flow: infra*
+### Task summary
+
+| Task | Status | Summary |
+|---|---|---|
+| T1. Stack + versions | **Final result** | `backend/`+`frontend/` scaffolded, deps installed clean (frontend via Vite, backend via venv), `uvicorn`/`npm run dev` both verified booting. |
+| T2. Docker Compose + run modes | **Final result** | Postgres 16 + Qdrant containers healthy; found and fixed a real port-5432 collision with a pre-existing native Postgres (remapped to 5433). Finalization mode intentionally deferred. |
+| T3. Unified LLM client + caching | **Final result** | `llm_client.py` built and verified: cache miss/hit/bypass all behave correctly, token usage logged. |
+| T3b. STT client (Groq) | **Final result** | `stt_client.py` verified against two real Indonesian audio clips — both transcribed accurately. |
+| T3c. Telegram bot client | **Final result** | `telegram_client.py` verified fully live — deep-link chat_id capture, message send, and document send all confirmed received. |
+| T3d. Vision-LLM client | **Final result** | `vision_client.py` verified — SumoPod vision confirmed non-functional, Groq's Llama 4 Scout confirmed working for both transcribe and describe modes. |
+| T8. Cost estimate | **Final result** | Projected ≈$0.07/demo run, ≈$0.20 with dev re-runs, from real observed token counts + published rates. Flagged to re-verify against real logs once seed data exists. |
+| T4. Local-LLM substitution | **To do** *(deferred)* | Cut from scope — negligible savings for real solo build hours. |
+
+
   - [x] **Folders scaffolded 2026-07-13**: `backend/` (routers/services/models/db/tests, each a Python package) + `frontend/` (real Vite React-TS app via `npm create vite@5`)
   - [x] Pin frontend deps: React 18.3 + Vite 5.4 + TypeScript 5.6, generated in `frontend/package.json` by the scaffolder
   - [x] **Node upgraded 2026-07-13**: was 18.16 (2023), now **22.23.1** via freshly reinstalled `nvm-windows` (first install attempt silently removed the old Node without completing its own setup — required a clean admin-mode reinstall). `frontend/` deps reinstalled clean under Node 22 — **0 engine warnings** (previously 2). Confirmed `npm run dev` boots Vite on port 5173, matching `.env`'s `FRONTEND_PORT`
@@ -334,6 +347,21 @@ scannable index of what exists, used by T1-T3.
 | `resource_library` | `milestone_description` | What completing it demonstrates |
 | `resource_library` | `url` | Optional link |
 
+### Task summary
+
+| Task | Status | Summary |
+|---|---|---|
+| T1. DB connection | **To do** | SQLAlchemy engine + `create_all()` against the Docker Postgres from Area 4 T2. |
+| T2. Schema (17 tables) | **To do** | Full happy-path entity set, per the schema reference above. |
+| T3. Qdrant collections | **To do** | `candidate_vectors` + `jd_vectors` collections with explainability payload. |
+| T4. File storage layout | **To do** | Isolated per-candidate folders for CV + audio, path-pointer-only in DB. |
+| T5. Repository layer | **To do** | Thin CRUD repositories over SQLAlchemy. |
+| T6. Competency framework `[content]` | **To do** | ~8-12 competencies for the Data Analyst demo role, with lightweight relations. |
+| T7. Resource library `[content]` | **To do** | ~3 curated resources per competency. |
+| T8. Consent + audit write paths | **To do** | Audit-log helper + consent gate enforcement. |
+| T9. Retention policy | **To do** | Light retention rule scoped to the 1 live candidate's real consented audio. |
+| T10. Seed data | **To do** | Kaggle-sourced, curated, anonymized, tiered 30-candidate seed set — the single biggest time sink in the plan. |
+
 - [ ] **T1. DB connection locked: PostgreSQL (Docker).** — *Depends: Area4 T2 · Flow: all persistence*
   - [ ] SQLAlchemy engine + session factory from `DATABASE_URL`
   - [ ] `create_all()` on startup (no migrations)
@@ -446,6 +474,29 @@ scannable index of what exists, used by T1-T3.
 | 15 | OpenAPI contract | Auto-generated typed contract for the frontend | `/openapi.json` | T16 | T15 |
 
 Module #14 is cross-cutting (no dedicated router/service file — wraps the others via decorators/middleware); #15 isn't hand-written, it's FastAPI's auto-generated output from the typed endpoints above.
+
+### Task summary
+
+| Task | Status | Summary |
+|---|---|---|
+| T1. Audit Tahap 2 backend | **Final result** | Full 10-point code audit done — keep/rebuild/drop verdict written into `CLAUDE.md`. |
+| T2. Project structure | **To do** | `routers/services/models/db` FastAPI layout + env loading. |
+| T3. Auth | **To do** | JWT for HR login, unguessable token links for candidates. |
+| T4. JD full CRUD + extraction | **To do** | Structured-field CRUD + Flash-model competency extraction, soft-delete only. |
+| T5. CV parse + PII redaction | **To do** | Text/vision-fallback extraction merged, then mandatory PII redaction before any LLM call — highest-difficulty task in the plan. |
+| T6. Embeddings → Qdrant | **To do** | Embed candidate profiles + JD competencies, upsert to Qdrant. |
+| T7. Matching engine | **To do** | Weighted semantic + competency-graph score, explainable per-competency detail. |
+| T8. Skill-gap analysis | **To do** | Deepseek Pro candidate-vs-JD gap output, grounded via a deterministic seed. |
+| T9. Interview question gen | **To do** | 2-3 Indonesian questions generated from the JD. |
+| T9b. Recruiter edit/approve | **To do** | Human-in-the-loop approval gate before candidates see questions. |
+| T9c. Invite candidate | **To do** | Generates the unguessable token link, HR copies it manually. |
+| T10. Answer intake + STT | **To do** | Consent-gated audio upload + Groq transcription. |
+| T11. Rubric scoring + summary | **To do** | Fixed 3-criteria rubric at temperature=0 + AI answer summary. |
+| T12. HR decision endpoints | **To do** | Records the human pass/reject decision, no auto-finalize path. |
+| T13. Report generation | **To do** | Deterministic report assembly, gated on a decision existing. |
+| T14. Report delivery | **To do** | PDF via adapted ReportLab code, sent through Telegram. |
+| T15. Async wiring + error handling | **To do** | Cross-cutting orchestration/retry/caching layer. |
+| T16. OpenAPI contract | **To do** | FastAPI auto-generated, no dedicated work beyond typed endpoints. |
 
 ### Foundation
 - [x] **T1. Audit Tahap 2 backend repo — DONE 2026-07-12.** — *Depends: none · Flow: reuse for 3*
@@ -624,6 +675,23 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 
 **Audio recorder state machine (T6):** idle → requesting-permission → (granted / **denied** → blocking message) → recording (count-up timer) → stopped → playback → re-record | submit → uploading → transcribed → next question | completed. A denied mic and an empty/0-second submission each get an explicit blocking state + message.
 
+### Task summary
+
+| Task | Status | Summary |
+|---|---|---|
+| T1. Audit Tahap 2 frontend | **Final result** | Confirmed no React code exists to reuse — only the visual language, already captured in the design artifacts. |
+| T2. Design system | **To do** | Port the locked "Enterprise Trust" visual direction into real React components. |
+| T3. Vite structure + route guards | **To do** | Routing, typed API client, consent/token-expiry route guards. |
+| T4. HR login | **To do** | Recruiter-only login; no candidate account exists. |
+| T4b. JD CRUD UI | **To do** | Structured-field create/edit/delete/list for job descriptions. |
+| T5. Shortlist | **To do** | Ranked candidates with per-competency explainability + tier status pills. |
+| T5b. Question edit/approve UI | **To do** | HR edits/approves AI-generated interview questions. |
+| T5c. Invite modal | **To do** | Copyable token-link modal, re-viewable after first generation. |
+| T6. Candidate audio interview | **To do** | Full 8-state recorder machine — flagged as the single highest-risk component in the plan. |
+| T7. HR decision + detail + delivery | **To do** | Audio player, transcript, rubric, decision action, report send. |
+| T8. Candidate consent + Telegram linking | **To do** | PDP consent checkbox + Telegram deep-link capture. |
+| T9. Cross-cutting UX | **To do** | Shared loading/error/empty states across all screens. |
+
 - [ ] **T1. Audit Tahap 2 frontend — corrected scope.** — *Depends: none*
   - [ ] Confirmed: `../brainstorming result/tahap 2 code reference/frontend/` is static HTML/CSS/JS, **not React** — nothing to port as code
   - [ ] Extract the reusable **visual language only**: colors (`#102b4f` navy, `#4f46e5` indigo, teal/success/warning/danger tokens), Inter font, card/badge conventions — see the published design-comparison artifact for the faithful recreation
@@ -739,6 +807,19 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 **Failure gate (resolved 2026-07-12):** if any 💎 claim test (T3, T3b, T4, T5, T6, T8) fails on the day it's run, fix it before starting the next day's build tasks. This is the entire point of shifting them left — a noted-but-deferred failure defeats the purpose.
 
 **Cost guardrail (resolved 2026-07-12):** T3 and T4 each make 5 genuinely independent, cache-bypassed Deepseek calls per run. Cheap individually, but run them **once when the feature is believed complete** — not repeatedly inside an edit-test-edit debugging loop. This is exactly the repeated-spend pattern Area 4's whole caching strategy exists to avoid.
+
+### Task summary
+
+| Task | Status | Summary |
+|---|---|---|
+| T3. Determinism test | **To do** | 5 cache-bypassed rubric-scoring runs must agree exactly. |
+| T3b. PII redaction test | **To do** | Mocked-request assertion that no raw PII reaches the LLM payload or the DB. |
+| T4. Report consistency test | **To do** | 5 cache-bypassed runs must produce identical report data (not PDF bytes). |
+| T5. Matching/tier check | **To do** | Strong-tier average score must meaningfully beat weak-tier average. |
+| T6. Human-in-loop test | **To do** | Confirms no code path can finalize a candidate without HR action. |
+| T8. Consent-gate test | **To do** | 403 without consent, success with a valid consent record. |
+| T10. Full e2e run | **To do** | Scripted happy-path walkthrough of the entire flow, seed to Telegram delivery. |
+| T12. Demo-readiness checklist | **To do** | Rehearsal covering every frontend edge state + a real Telegram delivery check. |
 
 - [ ] **T3. 💎 Determinism test.** — *Depends: Area2 T11 · **Run: Day 6** (re-baselined 2026-07-12), as soon as rubric scoring exists*
   - [ ] Same **transcript** → same rubric score across **5 repeated runs, cache BYPASSED** for these calls (a determinism test that hits the Area 4 T3 cache after run 1 would just replay the same response and prove nothing about the LLM). Run once per feature, not in a tight debug loop (see cost guardrail above)
