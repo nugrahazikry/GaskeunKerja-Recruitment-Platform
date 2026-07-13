@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -80,7 +82,14 @@ async def create_candidate(
 def invite_candidate(candidate_id: int, hr=Depends(get_current_hr), db: Session = Depends(get_db)):
     """Generates a fresh, meaningful invite token — only callable once the job's
     interview questions are approved (T9b). Regenerates the placeholder token set at
-    CV-upload time (T5), which was never meant as a real invite link."""
+    CV-upload time (T5), which was never meant as a real invite link.
+
+    Re-invite-safe (Area 1 T5c): if the candidate was already invited and hasn't
+    started the interview yet, calling this again just issues a fresh token/expiry
+    without erasing `invited_at` — the Shortlist's 'Belum diundang' status pill is
+    keyed off `invited_at`, not the token, so re-opening the invite modal never
+    regresses a candidate back to 'not invited'.
+    """
     candidate = repo.candidates.get(db, candidate_id)
     if not candidate or not _job_belongs_to_company(db, candidate.job_id, hr["company_id"]):
         raise HTTPException(status_code=404, detail="Candidate not found")
@@ -94,6 +103,8 @@ def invite_candidate(candidate_id: int, hr=Depends(get_current_hr), db: Session 
     token, expires_at = auth.generate_candidate_token()
     candidate.token = token
     candidate.token_expires_at = expires_at
+    if candidate.invited_at is None:
+        candidate.invited_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(candidate)
 

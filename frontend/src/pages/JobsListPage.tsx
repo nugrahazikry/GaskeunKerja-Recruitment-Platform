@@ -64,13 +64,21 @@ export function JobsListPage() {
         {state.status === "ready" && state.jobs.length > 0 && (
           <Table
             columns={[
-              { header: "Judul", render: (j: Job) => <Link to={`/jobs/${j.id}/edit`}>{j.title}</Link> },
+              { header: "Judul", render: (j: Job) => <Link to={`/jobs/${j.id}`}>{j.title}</Link> },
               {
                 header: "Status",
                 render: (j: Job) => (
                   <Badge tone={j.status === "active" ? "success" : "neutral"}>
                     {j.status === "active" ? "Aktif" : "Ditutup"}
                   </Badge>
+                ),
+              },
+              {
+                header: "",
+                render: (j: Job) => (
+                  <Link to={`/jobs/${j.id}/edit`}>
+                    <Button variant="secondary">Edit</Button>
+                  </Link>
                 ),
               },
             ]}

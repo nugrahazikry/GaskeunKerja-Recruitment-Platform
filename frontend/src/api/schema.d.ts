@@ -113,6 +113,12 @@ export interface paths {
          * @description Generates a fresh, meaningful invite token — only callable once the job's
          *     interview questions are approved (T9b). Regenerates the placeholder token set at
          *     CV-upload time (T5), which was never meant as a real invite link.
+         *
+         *     Re-invite-safe (Area 1 T5c): if the candidate was already invited and hasn't
+         *     started the interview yet, calling this again just issues a fresh token/expiry
+         *     without erasing `invited_at` — the Shortlist's 'Belum diundang' status pill is
+         *     keyed off `invited_at`, not the token, so re-opening the invite modal never
+         *     regresses a candidate back to 'not invited'.
          */
         post: operations["invite_candidate_candidates__candidate_id__invite_post"];
         delete?: never;
@@ -172,7 +178,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Ranked Candidates */
+        /**
+         * Get Ranked Candidates
+         * @description Status pill derivation (Area 1 T5, resolved 2026-07-12): 'Belum diundang' /
+         *     'Menunggu wawancara' / 'Selesai wawancara' are derived from row presence
+         *     (invited_at, interview_answers, hr_decisions), never a stored status field.
+         */
         get: operations["get_ranked_candidates_jobs__job_id__candidates_get"];
         put?: never;
         post?: never;
@@ -601,6 +612,12 @@ export interface components {
             rank: number;
             /** Competency Breakdown */
             competency_breakdown: Record<string, never>;
+            /** Invited */
+            invited: boolean;
+            /** Interview Completed */
+            interview_completed: boolean;
+            /** Decided */
+            decided: boolean;
         };
         /** QuestionOut */
         QuestionOut: {

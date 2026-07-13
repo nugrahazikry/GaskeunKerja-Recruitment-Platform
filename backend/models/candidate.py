@@ -15,4 +15,5 @@ class Candidate(Base):
     token: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     token_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     telegram_chat_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    invited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

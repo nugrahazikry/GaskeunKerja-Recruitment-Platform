@@ -695,7 +695,7 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 | T3. Vite structure + route guards | ✅ **Final result** | React Router + typed OpenAPI client wired; both guard screens verified via real Playwright runs against the live backend. | 1.5 | 🟡 | Required 2 backend gap-fills: CORS middleware (missing entirely) + 3 new candidate-facing endpoints |
 | T4. HR login | ✅ **Final result** | Login + error state + persisted session verified live against the real seeded HR account. | 1.0 | 🟢 | |
 | T4b. JD CRUD UI | ✅ **Final result** | List/create/edit/close verified end-to-end live, including validation error + competency re-extraction on save. | 2.5 | 🟡 | |
-| T5. Shortlist | 📝 **To do** | Ranked candidates with per-competency explainability + tier status pills. | 3.0 | 🟡 | |
+| T5. Shortlist | ✅ **Final result** | Ranked list + expandable explainability + tier status verified live on the real 30-candidate seed data. | 3.0 | 🟡 | Required 1 backend gap-fill: `invited_at` column (placeholder tokens made "invited" unrecoverable from `token` alone) |
 | T5b. Question edit/approve UI | 📝 **To do** | HR edits/approves AI-generated interview questions. | 1.5 | 🟡 | |
 | T5c. Invite modal | 📝 **To do** | Copyable token-link modal, re-viewable after first generation. | 1.0 | 🟡 | |
 | T6. Candidate audio interview | 📝 **To do** | Full 8-state recorder machine — flagged as the single highest-risk component in the plan. | **5.5** | 🔴 | **Flagged highest-risk in the plan itself** — 8-state machine, browser permission handling, per-question upload |
@@ -733,13 +733,13 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
   - [x] Delete action (MVP: simple, no cascade-guard) — backend `DELETE /jobs/{id}` is a soft-delete (`status='closed'`), matches the existing anti-FK-error design; UI shows a "Tutup Lowongan" button, not a destructive delete
   - ✅ Done when: HR can list, create, edit, and delete JDs from the UI using the structured form — **verified with a real Playwright run against the live backend**: empty-title validation blocks submit with the correct inline error, a real JD (`POST /jobs`, which also triggers real competency extraction) appears in the list immediately, editing pre-fills the structured fields correctly and persists changes, closing flips the status badge to "Ditutup." Zero console errors throughout. Test JDs and their `jd_competencies` rows cleaned up from the DB afterward so the seed data stays clean.
 
-- [ ] **T5. 💎 HR shortlist w/ explainability + tier status.** — *Depends: Area2 T7 · Flow: 4*
-  - [ ] Ranked list + match score
-  - [ ] Expand a score → which competencies matched (Q17)
-  - [ ] **Status pill per candidate (resolved 2026-07-12)**: *Belum diundang* (no `candidates.token` yet) / *Menunggu wawancara* (invited, no `interview_answers` yet) / *Selesai wawancara* (has `rubric_scores`/`hr_decisions`) — derived from row presence, not a stored field
-  - [ ] "Undang ke Interview" button per row (opens T5c modal)
-  - [ ] **Instant read (resolved 2026-07-12)**: reads pre-computed `match_scores` (seeded + computed on candidate-add) — no live matching call, no loading spinner, no "run ranking" button. Empty state if a JD has no matched candidates yet
-  - ✅ Done when: a viewer can see *why* a candidate ranks AND which stage each of the 30 is at; the ranked list appears instantly with no wait
+- [x] **T5. 💎 HR shortlist w/ explainability + tier status. — DONE 2026-07-13.** — *Depends: Area2 T7 · Flow: 4*
+  - [x] Ranked list + match score — `frontend/src/pages/ShortlistPage.tsx`, `GET /jobs/{job_id}/candidates`, sorted by `rank`
+  - [x] Expand a score → which competencies matched (Q17) — click-to-expand row shows semantic-similarity %, graph-boost %, and matched-competency badges from `competency_breakdown`
+  - [x] **Status pill per candidate (resolved 2026-07-12, corrected 2026-07-13)**: *Belum diundang* / *Menunggu wawancara* / *Selesai wawancara*, derived from row presence — **found and fixed a real design gap while building this**: the original plan said "no `candidates.token` yet" for *Belum diundang*, but every candidate already gets a placeholder token at CV-upload time (T5's earlier design resolution), so `token IS NOT NULL` could never distinguish invited from not-invited. Added a nullable `candidates.invited_at` column, set once at `POST /candidates/{id}/invite` time (idempotent — re-inviting doesn't reset it, protecting T5c's re-viewable-link requirement). `GET /jobs/{job_id}/candidates` now returns `invited`/`interview_completed`/`decided` booleans derived from `invited_at`/`interview_answers`/`hr_decisions` row presence.
+  - [x] "Undang ke Interview" button per row (opens T5c modal) — button present and correctly relabels to "Lihat Link Undangan" once invited; real modal wiring is T5c's job (currently a placeholder `alert()`)
+  - [x] **Instant read (resolved 2026-07-12)**: reads pre-computed `match_scores` — no live matching call, no "run ranking" button
+  - ✅ Done when: a viewer can see *why* a candidate ranks AND which stage each of the 30 is at; the ranked list appears instantly with no wait — **verified live against the real 30-candidate Web Developer seed data**: all 30 rows render sorted by score, the 2 synthetic interview candidates (WD-29/WD-30) correctly show "Selesai wawancara" while the other 28 show "Belum diundang" (confirmed against direct DB state, not just the UI), expanding a row shows real semantic-similarity/graph-boost percentages and matched-competency badges (e.g. HTML/CSS/JavaScript). Zero console errors.
 
 - [ ] **T5b. 💎 Recruiter question edit/approve.** — *Depends: Area2 T9b · Flow: 5*
   - [ ] View AI-generated questions; edit/add/remove
