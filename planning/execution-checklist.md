@@ -488,7 +488,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | T5. CV parse + PII redaction | **Final result** | Full pipeline verified end-to-end with a real CV upload; caught and fixed a real regex false-positive bug in PII redaction along the way. |
 | T6. Embeddings → Qdrant | **Final result** | Verified with real semantic matching — a JD correctly found its matching candidate at 0.805 similarity. |
 | T7. Matching engine | **Final result** | Verified with a real strong/mid/weak scenario — scores and ranks correctly discriminated. |
-| T8. Skill-gap analysis | **To do** | Deepseek Pro candidate-vs-JD gap output, grounded via a deterministic seed. |
+| T8. Skill-gap analysis | **Final result** | Verified: real gap identified correctly, LLM output grounded to a deterministic seed, no-gap case short-circuits with zero LLM calls. |
 | T9. Interview question gen | **To do** | 2-3 Indonesian questions generated from the JD. |
 | T9b. Recruiter edit/approve | **To do** | Human-in-the-loop approval gate before candidates see questions. |
 | T9c. Invite candidate | **To do** | Generates the unguessable token link, HR copies it manually. |
@@ -556,11 +556,11 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - [x] `backend/routers/matching.py::GET /jobs/{id}/candidates` — ranked shortlist endpoint, company-scoped
   - ✅ Done when: ranked shortlist; each score expands to which competencies drove it; formula is the documented weighted sum — **verified against a realistic 3-candidate scenario** (strong/mid/weak fit vs. a JavaScript/React/Node.js/Database JD): scores correctly discriminated (Strong 0.79 > Mid 0.58 > Weak 0.44), ranks assigned 1/2/3 correctly, `matched_competencies` correctly showed `["JavaScript","React","Node.js"]` for the strong candidate vs. `[]` for the mismatched one. Verified via real HTTP call to `GET /jobs/7/candidates` — full ranked JSON returned with per-candidate breakdown. All test data cleaned up
 
-- [ ] **T8. Skill-gap per candidate (Deepseek Pro).** — *Depends: T7 · Flow: 4→8*
-  - [ ] **Tahap 2 reuse (2026-07-12 audit):** `agent_4_recommendation_report.py::_build_seed_gap()`/`_is_skill_match()` implement a deterministic token-overlap "seed" that grounds/filters the LLM's gap output — adapt this technique (compute a cheap deterministic gap first, use it to constrain/validate the LLM's structured output) even though the underlying comparison there is candidate-vs-market, here it's candidate-vs-JD
-  - [ ] Candidate profile vs JD competencies → structured gap output
-  - [ ] Persist
-  - ✅ Done when: each shortlisted candidate has a structured gap record
+- [x] **T8. Skill-gap per candidate (Deepseek Pro). — DONE 2026-07-13.** — *Depends: T7 · Flow: 4→8*
+  - [x] **Tahap 2 reuse (2026-07-12 audit):** `agent_4_recommendation_report.py::_build_seed_gap()`/`_is_skill_match()` pattern adapted in `backend/services/skillgap.py` — `build_seed_gap()`/`_is_skill_match()` compute a deterministic token-overlap gap first; the LLM call is then grounded against it (any LLM-claimed "missing competency" not in the deterministic seed is discarded, falling back to the seed itself)
+  - [x] Candidate profile vs JD competencies → structured gap output — `analyze_skill_gap()`: `{gap_summary, missing_competencies, development_priority}`, real Deepseek Pro call
+  - [x] Persist — **no dedicated table exists in the 17-table schema** (confirmed against the module inventory: skill-gap is explicitly "(internal, feeds T13)" — the report-generation step is its actual consumer, not a standalone persisted record). Implemented as a callable service function T13 will invoke directly, not backed by its own DB row
+  - ✅ Done when: each shortlisted candidate has a structured gap record — **verified**: real gap (missing React/Node.js/PostgreSQL for a JS/HTML/CSS candidate) correctly identified, sensible Indonesian summary generated, LLM output correctly grounded to the deterministic seed (no hallucinated extra gaps); the no-gap edge case (candidate already has everything) correctly short-circuits with zero LLM calls
 
 ### AI Interview Module (the new component)
 - [ ] **T9. Interview question generation (Flash).** — *Depends: T4 · Flow: 5*
@@ -932,7 +932,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | T5 CV parse (text + vision fallback + PII redaction) | 🟢 Done 2026-07-13 | **3.75** ↓ *(was 5.0)* | 🔴 | **Tahap 2 reuse**: the `pdfplumber` text-extraction + empty-page-detection pattern is validated working code — adopt it directly for the text-extraction step. Still 🔴: PII redaction, SumoPod integration, and proper (non-regex) structured-output validation are all new work Tahap 2 doesn't have (its own JSON parsing is explicitly fragile — a pattern to avoid, not copy) |
 | T6 Embeddings → Qdrant | 🟢 Done 2026-07-13 | 1.5 | 🟡 | No embeddings code in Tahap 2 |
 | T7 Matching engine (semantic + graph + formula) | 🟢 Done 2026-07-13 | 3.0 | 🟠 | Tahap 2's "matching" is a token-overlap heuristic — a different technique entirely, doesn't transfer to our semantic+graph approach |
-| T8 Skill-gap analysis | ⚪ Not started | **1.0** ↓ *(was 1.5)* | 🟡 | **Tahap 2 reuse**: `_build_seed_gap()`/`_is_skill_match()`'s deterministic-seed-grounds-LLM-output pattern is a legitimate technique to adapt here, even though it's candidate-vs-market there and candidate-vs-JD here |
+| T8 Skill-gap analysis | 🟢 Done 2026-07-13 | **1.0** ↓ *(was 1.5)* | 🟡 | **Tahap 2 reuse**: `_build_seed_gap()`/`_is_skill_match()`'s deterministic-seed-grounds-LLM-output pattern is a legitimate technique to adapt here, even though it's candidate-vs-market there and candidate-vs-JD here |
 | T9 Interview question gen | ⚪ Not started | 1.0 | 🟡 | No interview module in Tahap 2 (the whole "new component" premise from the original pivot) |
 | T9b Recruiter edit/approve | ⚪ Not started | 1.0 | 🟢 | |
 | T9c Invite candidate | ⚪ Not started | 1.0 | 🟢 | |
