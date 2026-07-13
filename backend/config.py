@@ -48,3 +48,7 @@ DATABASE_URL = _require("DATABASE_URL")
 QDRANT_HOST = os.environ.get("QDRANT_HOST", "localhost")
 QDRANT_PORT = int(os.environ.get("QDRANT_PORT", "6333"))
 QDRANT_URL = os.environ.get("QDRANT_URL", f"http://{QDRANT_HOST}:{QDRANT_PORT}")
+
+JWT_SECRET = _require("JWT_SECRET")
+JWT_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "120"))
+CANDIDATE_TOKEN_TTL_HOURS = int(os.environ.get("CANDIDATE_TOKEN_TTL_HOURS", "72"))

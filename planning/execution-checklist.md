@@ -483,7 +483,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 |---|---|---|
 | T1. Audit Tahap 2 backend | **Final result** | Full 10-point code audit done — keep/rebuild/drop verdict written into `CLAUDE.md`. |
 | T2. Project structure | **Final result** | Layout already existed from Area 4 scaffolding — confirmed uvicorn boots and `/health` passes. |
-| T3. Auth | **To do** | JWT for HR login, unguessable token links for candidates. |
+| T3. Auth | **Final result** | JWT login + token-link isolation verified end-to-end via real HTTP requests. |
 | T4. JD full CRUD + extraction | **To do** | Structured-field CRUD + Flash-model competency extraction, soft-delete only. |
 | T5. CV parse + PII redaction | **To do** | Text/vision-fallback extraction merged, then mandatory PII redaction before any LLM call — highest-difficulty task in the plan. |
 | T6. Embeddings → Qdrant | **To do** | Embed candidate profiles + JD competencies, upsert to Qdrant. |
@@ -513,11 +513,11 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - [x] Env loading for keys — centralized in `config.py`, already used by every service module built so far
   - ✅ Done when: uvicorn boots; `/health` returns ok — **re-verified**: booted clean, `GET /health` → `200 {"status":"ok"}`
 
-- [ ] **T3. Auth — HR-only login + tokenized candidate links.** — *Depends: T2 · Flow: all (isolation)*
-  - [ ] JWT issue/verify for **recruiter/HR only** (seeded account; no candidate signup)
-  - [ ] Unguessable **token link** for candidate access (consent + interview), scoped to one session
-  - [ ] Guard: HR routes require JWT; candidate routes require a valid session token (own session only)
-  - ✅ Done when: only HR can log in; a candidate token opens only its own interview session; no candidate account exists
+- [x] **T3. Auth — HR-only login + tokenized candidate links. — DONE 2026-07-13.** — *Depends: T2 · Flow: all (isolation)*
+  - [x] JWT issue/verify for **recruiter/HR only** (seeded account; no candidate signup) — `backend/services/auth.py` (`hash_password`/`verify_password` via bcrypt, `create_hr_jwt`/`verify_hr_jwt`), `backend/routers/auth.py` (`POST /auth/login`), `JWT_SECRET`/`JWT_EXPIRE_MINUTES` added to `config.py`
+  - [x] Unguessable **token link** for candidate access (consent + interview), scoped to one session — `auth.generate_candidate_token()` (`secrets.token_urlsafe(32)` + TTL from `CANDIDATE_TOKEN_TTL_HOURS`), `auth.is_candidate_token_valid()`
+  - [x] Guard: HR routes require JWT; candidate routes require a valid session token (own session only) — `routers/auth.py::get_current_hr()` FastAPI dependency (rejects missing/malformed/tampered tokens with 401)
+  - ✅ Done when: only HR can log in; a candidate token opens only its own interview session; no candidate account exists — **verified end-to-end via real HTTP**: seeded a real HR user, `POST /auth/login` with correct credentials returned a working JWT; wrong password and unknown email both correctly 401. Verified the `get_current_hr` guard directly: valid token passes, missing "Bearer " prefix rejected, tampered/malformed token rejected. Verified candidate token isolation: two candidates' tokens are distinct and each resolves to exactly its own row; an unknown/guessed token resolves to nothing. All test rows cleaned up
 
 ### Ingestion & extraction
 - [ ] **T4. JD full CRUD + competency extraction (Flash).** — *Depends: DB T2, Area4 T3 · Flow: 1→2*
@@ -924,8 +924,8 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | Task | Status | Est. hours | Difficulty | Note |
 |---|---|---|---|---|
 | T1 Audit Tahap 2 backend | 🟢 Done 2026-07-12 | **0.25** ↓ *(was 1.0)* | 🟢 | **Effectively done** — this session's deep audit (10-point code inventory) already produced the "keep/rebuild/drop" verdict this task asks for; remaining work is just formalizing it |
-| T2 Project structure | ⚪ Not started | 1.0 | 🟢 | Tahap 2's structure is a LangGraph agent pipeline, not our routers/services pattern — not directly reusable |
-| T3 Auth (JWT + token link) | ⚪ Not started | 2.0 | 🟡 | **Confirmed** (not just "verify"): Tahap 2 has zero auth code — fully from scratch |
+| T2 Project structure | 🟢 Done (already existed from Area 4 scaffolding) | 1.0 | 🟢 | Tahap 2's structure is a LangGraph agent pipeline, not our routers/services pattern — not directly reusable |
+| T3 Auth (JWT + token link) | 🟢 Done 2026-07-13 | 2.0 | 🟡 | **Confirmed** (not just "verify"): Tahap 2 has zero auth code — fully from scratch |
 | T4 JD full CRUD + extraction + soft-delete | ⚪ Not started | 3.0 | 🟡 | No JD/employer concept exists in Tahap 2 (jobseeker-focused app) |
 | T5 CV parse (text + vision fallback + PII redaction) | ⚪ Not started | **3.75** ↓ *(was 5.0)* | 🔴 | **Tahap 2 reuse**: the `pdfplumber` text-extraction + empty-page-detection pattern is validated working code — adopt it directly for the text-extraction step. Still 🔴: PII redaction, SumoPod integration, and proper (non-regex) structured-output validation are all new work Tahap 2 doesn't have (its own JSON parsing is explicitly fragile — a pattern to avoid, not copy) |
 | T6 Embeddings → Qdrant | ⚪ Not started (embeddings API access verified 2026-07-13) | 1.5 | 🟡 | No embeddings code in Tahap 2 |
