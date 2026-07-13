@@ -15,10 +15,10 @@
 | Area | Status | Core tasks | Deferred | Primary days |
 |---|---|---|---|---|
 | 4. Cost / Tooling (dev env) | 🟢 Done (T1-T3d, T8 all done; T4 deferred) | 7 | 1 | Day 1 |
-| 3. Database + datasets | 🟡 In progress (T1-T9 done; T10 blocked on Kaggle CV/audio seed material) | 9 | 0 | Day 2–3 |
+| 3. Database + datasets | 🟢 Done (all 10 tasks T1-T10 verified end-to-end) | 9 | 0 | Day 2–3 |
 | 2. Backend & AI | 🟢 Done (all 16 tasks T1-T16 verified end-to-end) | 16 | 0 | Day 4–7 |
 | 1. Frontend UI/UX | 🟡 In progress (T1 done, T3 partial; rest to do) | 13 | 2 | Day 8–11 |
-| 5. QA | ⚪ Not started (Area 2 now done — can start) | 8 | 5 | Day 4-12 (shifted left, spans build; final pass Day 12 — see banner) |
+| 5. QA | ⚪ Not started (Areas 2 and 3 now done — can start) | 8 | 5 | Day 4-12 (shifted left, spans build; final pass Day 12 — see banner) |
 
 Status values: ⚪ Not started · 🟡 In progress · 🟢 Done/locked.
 
@@ -164,7 +164,7 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 
 ---
 
-## Area 3 — Database + Reference Datasets  ·  Status: 🟡 In progress (T1-T9 done; T10 blocked on Kaggle CV/audio seed material)
+## Area 3 — Database + Reference Datasets  ·  Status: 🟢 Done (all 10 tasks T1-T10 verified end-to-end)
 
 > **Blocks Area 2.** Schema early; datasets are `[content]` and gate the report (Area 2 T13) — start Day 2, don't slip.
 > Resolved: **PostgreSQL in Docker, via SQLAlchemy, NO Alembic** (`create_all` on fresh demo DB).
@@ -361,7 +361,7 @@ scannable index of what exists, used by T1-T3.
 | T7. Resource library `[content]` | ✅ **Final result** | 30 resources (3/competency) curated and verified — every competency has full coverage. | 1.5 | 🟡 | Domain judgment |
 | T8. Consent + audit write paths | ✅ **Final result** | Audit-log helper + consent gate verified — blocks without consent, allows once recorded. | 1.5 | 🟡 | No Tahap 2 equivalent |
 | T9. Retention policy | ✅ **Final result** | 30-day retention rule + manual cleanup helper verified — deletes expired audio, correctly leaves recent audio untouched. | 0.5 | 🟢 | |
-| T10. Seed data | 🚧 **Blocked** | Role changed to Web Developer + CVs are random/untiered (user's call) + still needs Area 2 T5 (CV parsing) to exist before it can actually run. | **4.5** | 🟠 | **The real time sink** — manual curation labor across 30 real CVs, not code complexity |
+| T10. Seed data | ✅ **Final result** | All 30 CVs ran through the real pipeline + 2 synthetic interviews seeded, verified via direct DB queries. Found and fixed 2 real bugs (arg mismatch, hardcoded HR id) along the way. | **4.5** | 🟠 | Tiering explicitly skipped per user decision — QA Area 5 T5 still has no ground truth to test against |
 | **Subtotal** | | | **~16h** | | vs. **16h** scheduled (Day 2-3) — tight but plausible IF T10 doesn't overrun |
 
 - [x] **T1. DB connection locked: PostgreSQL (Docker). — DONE 2026-07-13.** — *Depends: Area4 T2 · Flow: all persistence*
@@ -418,19 +418,17 @@ scannable index of what exists, used by T1-T3.
   - [x] Provide a callable manual cleanup helper — `cleanup_expired_audio(db, storage_root)`, returns the list of cleaned-up candidate ids
   - ✅ Done when: policy documented + cleanup callable exists (supports UU PDP) — **verified**: created two candidates with real audio files — one with a 35-day-old consent record (past the 30-day retention window), one with a 5-day-old record. Ran cleanup: the expired candidate's audio file was deleted, the recent candidate's audio was correctly left untouched; all test data cleaned up afterward
 
-- [ ] **T10. Seed data for demo — role/CV plan changed 2026-07-13, see notes below.** — *Depends: T2, T6, T7, **Area2 T5 (CV parsing, not yet built)** · Flow: all*
-  - ⚠️ **2026-07-13 changes from the original plan**: (1) demo role is now **Web Developer**, not Data Analyst (T6/T7 already re-curated); (2) the 30 CVs the user added to `seed/raw/cv/` are **confirmed random, not curated/tiered** — user's own words: "for testing purposes only." The strong/mid/weak tiering below is **not being done** on this batch; (3) only **2** synthetic interview candidates (not 2-3) — user is reusing the 2 existing test recordings (`Recording 50 tahun pengalaman.m4a`, `Recording dari web.mp3`) rather than recording a 3rd. Sub-items below are left as the **original** plan text for reference, but items marked ⚠️ above no longer apply as written — needs a fresh look before this task is actually run
-  - [ ] 1 company + 1 seeded HR account (JD itself created via the in-app CRUD flow, Area 2 T4/Area 1 T4b — not a raw DB insert). **Single company for MVP** (resolved 2026-07-12: no second company/isolation demo — isolation logic still exists in code, Area 2 T3, just not shown on camera). **JD content drafted 2026-07-13**: `backend/seed/job_description_data.py` (Web Developer, structured fields, Bahasa Indonesia) — written by AI per user request, not yet inserted into `jobs`
-  - [x] ~~Manual Kaggle download, filter INFORMATION-TECHNOLOGY, curate 30~~ — **superseded 2026-07-13**: user added 30 CVs directly to `seed/raw/cv/` already; confirmed random/uncurated, not filtered by category or fit
-  - [x] ~~Manually curate 30 candidate PDFs for a strong/mid/weak spread~~ — **explicitly skipped 2026-07-13** per user decision; the 30 CVs are random test data, no intended tier exists for them
-  - [x] ~~Record the intended match-quality tier per candidate~~ — **not applicable**: no tiering was done, so there's no ground truth to record. **Flags a real gap**: QA Area 5 T5 (matching/tier check) has nothing to assert against unless this is revisited before that test runs
-  - [ ] Run each through the anonymization + parse pipeline (Area 2 T5) before seeding — structured DB/LLM input never holds raw Kaggle PII (raw PDF file itself is kept as-is, HR-facing) — **blocked**: Area 2 T5 doesn't exist yet
-  - [ ] **Candidate interview-data tiers (revised 2026-07-13, was 27+2-3+1)**: of the 30 —
-    - **27 profile-only**: `parsed_profiles` + `match_scores` only, no interview data at all (demonstrates matching/ranking)
-    - **2 pre-seeded synthetic interviews** (was 2-3): the 2 existing test `.webm`-equivalent recordings (`.m4a`/`.mp3`, already in `seed/raw/audio/`, transcription-verified in Area 4 T3b) + `transcripts` + `rubric_scores` + `interview_summaries`, written directly to DB (not run through the live pipeline). **Also seed an `hr_decisions` row for each** — advance/reject already recorded — so their candidate-detail page shows a completed "decided, report sent" state instead of a live, clickable-but-broken send-report button (they have no `telegram_chat_id`)
-    - **1 live candidate**: NO interview data pre-seeded — this candidate is walked through the real flow during demo recording (consent → Telegram link → record real audio → real STT/rubric/summary → HR review → decision → Telegram delivery)
-  - [ ] Competency + resource rows (from T6/T7) — **done**, Web Developer framework already seeded
-  - ✅ Done when: one command loads a demo-ready DB (30 candidates, anonymized-for-LLM, Web Developer JD) with no manual DB fiddling — **not yet run**: blocked on Area 2 T5 existing; tiering explicitly out of scope for this batch per user decision
+- [x] **T10. Seed data for demo — DONE 2026-07-13 (role/CV plan changed, tiering skipped per user decision).** — *Depends: T2, T6, T7, Area2 T5 · Flow: all*
+  - ⚠️ **Final scope (2026-07-13, confirmed against original plan)**: (1) demo role is **Web Developer**, not Data Analyst; (2) the 30 CVs are **confirmed random, not curated/tiered** — user's own words: "for testing purposes only," so no strong/mid/weak spread exists (QA Area 5 T5 has no ground truth to assert against until revisited); (3) only **2** synthetic interview candidates (not 2-3), reusing the 2 existing test recordings
+  - [x] 1 company + 1 seeded HR account + 1 Web Developer JD — created via the **real JD-creation path** (`services.extract.extract_competencies`, Area 2 T4), not a raw insert. `backend/seed/load_demo_data.py::_seed_company_hr_job()`
+  - [x] ~~Manual Kaggle download, filter INFORMATION-TECHNOLOGY, curate 30~~ — superseded: user's 30 CVs used as-is, confirmed random/uncurated
+  - [x] ~~Manually curate 30 candidate PDFs for a strong/mid/weak spread~~ — explicitly skipped per user decision
+  - [x] ~~Record the intended match-quality tier per candidate~~ — not applicable, no tiering was done (QA Area 5 T5 gap still open, unresolved)
+  - [x] Run each through the anonymization + parse pipeline (Area 2 T5) before seeding — **all 30 real CVs ran through the actual live pipeline** (`ingest_cv()` → PII redaction → Deepseek parse → embed → match score), not a shortcut
+  - [x] **Candidate interview-data tiers**: of the 30 — **28 profile-only** (parsed_profiles + match_scores only), **2 pre-seeded synthetic interviews** (Kandidat WD-29, WD-30 — real distinct audio, transcripts, rubric_scores, interview_summaries, hr_decisions all seeded), **1 designated live candidate** (no interview data pre-seeded, for the real demo recording later)
+  - [x] Competency + resource rows (from T6/T7) — already seeded, unaffected
+  - ✅ Done when: one command loads a demo-ready DB with no manual DB fiddling — **verified end-to-end via direct DB queries**: 30 candidates, 30 parsed_profiles, 30 match_scores, 2 interview_answers/transcripts, 6 rubric_scores (3 criteria × 2), 2 interview_summaries, 2 hr_decisions, 0 consent_records (correctly zero — no seed/synthetic candidate gets a fabricated consent row, per the Area 3 T8 design). Ranked shortlist spot-checked (top 5 by score, plausible for random resumes vs. a Web Developer JD). Synthetic interview summaries correctly reflect the actual thin test-audio content, not fabricated text
+  - ⚠️ **Real bugs found + fixed during this run**: (1) `extract_competencies()` called with 3 args instead of the required 4 (missing `qualifications`) — a genuine signature mismatch, fixed immediately; (2) `_seed_synthetic_interview()` hardcoded `decided_by=1`, assuming HR user id 1 — broke because this run's real HR user had id 17; fixed by threading the actual `hr.id` through. The interrupted first attempt (killed mid-way through the synthetic-interview step after finishing all 30 CVs) left one duplicate `interview_answers`/`rubric_scores` row for candidate WD-29, caught by inspecting row counts and cleaned up manually before the final verification above. **Note on the run itself**: real per-CV latency was uneven (roughly 1-50s per candidate depending on load), the whole 30-CV run took a bit over 2 hours wall-clock including the investigation into whether it was hung (it wasn't — genuinely progressing throughout, confirmed by polling `match_scores` count directly rather than trusting the (buffered-then-caught-up) log output)
 
 ---
 

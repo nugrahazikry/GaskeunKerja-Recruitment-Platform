@@ -1,4 +1,4 @@
-"""Loads the Data Analyst competency framework + resource library into Postgres (Area 3 T6/T7).
+"""Loads the Web Developer competency framework + resource library into Postgres (Area 3 T6/T7).
 
 Idempotent: skips loading if the framework for this job_role already has rows.
 Run: python -m seed.load_competency_framework (from backend/, with .venv active)
