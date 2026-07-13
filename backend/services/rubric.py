@@ -30,12 +30,17 @@ def _build_criteria_text() -> str:
     return "\n\n".join(parts)
 
 
-def score_answer(question: str, transcript: str) -> dict:
-    """Deepseek Pro, temperature=0 (enforced by chat_pro) -> rubric scores + summary."""
+def score_answer(question: str, transcript: str, bypass_cache: bool = False) -> dict:
+    """Deepseek Pro, temperature=0 (enforced by chat_pro) -> rubric scores + summary.
+
+    bypass_cache is exposed for Area 5 QA T3 (determinism test) — a test that hits the
+    Area 4 disk cache after its first call would just replay the same response and prove
+    nothing about the LLM's actual determinism.
+    """
     prompt = _SCORING_PROMPT.format(
         question=question, transcript=transcript, criteria_descriptions=_build_criteria_text()
     )
-    raw = llm_client.chat_pro([{"role": "user", "content": prompt}])
+    raw = llm_client.chat_pro([{"role": "user", "content": prompt}], bypass_cache=bypass_cache)
 
     text = raw.strip()
     if text.startswith("```"):

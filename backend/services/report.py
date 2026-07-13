@@ -11,13 +11,16 @@ from db import repositories as repo
 from services.skillgap import analyze_skill_gap
 
 
-def build_report(db: Session, candidate_id: int, job_id: int) -> dict:
+def build_report(db: Session, candidate_id: int, job_id: int, bypass_cache: bool = False) -> dict:
     """Requires an hr_decisions row to already exist for this candidate (checked by caller).
 
     Returns a structured report dict — the deterministic content that gets rendered to PDF
     in T14. Same skill-gap input always produces the same report (QA T4's determinism claim)
     because this function only selects/orders existing data, no LLM call happens here beyond
     the already-grounded analyze_skill_gap() call.
+
+    bypass_cache is exposed for Area 5 QA T4 — same reasoning as elsewhere: a determinism
+    test that hits the Area 4 disk cache proves nothing about the underlying LLM call.
     """
     candidate = repo.candidates.get(db, candidate_id)
     if not candidate:
@@ -29,7 +32,7 @@ def build_report(db: Session, candidate_id: int, job_id: int) -> dict:
     jd_competencies = repo.jd_competencies.list(db, job_id=job_id)
     required_competency_names = [c.competency_name for c in jd_competencies]
 
-    gap_result = analyze_skill_gap(candidate_skills, required_competency_names)
+    gap_result = analyze_skill_gap(candidate_skills, required_competency_names, bypass_cache=bypass_cache)
 
     # For each missing competency, select the matching competency_framework row (by name)
     # and its curated resources — deterministic lookup, not generation.

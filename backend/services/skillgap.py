@@ -45,7 +45,12 @@ PENTING: "missing_competencies" HARUS berupa subset dari daftar kompetensi yang 
 ({seed_gap}) — jangan menambahkan kompetensi lain yang tidak ada di daftar tersebut."""
 
 
-def analyze_skill_gap(candidate_skills: list[str], required_competencies: list[str]) -> dict:
+def analyze_skill_gap(
+    candidate_skills: list[str], required_competencies: list[str], bypass_cache: bool = False
+) -> dict:
+    """bypass_cache is exposed for Area 5 QA T4 (report consistency test) — same
+    reasoning as rubric.score_answer: a determinism test hitting the Area 4 disk cache
+    after its first call proves nothing about the LLM's actual behavior."""
     seed_gap = build_seed_gap(candidate_skills, required_competencies)
 
     if not seed_gap:
@@ -60,7 +65,7 @@ def analyze_skill_gap(candidate_skills: list[str], required_competencies: list[s
         required_competencies=", ".join(required_competencies),
         seed_gap=", ".join(seed_gap),
     )
-    raw = llm_client.chat_pro([{"role": "user", "content": prompt}])
+    raw = llm_client.chat_pro([{"role": "user", "content": prompt}], bypass_cache=bypass_cache)
 
     text = raw.strip()
     if text.startswith("```"):
