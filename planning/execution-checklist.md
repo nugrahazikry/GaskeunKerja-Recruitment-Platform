@@ -486,7 +486,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | T3. Auth | **Final result** | JWT login + token-link isolation verified end-to-end via real HTTP requests. |
 | T4. JD full CRUD + extraction | **Final result** | Full CRUD verified end-to-end with real SumoPod extraction calls; company isolation confirmed via 404, not leakage. |
 | T5. CV parse + PII redaction | **Final result** | Full pipeline verified end-to-end with a real CV upload; caught and fixed a real regex false-positive bug in PII redaction along the way. |
-| T6. Embeddings → Qdrant | **To do** | Embed candidate profiles + JD competencies, upsert to Qdrant. |
+| T6. Embeddings → Qdrant | **Final result** | Verified with real semantic matching — a JD correctly found its matching candidate at 0.805 similarity. |
 | T7. Matching engine | **To do** | Weighted semantic + competency-graph score, explainable per-competency detail. |
 | T8. Skill-gap analysis | **To do** | Deepseek Pro candidate-vs-JD gap output, grounded via a deterministic seed. |
 | T9. Interview question gen | **To do** | 2-3 Indonesian questions generated from the JD. |
@@ -541,10 +541,11 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - [x] Store original file as-is (DB T4, HR-facing) + parsed/anonymized rows — `backend/services/candidate_ingest.py::ingest_cv()` ties the whole pipeline together: extract → merge captions → redact → parse → `storage.save_cv()` → `parsed_profiles` row
   - ✅ Done when: all 30 seed CVs (real PDFs, Kaggle) parse correctly regardless of text/scanned/mixed format; no real name/email/phone reaches the LLM or the structured DB row — **verified against real data**: extracted text from 5 real seed CVs correctly (all text-based, 0 scanned pages in this particular sample, so the vision-fallback path wasn't exercised by real seed data — it was separately verified in Area 4 T3d with a synthetic scanned-page image); uploaded one real CV through the full live pipeline via HTTP — correctly produced structured skills/experience/qualifications in `parsed_profiles`; **note**: the Kaggle `resume-dataset` CVs turned out to already be template/anonymized documents with no real names/emails/phones in them, so they couldn't validate redaction meaningfully — redaction was instead directly verified with an injected synthetic PII string (name+email+phone), confirmed none of it survives into the redacted text that would be sent to the LLM
 
-- [ ] **T6. Embeddings → Qdrant (local multilingual sentence-transformers).** — *Depends: T4, T5, DB T3 · Flow: 4*
-  - [ ] Embed candidate profile + JD competencies
-  - [ ] Upsert to Qdrant collections with competency payload
-  - ✅ Done when: vectors present for JD + all candidates; query returns neighbors
+- [x] **T6. Embeddings → Qdrant. — DONE 2026-07-13.** — *Depends: T4, T5, DB T3 · Flow: 4*
+  - ⚠️ **Stale spec note**: this task's title still says "local multilingual sentence-transformers" from the original Area 4 draft — superseded 2026-07-13 by the actual resolved decision: **SumoPod `gemini/gemini-embedding-001`** (see `.env`, `plan.md` decision log). Built against the real current decision, not the stale title
+  - [x] Embed candidate profile + JD competencies — `backend/services/embeddings.py::embed_text()` (SumoPod, 1536-dim truncated), `backend/services/candidate_embedding.py` (`embed_candidate_profile()`, `embed_jd_competencies()` — both convert structured DB rows into Indonesian-language text before embedding)
+  - [x] Upsert to Qdrant collections with competency payload — candidate payload includes `skills`; JD payload includes `competencies` list
+  - ✅ Done when: vectors present for JD + all candidates; query returns neighbors — **verified against real data**: seeded a JD (JavaScript/React/Node.js competencies) and a matching candidate (JavaScript/React/HTML/CSS skills), embedded both via real SumoPod calls, confirmed both vectors exist in Qdrant with 1536 dimensions and correct payloads; queried `candidate_vectors` using the JD's own vector — correctly returned the matching candidate as the top (and only) neighbor with a strong 0.805 similarity score, confirming genuine semantic matching rather than keyword overlap. Test data cleaned up
 
 ### Matching & analysis
 - [ ] **T7. Matching engine — semantic + lightweight competency-graph.** — *Depends: T6, DB T6 · Flow: 4*
@@ -928,7 +929,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | T3 Auth (JWT + token link) | 🟢 Done 2026-07-13 | 2.0 | 🟡 | **Confirmed** (not just "verify"): Tahap 2 has zero auth code — fully from scratch |
 | T4 JD full CRUD + extraction + soft-delete | 🟢 Done 2026-07-13 | 3.0 | 🟡 | No JD/employer concept exists in Tahap 2 (jobseeker-focused app) |
 | T5 CV parse (text + vision fallback + PII redaction) | 🟢 Done 2026-07-13 | **3.75** ↓ *(was 5.0)* | 🔴 | **Tahap 2 reuse**: the `pdfplumber` text-extraction + empty-page-detection pattern is validated working code — adopt it directly for the text-extraction step. Still 🔴: PII redaction, SumoPod integration, and proper (non-regex) structured-output validation are all new work Tahap 2 doesn't have (its own JSON parsing is explicitly fragile — a pattern to avoid, not copy) |
-| T6 Embeddings → Qdrant | ⚪ Not started (embeddings API access verified 2026-07-13) | 1.5 | 🟡 | No embeddings code in Tahap 2 |
+| T6 Embeddings → Qdrant | 🟢 Done 2026-07-13 | 1.5 | 🟡 | No embeddings code in Tahap 2 |
 | T7 Matching engine (semantic + graph + formula) | ⚪ Not started | 3.0 | 🟠 | Tahap 2's "matching" is a token-overlap heuristic — a different technique entirely, doesn't transfer to our semantic+graph approach |
 | T8 Skill-gap analysis | ⚪ Not started | **1.0** ↓ *(was 1.5)* | 🟡 | **Tahap 2 reuse**: `_build_seed_gap()`/`_is_skill_match()`'s deterministic-seed-grounds-LLM-output pattern is a legitimate technique to adapt here, even though it's candidate-vs-market there and candidate-vs-JD here |
 | T9 Interview question gen | ⚪ Not started | 1.0 | 🟡 | No interview module in Tahap 2 (the whole "new component" premise from the original pivot) |
