@@ -356,8 +356,8 @@ scannable index of what exists, used by T1-T3.
 | T3. Qdrant collections | **Final result** | `candidate_vectors` + `jd_vectors` collections created and verified with a real upsert/query round-trip. |
 | T4. File storage layout | **Final result** | Isolated per-candidate folders for CV + audio verified — layout, isolation, and round-trip all confirmed. |
 | T5. Repository layer | **Final result** | Generic Repository class + one instance per entity, verified with real get/list/create calls. |
-| T6. Competency framework `[content]` | **To do** | ~8-12 competencies for the Data Analyst demo role, with lightweight relations. |
-| T7. Resource library `[content]` | **To do** | ~3 curated resources per competency. |
+| T6. Competency framework `[content]` | **Final result** | 10 competencies curated for Data Analyst with level descriptions + verified relations, loaded via an idempotent seed script. |
+| T7. Resource library `[content]` | **Final result** | 30 resources (3/competency) curated and verified — every competency has full coverage. |
 | T8. Consent + audit write paths | **To do** | Audit-log helper + consent gate enforcement. |
 | T9. Retention policy | **To do** | Light retention rule scoped to the 1 live candidate's real consented audio. |
 | T10. Seed data | **To do** | Kaggle-sourced, curated, anonymized, tiered 30-candidate seed set — the single biggest time sink in the plan. |
@@ -393,16 +393,16 @@ scannable index of what exists, used by T1-T3.
   - [x] Thin repositories/CRUD over SQLAlchemy (no Alembic) — `backend/db/repository.py` (generic `Repository[ModelType]`: `get`/`list`/`create`), `backend/db/repositories.py` (one instance per entity, all 17)
   - ✅ Done when: each entity has get/create used by services — **verified**: created a `Company` + a linked `HRUser` through the repositories, fetched the company back by id, listed `hr_users` filtered by `company_id` (correct single result), confirmed `get()` on a nonexistent id returns `None` rather than raising; test rows cleaned up afterward (children deleted before parents, respecting FKs)
 
-- [ ] **T6. `[content]` Competency framework — ONE demo role: Data Analyst (IT).** — *Depends: T2 · Flow: 4, 8*
-  - [ ] List ~8-12 competencies with levels (e.g. SQL, Excel/spreadsheet, data visualization, statistics, Python/R, data cleaning, dashboarding, business communication)
-  - [ ] Encode lightweight relations (parent/related) feeding the matching graph (Area 2 T7)
-  - [ ] Store as seed rows in the reference table
-  - ✅ Done when: one role fully covered; relations queryable; used by matching + report
+- [x] **T6. `[content]` Competency framework — ONE demo role: Data Analyst (IT). — DONE 2026-07-13.** — *Depends: T2 · Flow: 4, 8*
+  - [x] List ~8-12 competencies with levels — **10 competencies curated**: SQL, Excel/Spreadsheet, Data Visualization, Statistik, Python/R, Data Cleaning, Dashboarding, Komunikasi Bisnis, Pemahaman Domain Bisnis, Berpikir Kritis & Problem Solving — each with a 1/3/5-anchored Indonesian level description (`backend/seed/competency_framework_data.py`)
+  - [x] Encode lightweight relations (parent/related) feeding the matching graph (Area 2 T7) — each competency has 1-2 related competencies, internally consistent (e.g. SQL↔Data Cleaning↔Dashboarding cross-reference correctly)
+  - [x] Store as seed rows in the reference table — `backend/seed/load_competency_framework.py`, idempotent (two-pass: create rows, then fill `related_competency_ids` once all ids exist)
+  - ✅ Done when: one role fully covered; relations queryable; used by matching + report — **verified**: ran the loader (10 competencies + 30 resources created), re-ran to confirm idempotency (correctly skipped), queried `related_competency_ids` directly — all populated and cross-referencing correctly
 
-- [ ] **T7. `[content]` Curated resource library — same role.** — *Depends: T6 · Flow: 8*
-  - [ ] ~3 resources per competency (title, duration, milestone), keyed to competency ids
-  - [ ] Enough to assemble a deterministic report
-  - ✅ Done when: every competency has ≥1 mapped resource; report can select/order from it
+- [x] **T7. `[content]` Curated resource library — same role. — DONE 2026-07-13.** — *Depends: T6 · Flow: 8*
+  - [x] ~3 resources per competency (title, duration, milestone), keyed to competency ids — exactly 3 per competency, 30 total, Indonesian titles/milestones (`backend/seed/competency_framework_data.py::RESOURCES`)
+  - [x] Enough to assemble a deterministic report — same loader as T6, `backend/seed/load_competency_framework.py`
+  - ✅ Done when: every competency has ≥1 mapped resource; report can select/order from it — **verified**: `LEFT JOIN` query confirms all 10 competencies have exactly 3 resources each, none with zero
 
 - [ ] **T8. Consent + audit write paths.** — *Depends: T2 · Flow: 5, 6*
   - [ ] Helper writes an `audit_log` row at every AI decision point + candidate-data access
