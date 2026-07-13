@@ -4,10 +4,16 @@ from openai import OpenAI
 
 from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL_FLASH, LLM_MODEL_PRO, LLM_TEMPERATURE_SCORING
 from services import llm_cache
+from services.retry import with_retry
 
 logger = logging.getLogger("llm_client")
 
 _client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
+
+
+@with_retry(max_attempts=3, backoff_seconds=1.0)
+def _create_completion(model: str, messages: list[dict], temperature: float):
+    return _client.chat.completions.create(model=model, messages=messages, temperature=temperature)
 
 
 def chat(
@@ -29,7 +35,7 @@ def chat(
             logger.info("cache hit model=%s tokens=0 (served from cache)", model)
             return cached["content"]
 
-    response = _client.chat.completions.create(model=model, messages=messages, temperature=temperature)
+    response = _create_completion(model, messages, temperature)
     content = response.choices[0].message.content or ""
     usage = response.usage
 

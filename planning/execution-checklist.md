@@ -499,7 +499,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | T12. HR decision endpoints | ✅ **Final result** | Verified end-to-end; grep-confirmed no auto-finalize path exists anywhere in the codebase. | 1.0 | 🟢 | No employer-decision flow in Tahap 2 |
 | T13. Report generation | ✅ **Final result** | Verified end-to-end: gating, real curated resource citations, and determinism all confirmed. | 2.5 | 🟡 | Different approach from Tahap 2's LLM-free-generated content, no code reuse |
 | T14. Report delivery | ✅ **Final result** | Verified with a real live Telegram send — user confirmed both PDF and summary arrived. Corrected a stale file citation along the way. | **2.0** ↓ *(was 3.0, weasyprint)* | 🟡 *(was 🟠)* | **Tahap 2 reuse**: real `_build_report_pdf()` found in `app.py` (not the file the plan cited) — adapted its panel-styling technique, pure-Python ReportLab retires the weasyprint Windows dependency risk |
-| T15. Async wiring + error handling | 📝 **To do** | Cross-cutting orchestration/retry/caching layer. | **1.75** ↓ *(was 2.0)* | 🟡 | Tahap 2's async-job pattern is a minor reference; do not copy its traceback-leaking exception handler |
+| T15. Async wiring + error handling | ✅ **Final result** | Verified: retry logic behaves correctly, exception handler leaks nothing (unlike Tahap 2's). | **1.75** ↓ *(was 2.0)* | 🟡 | Tahap 2's async-job pattern is a minor reference; do not copy its traceback-leaking exception handler |
 | T16. OpenAPI contract | 📝 **To do** | FastAPI auto-generated, no dedicated work beyond typed endpoints. | 0.5 | 🟢 | FastAPI-generated regardless |
 | **Subtotal** | | | **~29.75h** *(was 33.5h)* | | vs. **32h** scheduled (Day 4-7, 4 days × 8h) |
 
@@ -620,12 +620,12 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - ✅ Done when: HR clicks "send report" and the candidate (pass or fail) receives the file + summary via Telegram automatically — **verified end-to-end with a real live Telegram send** (user confirmed): PDF generation checked visually first (correct Indonesian layout, teal panel headers, all report sections present and readable — not just "produces bytes"); `send-report` before a decision correctly 400s; after recording a decision, a real PDF was generated, saved to `storage/reports/`, and delivered via real `sendDocument` + `sendMessage` calls to the user's actual Telegram chat — user confirmed both the file and summary message arrived correctly
 
 ### Orchestration & contract
-- [ ] **T15. Async wiring + error handling + caching.** — *Depends: T4–T14 · Flow: all*
-  - [ ] FastAPI async orchestration across stages
-  - [ ] Retries on LLM/STT calls
-  - [ ] Caching via Area4 T3
-  - [ ] **⚠️ Do NOT replicate Tahap 2's exception handler (2026-07-12 audit finding):** its global `@app.exception_handler(Exception)` returns raw Python tracebacks as JSON in 500 responses — a real security anti-pattern. Ours must return a generic error message, log the traceback server-side only
-  - ✅ Done when: full pipeline runs end-to-end without manual step-poking; a forced 500 never leaks a stack trace to the client
+- [x] **T15. Async wiring + error handling + caching. — DONE 2026-07-13.** — *Depends: T4–T14 · Flow: all*
+  - [x] FastAPI async orchestration across stages — already in place: `interview_answers`/`candidates` routers use `async def` where file I/O benefits from it; each stage (T4-T14) already calls the next synchronously within a request, no separate job queue needed at this scale
+  - [x] Retries on LLM/STT calls — `backend/services/retry.py::with_retry()` decorator (3 attempts, linear backoff), applied to `llm_client.py::_create_completion()` and `stt_client.py::_create_transcription()` — wraps only the actual network call, not the surrounding cache logic
+  - [x] Caching via Area4 T3 — already built (T3), unaffected by the retry wrapper (verified a real LLM call still succeeds after wrapping)
+  - [x] **⚠️ Do NOT replicate Tahap 2's exception handler (2026-07-12 audit finding):** its global `@app.exception_handler(Exception)` returns raw Python tracebacks as JSON in 500 responses — a real security anti-pattern. Ours must return a generic error message, log the traceback server-side only — `backend/main.py`: two handlers — `http_exception_handler` (passes through our own intentional `HTTPException`s with their real, safe detail) and `unhandled_exception_handler` (catches everything else, logs the full traceback server-side via `logger.exception()`, returns only a generic message + a correlation `error_id`)
+  - ✅ Done when: full pipeline runs end-to-end without manual step-poking; a forced 500 never leaks a stack trace to the client — **verified**: retry decorator tested directly — succeeds after 2 transient failures on the 3rd attempt, and correctly exhausts + raises after all attempts fail; exception handlers tested directly — a forced `RuntimeError` containing deliberately sensitive-looking text returned only `{"detail": "An unexpected error occurred.", "error_id": "..."}`, no traceback or internal detail in the response body; a real `HTTPException(404, "Job not found")` correctly passed through with its actual detail intact
 
 - [ ] **T16. Publish OpenAPI contract for frontend.** — *Depends: T15 · Flow: integration*
   - [ ] Ensure endpoints are typed

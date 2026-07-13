@@ -3,6 +3,7 @@ import logging
 from openai import OpenAI
 
 from config import STT_API_KEY, STT_BASE_URL, STT_LANGUAGE, STT_MODEL, STT_PROVIDER
+from services.retry import with_retry
 
 logger = logging.getLogger("stt_client")
 
@@ -11,15 +12,16 @@ if STT_PROVIDER in ("groq", "openai"):
     _client = OpenAI(api_key=STT_API_KEY, base_url=STT_BASE_URL)
 
 
+@with_retry(max_attempts=3, backoff_seconds=1.0)
+def _create_transcription(file):
+    return _client.audio.transcriptions.create(model=STT_MODEL, language=STT_LANGUAGE, file=file)
+
+
 def transcribe(audio_path: str) -> str:
     """Transcribe a webm audio file to text, per STT_PROVIDER (groq | openai | local)."""
     if STT_PROVIDER in ("groq", "openai"):
         with open(audio_path, "rb") as f:
-            response = _client.audio.transcriptions.create(
-                model=STT_MODEL,
-                language=STT_LANGUAGE,
-                file=f,
-            )
+            response = _create_transcription(f)
         logger.info("transcribed provider=%s model=%s file=%s", STT_PROVIDER, STT_MODEL, audio_path)
         return response.text
 
