@@ -23,6 +23,12 @@ from routers import (
 )
 from services.telegram_poller import run_telegram_poller
 
+# Python's root logger defaults to WARNING with no handler configured, which was
+# silently swallowing every logger.info() call across the whole app (found while
+# verifying Area 1 T8's Telegram poller — its "linked chat_id" log line never
+# appeared despite the underlying DB write succeeding correctly).
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
 logger = logging.getLogger("gaskeun")
 
 app = FastAPI(title="GaskeunKerja for Business — MVP")
