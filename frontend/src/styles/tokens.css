@@ -1,0 +1,74 @@
+/* Enterprise Trust design tokens — locked 2026-07-12 (see planning/execution-checklist.md Area 1) */
+
+:root {
+  /* Brand colors */
+  --color-teal-900: #0a4a3f;
+  --color-teal-700: #0f6b5c;
+  --color-teal-500: #1a8a76;
+  --color-gold-700: #c98a2c;
+  --color-gold-500: #dba54a;
+
+  /* Neutrals — teal-tinted paper, not pure white */
+  --color-paper: #f4f7f6;
+  --color-surface: #ffffff;
+  --color-border: #d7e2df;
+  --color-ink-900: #10201d;
+  --color-ink-700: #33453f;
+  --color-ink-500: #5c6f69;
+
+  /* Status */
+  --color-success: #1a8a4c;
+  --color-warning: #c98a2c;
+  --color-danger: #b3392c;
+  --color-info: #2c6fb3;
+
+  /* Typography */
+  --font-heading: Georgia, "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 48px;
+
+  /* Radii / shadows */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --shadow-card: 0 1px 3px rgba(16, 32, 29, 0.08), 0 1px 2px rgba(16, 32, 29, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-paper);
+  color: var(--color-ink-900);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+  color: var(--color-ink-900);
+  font-weight: 700;
+  margin: 0;
+}
+
+a {
+  color: var(--color-teal-700);
+}

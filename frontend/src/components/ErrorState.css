@@ -1,0 +1,15 @@
+.error-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: rgba(179, 57, 44, 0.06);
+  border: 1px solid rgba(179, 57, 44, 0.25);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+}
+
+.error-state-message {
+  font-size: 14px;
+}

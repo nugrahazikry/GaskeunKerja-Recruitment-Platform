@@ -691,7 +691,7 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 | Task | Status | Summary | Est. hours | Difficulty | Note |
 |---|---|---|---|---|---|
 | T1. Audit Tahap 2 frontend | ✅ **Final result** | Confirmed no React code exists to reuse — only the visual language, already captured in the design artifacts. | 0.5 | 🟢 | |
-| T2. Design system | 📝 **To do** | Port the locked "Enterprise Trust" visual direction into real React components. | 3.0 | 🟡 | Design locked/previewed 2026-07-12, not yet built in code |
+| T2. Design system | ✅ **Final result** | 9 shared components built and verified via a real Playwright screenshot — correct teal/gold/Georgia-serif styling, zero console errors. | 3.0 | 🟡 | Design locked/previewed 2026-07-12 |
 | T3. Vite structure + route guards | 🔄 **In progress** | Vite scaffold done 2026-07-13; route guards not started. | 1.5 | 🟡 | |
 | T4. HR login | 📝 **To do** | Recruiter-only login; no candidate account exists. | 1.0 | 🟢 | |
 | T4b. JD CRUD UI | 📝 **To do** | Structured-field create/edit/delete/list for job descriptions. | 2.5 | 🟡 | |
@@ -709,10 +709,11 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
   - [ ] Extract the reusable **visual language only**: colors (`#102b4f` navy, `#4f46e5` indigo, teal/success/warning/danger tokens), Inter font, card/badge conventions — see the published design-comparison artifact for the faithful recreation
   - ✅ Done when: written verdict — zero code reuse, visual-language reuse only
 
-- [ ] **T2. Minimal design system (React + Vite, built fresh) — Enterprise Trust LOCKED.** — *Depends: T1*
-  - [ ] Direction confirmed 2026-07-12: **Enterprise Trust** — teal `#0f6b5c`, gold `#c98a2c`, Georgia serif headings, teal-tinted paper `#f4f7f6`, top-nav dossier layout. Reference: the 8-page artifact above (tokens/components already prototyped there — port the CSS approach into React)
-  - [ ] Shared components: tables, cards, score badges, forms, status pills (T5 tier), **skeleton loader, inline error+retry, empty-state, spinner-with-label** (all used by T9)
-  - ✅ Done when: shared components exist (not a full system), built in React matching the locked direction
+- [x] **T2. Minimal design system (React + Vite, built fresh) — Enterprise Trust LOCKED. — DONE 2026-07-13.** — *Depends: T1*
+  - [x] Direction confirmed 2026-07-12: **Enterprise Trust** — teal `#0f6b5c`, gold `#c98a2c`, Georgia serif headings, teal-tinted paper `#f4f7f6` — `frontend/src/styles/tokens.css` (CSS custom properties: colors, typography, spacing scale, radii/shadow). Top-nav dossier layout deferred to **T3** (page-shell/routing structure, not a component-library concern)
+  - [x] Shared components: tables, cards, score badges, forms, status pills (T5 tier), **skeleton loader, inline error+retry, empty-state, spinner-with-label** (all used by T9) — `frontend/src/components/`: `Card`, `Button` (primary/secondary/danger), `Badge` (neutral/success/warning/danger/info tones, used for T5 tier pills), `Table`, `TextField`/`TextAreaField`, `SkeletonLoader`, `ErrorState` (with retry), `EmptyState`, `SpinnerWithLabel` — all 9 components built
+  - [x] Removed default Vite boilerplate (`App.css`, `index.css`, react/vite logo assets) — replaced with the real token file
+  - ✅ Done when: shared components exist (not a full system), built in React matching the locked direction — **verified visually via a real Playwright screenshot** (installed `playwright` + Chromium, since no browser-automation tool was otherwise available on this machine): booted the real Vite dev server, rendered a preview page exercising every component, screenshot confirms correct teal/gold/Georgia-serif Enterprise Trust styling, zero console errors. Screenshot showed one demo-data sloppiness (both table rows showed the same badge tone) — a throwaway preview-page bug, not a component bug, harmless since this file gets replaced by real routing in T3+
 
 - [ ] **T3. Vite structure + route guards.** — *Depends: none*
   - [ ] Routing + minimal state
