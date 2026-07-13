@@ -91,14 +91,14 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 > built, or any recorder that outputs webm/opus) — real distinct audio, not a duplicated file, no
 > new TTS dependency.
 
-- [ ] **T1. Lock the local-first stack + versions.** — *Depends: none · Flow: infra*
+- [x] **T1. Lock the local-first stack + versions. — DONE 2026-07-13.** — *Depends: none · Flow: infra*
   - [x] **Folders scaffolded 2026-07-13**: `backend/` (routers/services/models/db/tests, each a Python package) + `frontend/` (real Vite React-TS app via `npm create vite@5`)
   - [x] Pin frontend deps: React 18.3 + Vite 5.4 + TypeScript 5.6, generated in `frontend/package.json` by the scaffolder
   - [x] **Node upgraded 2026-07-13**: was 18.16 (2023), now **22.23.1** via freshly reinstalled `nvm-windows` (first install attempt silently removed the old Node without completing its own setup — required a clean admin-mode reinstall). `frontend/` deps reinstalled clean under Node 22 — **0 engine warnings** (previously 2). Confirmed `npm run dev` boots Vite on port 5173, matching `.env`'s `FRONTEND_PORT`
-  - [ ] Pin backend deps: draft `requirements.txt` written (fastapi, uvicorn, sqlalchemy, psycopg, qdrant-client, openai, pyjwt, pypdf, Pillow, httpx) — **not yet `pip install`-ed or version-verified to actually resolve together**
-  - [ ] Pin PDF deps: `pypdf` + `Pillow` already in the draft `requirements.txt` above — **no OCR binary needed** (replicated from NalarX: vision-LLM captioning instead of Tesseract; see Area 3 T5 note)
-  - [ ] Commit exact versions — no floating `latest` (frontend done via lockfile; backend still needs a `pip freeze` pass after first install)
-  - ✅ Done when: a fresh clone documents exact versions across `requirements.txt` + `package.json` — **frontend done, backend pending first real `pip install`**
+  - [x] **Backend deps installed 2026-07-13**: created `backend/.venv`, ran `pip install -r requirements.txt` — all top-level pins resolved with **zero conflicts**, no forced version changes. Full transitive tree frozen to `backend/requirements.lock.txt` (`pip freeze`, 42 packages)
+  - [x] Pin PDF deps: `pypdf` + `Pillow` installed as part of the above — **no OCR binary needed** (replicated from NalarX: vision-LLM captioning instead of Tesseract; see Area 3 T5 note)
+  - [x] Commit exact versions — `requirements.txt` (top-level pins) + `requirements.lock.txt` (full resolved tree) + `frontend/package-lock.json`, no floating `latest` anywhere
+  - ✅ Done when: a fresh clone documents exact versions across `requirements.txt` + `package.json` — **verified**: `uvicorn main:app` booted clean, `GET /health` returned `200 {"status":"ok"}`
 
 - [ ] **T2. Docker Compose (DBs) + run modes.** — *Depends: T1 · Flow: infra*
   - [ ] Compose services: `postgres` + `qdrant` with named volumes + healthchecks
@@ -808,7 +808,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 
 | Task | Status | Est. hours | Difficulty | Note |
 |---|---|---|---|---|
-| T1 Lock stack + versions | 🟡 In progress — folders + frontend deps done, backend deps not installed | 1.0 | 🟢 | Boilerplate |
+| T1 Lock stack + versions | 🟢 Done 2026-07-13 | 1.0 | 🟢 | Boilerplate |
 | T2 Docker Compose + run modes | ⚪ Not started | 2.0 | 🟢 | Standard Compose work; Tahap 2's compose has no DB services, minimal reference value |
 | T3 LLM client + caching + bypass | ⚪ Not started (API access verified, no client module yet) | 2.5 | 🟡 | Cache-key design + new bypass param — Tahap 2 uses Gemini/LangChain, zero code transfers |
 | T3b STT client (Groq) | ⚪ Not started (Groq STT call verified working, no client module yet) | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
