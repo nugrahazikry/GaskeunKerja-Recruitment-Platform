@@ -3,10 +3,11 @@ from fastapi import FastAPI
 import models  # noqa: F401  (registers all models on Base.metadata)
 from db.session import create_all
 from db.vector_store import create_collections
-from routers import auth
+from routers import auth, jobs
 
 app = FastAPI(title="GaskeunKerja for Business — MVP")
 app.include_router(auth.router)
+app.include_router(jobs.router)
 
 
 @app.on_event("startup")

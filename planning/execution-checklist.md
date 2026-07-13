@@ -484,7 +484,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | T1. Audit Tahap 2 backend | **Final result** | Full 10-point code audit done — keep/rebuild/drop verdict written into `CLAUDE.md`. |
 | T2. Project structure | **Final result** | Layout already existed from Area 4 scaffolding — confirmed uvicorn boots and `/health` passes. |
 | T3. Auth | **Final result** | JWT login + token-link isolation verified end-to-end via real HTTP requests. |
-| T4. JD full CRUD + extraction | **To do** | Structured-field CRUD + Flash-model competency extraction, soft-delete only. |
+| T4. JD full CRUD + extraction | **Final result** | Full CRUD verified end-to-end with real SumoPod extraction calls; company isolation confirmed via 404, not leakage. |
 | T5. CV parse + PII redaction | **To do** | Text/vision-fallback extraction merged, then mandatory PII redaction before any LLM call — highest-difficulty task in the plan. |
 | T6. Embeddings → Qdrant | **To do** | Embed candidate profiles + JD competencies, upsert to Qdrant. |
 | T7. Matching engine | **To do** | Weighted semantic + competency-graph score, explainable per-competency detail. |
@@ -520,14 +520,14 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - ✅ Done when: only HR can log in; a candidate token opens only its own interview session; no candidate account exists — **verified end-to-end via real HTTP**: seeded a real HR user, `POST /auth/login` with correct credentials returned a working JWT; wrong password and unknown email both correctly 401. Verified the `get_current_hr` guard directly: valid token passes, missing "Bearer " prefix rejected, tampered/malformed token rejected. Verified candidate token isolation: two candidates' tokens are distinct and each resolves to exactly its own row; an unknown/guessed token resolves to nothing. All test rows cleaned up
 
 ### Ingestion & extraction
-- [ ] **T4. JD full CRUD + competency extraction (Flash).** — *Depends: DB T2, Area4 T3 · Flow: 1→2*
-  - [ ] `POST /jobs` — accepts **structured fields** (title, responsibilities, requirements, qualifications; see Area 1 T4b), scoped to `company_id`
-  - [ ] `GET /jobs` — list JDs for the logged-in HR's company
-  - [ ] `GET /jobs/{id}` — view one
-  - [ ] `PUT /jobs/{id}` — edit (re-triggers competency extraction)
-  - [ ] `DELETE /jobs/{id}` — **soft-delete (resolved 2026-07-12)**: sets `status='closed'`, no SQL `DELETE`; JD drops from the active list but all linked candidates/interviews/decisions/audit rows stay intact
-  - [ ] On create/update: Deepseek Flash → structured required competencies → persist to `jd_competencies`
-  - ✅ Done when: HR can create/list/edit/close JDs; posting/editing the demo JD yields structured competencies in DB; "delete" never throws an FK error or drops audit history
+- [x] **T4. JD full CRUD + competency extraction (Flash). — DONE 2026-07-13.** — *Depends: DB T2, Area4 T3 · Flow: 1→2*
+  - [x] `POST /jobs` — accepts **structured fields** (title, responsibilities, requirements, qualifications; see Area 1 T4b), scoped to `company_id` — `backend/routers/jobs.py`
+  - [x] `GET /jobs` — list JDs for the logged-in HR's company
+  - [x] `GET /jobs/{id}` — view one — scoped via `_get_scoped_job()`, returns 404 (not a leaking 403) for another company's job
+  - [x] `PUT /jobs/{id}` — edit (re-triggers competency extraction)
+  - [x] `DELETE /jobs/{id}` — **soft-delete (resolved 2026-07-12)**: sets `status='closed'`, no SQL `DELETE`; JD drops from the active list but all linked candidates/interviews/decisions/audit rows stay intact
+  - [x] On create/update: Deepseek Flash → structured required competencies → persist to `jd_competencies` — `backend/services/extract.py::extract_competencies()`; update path deletes old competency rows first, then re-extracts fresh
+  - ✅ Done when: HR can create/list/edit/close JDs; posting/editing the demo JD yields structured competencies in DB; "delete" never throws an FK error or drops audit history — **verified end-to-end via real HTTP + real SumoPod calls**: created a Web Developer JD → Flash correctly extracted 4 competencies (HTML/CSS/JavaScript/Frontend Framework); edited the JD's requirements to backend-focused content → re-extraction correctly replaced them with Node.js/PostgreSQL; list/get both correctly scoped to the JD's own company; soft-deleted → `status='closed'` in DB, row and its competency rows both still present (no FK error, no data loss); **cross-company isolation verified**: a second company's HR got `404` on the job (not data leakage) and an empty list. All test data cleaned up
 
 - [ ] **T5. CV upload + parse — text + vision-LLM caption fallback + PII redaction.** — *Depends: DB T4, Area4 T3, Area4 T3d · Flow: 3*
   - [ ] **Tahap 2 reuse (2026-07-12 audit):** `backend/config/utils.py::read_file_node()` has a working `pdfplumber`-based text-extraction + empty-page-detection implementation — read it and adapt the extraction technique directly; it validates the "extract → detect empty → fall back" approach this task also uses. PII redaction, SumoPod integration, and structured-output validation below are still new work (Tahap 2's own JSON parsing is regex+`json.loads` with silent fallback — explicitly a pattern to avoid, not copy)
@@ -926,7 +926,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | T1 Audit Tahap 2 backend | 🟢 Done 2026-07-12 | **0.25** ↓ *(was 1.0)* | 🟢 | **Effectively done** — this session's deep audit (10-point code inventory) already produced the "keep/rebuild/drop" verdict this task asks for; remaining work is just formalizing it |
 | T2 Project structure | 🟢 Done (already existed from Area 4 scaffolding) | 1.0 | 🟢 | Tahap 2's structure is a LangGraph agent pipeline, not our routers/services pattern — not directly reusable |
 | T3 Auth (JWT + token link) | 🟢 Done 2026-07-13 | 2.0 | 🟡 | **Confirmed** (not just "verify"): Tahap 2 has zero auth code — fully from scratch |
-| T4 JD full CRUD + extraction + soft-delete | ⚪ Not started | 3.0 | 🟡 | No JD/employer concept exists in Tahap 2 (jobseeker-focused app) |
+| T4 JD full CRUD + extraction + soft-delete | 🟢 Done 2026-07-13 | 3.0 | 🟡 | No JD/employer concept exists in Tahap 2 (jobseeker-focused app) |
 | T5 CV parse (text + vision fallback + PII redaction) | ⚪ Not started | **3.75** ↓ *(was 5.0)* | 🔴 | **Tahap 2 reuse**: the `pdfplumber` text-extraction + empty-page-detection pattern is validated working code — adopt it directly for the text-extraction step. Still 🔴: PII redaction, SumoPod integration, and proper (non-regex) structured-output validation are all new work Tahap 2 doesn't have (its own JSON parsing is explicitly fragile — a pattern to avoid, not copy) |
 | T6 Embeddings → Qdrant | ⚪ Not started (embeddings API access verified 2026-07-13) | 1.5 | 🟡 | No embeddings code in Tahap 2 |
 | T7 Matching engine (semantic + graph + formula) | ⚪ Not started | 3.0 | 🟠 | Tahap 2's "matching" is a token-overlap heuristic — a different technique entirely, doesn't transfer to our semantic+graph approach |
