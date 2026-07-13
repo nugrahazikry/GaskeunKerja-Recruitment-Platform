@@ -6,6 +6,7 @@ import { ErrorState } from "./ErrorState";
 export function AudioPlayer({ url }: { url: string }) {
   const [state, setState] = useState<"loading" | "error" | "ready">("loading");
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,9 +32,11 @@ export function AudioPlayer({ url }: { url: string }) {
       cancelled = true;
       if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
     };
-  }, [url]);
+  }, [url, reloadKey]);
 
   if (state === "loading") return <SpinnerWithLabel label="Memuat audio..." />;
-  if (state === "error") return <ErrorState message="Gagal memuat audio." />;
+  if (state === "error") {
+    return <ErrorState message="Gagal memuat audio." onRetry={() => setReloadKey((k) => k + 1)} />;
+  }
   return <audio controls src={objectUrl!} style={{ width: "100%" }} />;
 }

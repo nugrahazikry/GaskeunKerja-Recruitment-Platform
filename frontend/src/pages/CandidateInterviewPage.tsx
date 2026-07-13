@@ -32,8 +32,10 @@ function InterviewFlow({ candidateId, token }: { candidateId: number; token: str
 
   const sessionId = useRef(`web-${Date.now()}`);
   const recorder = useAudioRecorder();
+  const [questionsReloadKey, setQuestionsReloadKey] = useState(0);
 
   useEffect(() => {
+    setLoadError(false);
     api
       .GET("/candidates/{candidate_id}/questions", { params: { path: { candidate_id: candidateId }, query: { token } } })
       .then(({ data, error }) => {
@@ -43,7 +45,7 @@ function InterviewFlow({ candidateId, token }: { candidateId: number; token: str
         }
         setQuestions(data);
       });
-  }, [candidateId, token]);
+  }, [candidateId, token, questionsReloadKey]);
 
   async function handleSubmit() {
     if (!recorder.audioBlob || recorder.elapsedSeconds === 0) {
@@ -81,7 +83,12 @@ function InterviewFlow({ candidateId, token }: { candidateId: number; token: str
   }
 
   if (loadError) {
-    return <ErrorState message="Gagal memuat pertanyaan wawancara." />;
+    return (
+      <ErrorState
+        message="Gagal memuat pertanyaan wawancara."
+        onRetry={() => setQuestionsReloadKey((k) => k + 1)}
+      />
+    );
   }
   if (!questions) {
     return <SpinnerWithLabel label="Memuat pertanyaan..." />;

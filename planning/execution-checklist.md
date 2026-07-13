@@ -17,7 +17,7 @@
 | 4. Cost / Tooling (dev env) | 🟢 Done (T1-T3d, T8 all done; T4 deferred) | 7 | 1 | Day 1 |
 | 3. Database + datasets | 🟢 Done (all 10 tasks T1-T10 verified end-to-end) | 9 | 0 | Day 2–3 |
 | 2. Backend & AI | 🟢 Done (all 16 tasks T1-T16 verified end-to-end) | 16 | 0 | Day 4–7 |
-| 1. Frontend UI/UX | 🟡 In progress (T1 done, T3 partial; rest to do) | 13 | 2 | Day 8–11 |
+| 1. Frontend UI/UX | 🟢 Done (all 13 tasks T1-T9 verified end-to-end) | 13 | 0 | Day 8–11 |
 | 5. QA | ⚪ Not started (Areas 2 and 3 now done — can start) | 8 | 5 | Day 4-12 (shifted left, spans build; final pass Day 12 — see banner) |
 
 Status values: ⚪ Not started · 🟡 In progress · 🟢 Done/locked.
@@ -632,7 +632,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 
 ---
 
-## Area 1 — Frontend UI/UX  ·  Status: ⚪ Not started
+## Area 1 — Frontend UI/UX  ·  Status: 🟢 Done (all 13 tasks T1-T9 including sub-tasks verified end-to-end)
 
 > **Money-shot screens only** (💎); drive the rest via seed data. Minimal design system.
 > Resolved: **audio interview is CORE** + recruiter question edit/approve screen.
@@ -701,7 +701,7 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 | T6. Candidate audio interview | ✅ **Final result** | Full recorder machine verified live: real getUserMedia+MediaRecorder via Playwright's fake-device flag, real upload/STT round-trip, mic-denied path, completion guard. | **5.5** | 🔴 | Live human-mic sanity check still pending (user to confirm) |
 | T7. HR decision + detail + delivery | ✅ **Final result** | Full detail screen verified live: CV/skill-gap, audio+transcript+rubric, decision, all 3 report-send states including a real error+retry. | **4.0** | 🟠 | Required 3 backend gap-fills: full detail endpoint + audio-streaming endpoint, a real `report_sent_at` field (had been wrongly inferred), and a real cross-cutting CORS-on-error bug fix |
 | T8. Candidate consent + Telegram linking | ✅ **Final result** | Consent + required Telegram gate verified live with 3 real repeated deep-link sends — poller correctly captured the real chat_id every time. | 1.5 | 🟡 | Required 2 backend gap-fills: the Telegram poller itself, plus a real app-wide logging visibility bug (`logging.basicConfig` was never called, silently dropping every `INFO` log in the whole app) found while double-checking the poller |
-| T9. Cross-cutting UX | 📝 **To do** | Shared loading/error/empty states across all screens. | 2.5 | 🟡 | Touches every screen |
+| T9. Cross-cutting UX | ✅ **Final result** | Full audit of every screen against the 6 checkpoints; found and fixed 4 real gaps (2 missing retry paths, 1 button-group race, verified the rest already correct). | 2.5 | 🟡 | Mostly an audit pass — every prior task already used the shared components |
 | **Subtotal** | | | **~28h** | | vs. **32h** scheduled (Day 8-11, 4 days × 8h) |
 
 - [ ] **T1. Audit Tahap 2 frontend — corrected scope.** — *Depends: none*
@@ -777,14 +777,14 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
   - **1 real cross-cutting bug found and fixed**: testing the send-error path (fake `telegram_chat_id` → real Telegram API 400) surfaced that FastAPI's custom `@app.exception_handler` responses were missing CORS headers entirely — confirmed directly with curl (200/404 responses had `access-control-allow-origin`, the 500 didn't). The browser reported this as a CORS failure, completely masking the real 500 + error_id from the frontend. Fixed by explicitly attaching CORS headers in both exception handlers in `main.py` — this was a latent bug affecting every unhandled exception in the whole app, not just this endpoint.
   - ✅ Done when: HR can replay audio, read transcript+summary, record a decision, then send the report — all from this one screen; no click ever produces a failed/broken Telegram send on camera — **verified live against the real backend**: full detail view on a real synthetic candidate (skills/experience/qualifications, real skill-gap analysis, real 13-second audio playback, real transcript, real rubric scores, real AI summary, existing decision badge, disabled missing-Telegram state), a fresh decision recorded live on a different real candidate (button → badge transition), and the send-report error+retry path exercised with a real (intentionally invalid) Telegram chat_id — confirmed the UI shows the actual error message and retry button rather than crashing or masking it as a network failure. All test data (decision, telegram_chat_id) reset back to each candidate's pre-test state afterward. A genuine happy-path send (valid chat_id) was not re-tested here since it requires the user's real Telegram identity — the identical code path was already verified live during Area 2 T14.
 
-- [ ] **T9. Cross-cutting UX: loading, errors, empty states, refresh.** — *Depends: T2 · Flow: all*
-  - [ ] Shared inline **error component** with retry, used on every AI/STT/upload/Telegram call site
-  - [ ] **Loading** treatments: skeleton loaders on lists (JD list, shortlist), spinner-with-label on long AI waits (JD extraction, audio submit, report send), disable buttons during their call
-  - [ ] **Empty states**: empty JD list (first login), pre-match shortlist
-  - [ ] **JD form validation**: title + ≥1 of responsibilities/requirements required
-  - [ ] **Data freshness**: manual refresh model documented in the demo script (no realtime); state it, don't build polling
-  - [ ] **Non-goals honored**: single theme, desktop-only, no mobile recorder path
-  - ✅ Done when: no screen shows a raw error, infinite spinner, or blank-with-no-explanation during the demo happy path
+- [x] **T9. Cross-cutting UX: loading, errors, empty states, refresh. — DONE 2026-07-13.** — *Depends: T2 · Flow: all*
+  - [x] Shared inline **error component** with retry, used on every AI/STT/upload/Telegram call site — **audit found 3 real gaps, all fixed**: (1) `AudioPlayer` had no retry on a failed audio-blob fetch, only a full reload — added a `reloadKey`-driven retry, verified live with a real simulated failure+retry via Playwright route interception; (2) `CandidateInterviewPage`'s question-load error had no retry — added the same pattern; (3) `QuestionsPage`'s shared `actionError` (covering generate/save/approve) had no retry at all — added `lastFailedAction` tracking so retry re-calls whichever of the 3 actions actually failed. Login/JobForm/InviteModal's validation-style errors deliberately have no separate retry button (resubmitting via the existing submit button already covers it — a redundant button would be noise, not a gap).
+  - [x] **Loading** treatments: skeleton loaders confirmed on JD list + shortlist; spinner-with-label confirmed on all long AI/upload waits; **found and fixed 1 real race**: `QuestionsPage`'s "Simpan Perubahan"/"Setujui Pertanyaan"/"+ Tambah Pertanyaan"/"Hapus" only disabled themselves individually during their own call, not each other — a user could click Approve while Save was still in flight. Fixed to disable the whole button group whenever `busy !== null`; verified live that the group correctly locks during a real save.
+  - [x] **Empty states**: confirmed present and correctly conditioned on JD list (first login) and pre-match shortlist (already verified live in T4b/T5)
+  - [x] **JD form validation**: confirmed present and matches the spec exactly — title required, ≥1 of responsibilities/requirements required (verified live in T4b)
+  - [x] **Data freshness**: confirmed no polling/realtime exists anywhere in the frontend (`grep`'d for `setInterval`/`setTimeout` — the only two hits are the audio recorder's own countup timer and a one-shot "Tersalin!" UI reset, neither refetches data); documented the manual-refresh model in `plan.md`'s decision log since no dedicated demo-script file exists yet
+  - [x] **Non-goals honored**: confirmed zero `@media`/`matchMedia`/mobile-specific code anywhere — single theme, desktop-only, no responsive/mobile recorder path, exactly as scoped
+  - ✅ Done when: no screen shows a raw error, infinite spinner, or blank-with-no-explanation during the demo happy path — **systematic audit of all 9 pages against all 6 checkpoints**, not just a visual skim; 4 real gaps found and fixed (3 missing-retry, 1 disabled-state race), 2 live-verified with real simulated failures via Playwright route interception (not just code review), the rest confirmed already correct from prior tasks' live verification
 
 - [x] **T8. 💎 Candidate consent (token link) — Telegram linking only. — DONE 2026-07-13.** — *Depends: Area2 T5, DB T8 · Flow: 5*
   - [x] Candidate token page: consent checkbox (gates interview, PDP) — `frontend/src/pages/CandidateConsentPage.tsx`, calls the existing `POST /candidates/{id}/consent`

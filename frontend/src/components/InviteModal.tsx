@@ -20,6 +20,7 @@ export function InviteModal({
   const [error, setError] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   function buildLink(token: string) {
     return `${window.location.origin}/candidate/${candidateId}/interview?token=${token}`;
@@ -58,7 +59,7 @@ export function InviteModal({
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candidateId, alreadyInvited]);
+  }, [candidateId, alreadyInvited, reloadKey]);
 
   async function handleCopy() {
     if (!link) return;
@@ -70,7 +71,7 @@ export function InviteModal({
   return (
     <Modal title={alreadyInvited ? "Link Undangan" : "Undang ke Interview"} onClose={onClose}>
       {loading && <SpinnerWithLabel label="Memuat link undangan..." />}
-      {error && <ErrorState message={error} />}
+      {error && <ErrorState message={error} onRetry={() => setReloadKey((k) => k + 1)} />}
       {!loading && link && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <p>Bagikan link ini ke kandidat secara manual (misalnya via WhatsApp atau email):</p>

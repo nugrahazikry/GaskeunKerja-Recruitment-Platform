@@ -30,6 +30,7 @@ export function QuestionsPage() {
   const [drafts, setDrafts] = useState<DraftItem[]>([]);
   const [busy, setBusy] = useState<null | "generate" | "save" | "approve">(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [lastFailedAction, setLastFailedAction] = useState<null | "generate" | "save" | "approve">(null);
 
   function load() {
     setState({ status: "loading" });
@@ -59,8 +60,10 @@ export function QuestionsPage() {
     setBusy(null);
     if (error || !data) {
       setActionError("Gagal membuat pertanyaan.");
+      setLastFailedAction("generate");
       return;
     }
+    setLastFailedAction(null);
     setState({ status: "ready", questions: data });
     setDrafts(data.map((q) => ({ id: q.id, question_text: q.question_text, order_index: q.order_index })));
   }
@@ -87,8 +90,10 @@ export function QuestionsPage() {
     setBusy(null);
     if (error || !data) {
       setActionError("Gagal menyimpan pertanyaan.");
+      setLastFailedAction("save");
       return;
     }
+    setLastFailedAction(null);
     setState({ status: "ready", questions: data });
     setDrafts(data.map((q) => ({ id: q.id, question_text: q.question_text, order_index: q.order_index })));
   }
@@ -102,9 +107,17 @@ export function QuestionsPage() {
     setBusy(null);
     if (error || !data) {
       setActionError("Gagal menyetujui pertanyaan.");
+      setLastFailedAction("approve");
       return;
     }
+    setLastFailedAction(null);
     setState({ status: "ready", questions: data });
+  }
+
+  function retryLastAction() {
+    if (lastFailedAction === "generate") handleGenerate();
+    else if (lastFailedAction === "save") handleSave();
+    else if (lastFailedAction === "approve") handleApprove();
   }
 
   return (
@@ -150,24 +163,24 @@ export function QuestionsPage() {
                   />
                 </div>
                 {!isApproved && (
-                  <Button variant="danger" onClick={() => removeDraft(i)}>
+                  <Button variant="danger" onClick={() => removeDraft(i)} disabled={busy !== null}>
                     Hapus
                   </Button>
                 )}
               </div>
             ))}
 
-            {actionError && <ErrorState message={actionError} />}
+            {actionError && <ErrorState message={actionError} onRetry={retryLastAction} />}
 
             {!isApproved && (
               <div style={{ display: "flex", gap: 12 }}>
-                <Button variant="secondary" onClick={addDraft}>
+                <Button variant="secondary" onClick={addDraft} disabled={busy !== null}>
                   + Tambah Pertanyaan
                 </Button>
-                <Button variant="primary" onClick={handleSave} disabled={busy === "save"}>
+                <Button variant="primary" onClick={handleSave} disabled={busy !== null}>
                   {busy === "save" ? "Menyimpan..." : "Simpan Perubahan"}
                 </Button>
-                <Button variant="primary" onClick={handleApprove} disabled={busy === "approve"}>
+                <Button variant="primary" onClick={handleApprove} disabled={busy !== null}>
                   {busy === "approve" ? "Menyetujui..." : "Setujui Pertanyaan"}
                 </Button>
               </div>
