@@ -358,7 +358,7 @@ scannable index of what exists, used by T1-T3.
 | T5. Repository layer | **Final result** | Generic Repository class + one instance per entity, verified with real get/list/create calls. |
 | T6. Competency framework `[content]` | **Final result** | 10 competencies curated for Data Analyst with level descriptions + verified relations, loaded via an idempotent seed script. |
 | T7. Resource library `[content]` | **Final result** | 30 resources (3/competency) curated and verified — every competency has full coverage. |
-| T8. Consent + audit write paths | **To do** | Audit-log helper + consent gate enforcement. |
+| T8. Consent + audit write paths | **Final result** | Audit-log helper + consent gate verified — blocks without consent, allows once recorded. |
 | T9. Retention policy | **To do** | Light retention rule scoped to the 1 live candidate's real consented audio. |
 | T10. Seed data | **To do** | Kaggle-sourced, curated, anonymized, tiered 30-candidate seed set — the single biggest time sink in the plan. |
 
@@ -404,11 +404,11 @@ scannable index of what exists, used by T1-T3.
   - [x] Enough to assemble a deterministic report — same loader as T6, `backend/seed/load_competency_framework.py`
   - ✅ Done when: every competency has ≥1 mapped resource; report can select/order from it — **verified**: `LEFT JOIN` query confirms all 10 competencies have exactly 3 resources each, none with zero
 
-- [ ] **T8. Consent + audit write paths.** — *Depends: T2 · Flow: 5, 6*
-  - [ ] Helper writes an `audit_log` row at every AI decision point + candidate-data access
-  - [ ] Consent row gates interview processing
-  - [ ] Consent is only ever written for candidates who actually go through the interview-gate step (the 1 live demo candidate) — **seed-only candidates get no `consent_records` row** (resolved 2026-07-12: they never reach the gate, so a record would be fabricated, not real)
-  - ✅ Done when: each AI stage leaves an audit row; no interview processing without consent
+- [x] **T8. Consent + audit write paths. — DONE 2026-07-13.** — *Depends: T2 · Flow: 5, 6*
+  - [x] Helper writes an `audit_log` row at every AI decision point + candidate-data access — `backend/services/audit.py::log()`
+  - [x] Consent row gates interview processing — `backend/services/consent.py`: `has_consent()`, `require_consent()` (raises `ConsentRequiredError`, the 403 trigger for Area 2 T10's endpoint), `record_consent()`
+  - [x] Consent is only ever written for candidates who actually go through the interview-gate step (the 1 live demo candidate) — **seed-only candidates get no `consent_records` row** (resolved 2026-07-12: they never reach the gate, so a record would be fabricated, not real) — enforced by design: nothing calls `record_consent()` except the real consent-gate flow
+  - ✅ Done when: each AI stage leaves an audit row; no interview processing without consent — **verified**: created a real company→job→candidate chain, wrote an audit row and confirmed it's readable with correct action/metadata; confirmed `require_consent()` raises for a candidate with no consent record; confirmed it passes once `record_consent()` has run; all test rows cleaned up
 
 - [ ] **T9. Audio + CV retention/cleanup policy (light).** — *Depends: T4, T8 · Flow: 5 (PDP)*
   - [ ] Define a simple retention rule tied to the consent record (audio)
