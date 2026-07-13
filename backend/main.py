@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
+import models  # noqa: F401  (registers all models on Base.metadata)
 from db.session import create_all
-from models import company  # noqa: F401  (registers Company on Base.metadata)
 
 app = FastAPI(title="GaskeunKerja for Business — MVP")
 

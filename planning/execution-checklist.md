@@ -352,7 +352,7 @@ scannable index of what exists, used by T1-T3.
 | Task | Status | Summary |
 |---|---|---|
 | T1. DB connection | **Final result** | SQLAlchemy engine + `create_all()` wired and verified against the Docker Postgres — idempotent restart confirmed. |
-| T2. Schema (17 tables) | **To do** | Full happy-path entity set, per the schema reference above. |
+| T2. Schema (17 tables) | **Final result** | All 17 models built and verified — `create_all` produces every table, FKs and JSONB/array columns confirmed correct. |
 | T3. Qdrant collections | **To do** | `candidate_vectors` + `jd_vectors` collections with explainability payload. |
 | T4. File storage layout | **To do** | Isolated per-candidate folders for CV + audio, path-pointer-only in DB. |
 | T5. Repository layer | **To do** | Thin CRUD repositories over SQLAlchemy. |
@@ -367,14 +367,15 @@ scannable index of what exists, used by T1-T3.
   - [x] `create_all()` on startup (no migrations) — wired into `main.py`'s `@app.on_event("startup")`; one placeholder model (`backend/models/company.py::Company`, the `companies` table) added just to give `create_all()` something real to prove against — the full 17-table schema is T2's job, not T1's
   - ✅ Done when: backend creates all tables on boot against Compose Postgres — **verified**: cleared the DB (`\dt` → no relations), booted `uvicorn`, confirmed `companies` table created with correct schema (`\d companies`); restarted `uvicorn` again against the now-existing table — booted clean with no error, confirming `create_all()` is safely idempotent
 
-- [ ] **T2. Schema for the ~17 happy-path entities.** — *Depends: T1 · Flow: all*
-  - [ ] Core: `companies`, `hr_users`, `jobs`, `jd_competencies`, `candidates`, `parsed_profiles`
-  - [ ] Matching: `match_scores` (+ per-competency detail)
-  - [ ] Interview: `interview_questions`, `interview_answers`, `transcripts`, `rubric_scores`, `interview_summaries`
-  - [ ] Decision/compliance: `hr_decisions`, `consent_records`, `audit_log`
-  - [ ] Reference tables (T6/T7): `competency_framework`, `resource_library`
-  - [ ] Full column-level detail: see `area-3-database.md` § Database Schema Reference
-  - ✅ Done when: `create_all` builds every table; explicit `consent_records` + `audit_log` present
+- [x] **T2. Schema for the ~17 happy-path entities. — DONE 2026-07-13.** — *Depends: T1 · Flow: all*
+  - [x] Core: `companies`, `hr_users`, `jobs`, `jd_competencies`, `candidates`, `parsed_profiles` — `backend/models/company.py`, `hr_user.py`, `job.py`, `candidate.py`, `parsed_profile.py`
+  - [x] Matching: `match_scores` (+ per-competency detail) — `backend/models/match_score.py`, `competency_breakdown` as JSONB
+  - [x] Interview: `interview_questions`, `interview_answers`, `transcripts`, `rubric_scores`, `interview_summaries` — all in `backend/models/interview.py`
+  - [x] Decision/compliance: `hr_decisions`, `consent_records`, `audit_log` — `backend/models/hr_decision.py`, `consent.py`, `audit_log.py` (`metadata` column mapped to Python attribute `audit_metadata` — `metadata` is a reserved name on SQLAlchemy's `DeclarativeBase`)
+  - [x] Reference tables (T6/T7): `competency_framework`, `resource_library` — `backend/models/reference.py`; `related_competency_ids` as a Postgres integer array
+  - [x] Full column-level detail: see `area-3-database.md` § Database Schema Reference — all 17 models' columns cross-checked against this table, exact match
+  - [x] `backend/models/__init__.py` now imports and registers all 17 models on `Base.metadata`; `main.py` imports the package so `create_all()` picks up the full schema
+  - ✅ Done when: `create_all` builds every table; explicit `consent_records` + `audit_log` present — **verified**: cleared to just the T1 placeholder (`companies` only), booted `uvicorn`, confirmed all 17 tables now exist (`\dt`); spot-checked `audit_log` (confirms `metadata` column mapping works) and `interview_answers` (confirms FKs + the `rubric_scores`/`transcripts` reverse-reference chain all wired correctly)
 
 - [ ] **T3. Local Qdrant collections + payload schema.** — *Depends: Area4 T2 · Flow: 4*
   - [ ] Create `candidate_vectors` + `jd_vectors` collections
