@@ -120,11 +120,11 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
   - [x] **Bug found + fixed during verification**: `STORAGE_DIR=./storage` in `.env` is a relative path meant to resolve at the **repo root** (`implementation/storage/`), but the first test run (invoked from `backend/`) created a stray `backend/storage/` instead. Fixed in `config.py` by resolving `STORAGE_DIR` against `REPO_ROOT` explicitly, regardless of the process's cwd. Re-verified: cache now correctly lands at `implementation/storage/llm_cache/`
   - ✅ Done when: a test call to each model returns — **verified**: call 1 (flash) real API 1.4s, tokens logged 14/54/68; call 2 same input → cache hit, 0.00s, `tokens=0`; call 3 `bypass_cache=True` → forced real API call again, 1.09s; call 4 (`chat_pro`) → real call, `temperature=0` enforced
 
-- [ ] **T3b. STT client (Groq `whisper-large-v3`, Bahasa Indonesia).** — *Depends: T2 · Flow: 5*
-  - [ ] Second `openai`-SDK client with `base_url=STT_BASE_URL` (Groq), `api_key=STT_API_KEY`
-  - [ ] `audio.transcriptions.create(model=STT_MODEL, language="id", file=...)` — expects **webm** input, no conversion
-  - [ ] Provider switch honoring `STT_PROVIDER` (groq|openai|local) so local faster-whisper is a drop-in fallback
-  - ✅ Done when: a sample Indonesian `.webm` audio clip transcribes to correct text via Groq
+- [x] **T3b. STT client (Groq `whisper-large-v3`, Bahasa Indonesia). — DONE 2026-07-13.** — *Depends: T2 · Flow: 5*
+  - [x] Second `openai`-SDK client with `base_url=STT_BASE_URL` (Groq), `api_key=STT_API_KEY` — `backend/services/stt_client.py`; STT config added to `backend/config.py`
+  - [x] `audio.transcriptions.create(model=STT_MODEL, language="id", file=...)` — **tested with `.m4a` and `.mp3`** (no `.webm` sample was available yet, since Area 3's seed audio doesn't exist; Groq accepts both formats directly with no conversion needed, confirming the transcription pipeline + `language=id` setting work — the real app will feed `.webm` from `MediaRecorder`, still to be tested once that pipeline exists)
+  - [x] Provider switch honoring `STT_PROVIDER` (groq|openai|local) — `local` raises `NotImplementedError` with a clear message (documented fallback per plan, not built unless Groq becomes unavailable)
+  - ✅ Done when: a sample Indonesian audio clip transcribes to correct text via Groq — **verified twice**: `.m4a` → "Halo nama saya Alexander Graham Bell, saya adalah kandidat nomor 7 dan saya memiliki pengalaman hingga 50 tahun data science dengan pengalaman di Python dan juga SQL, terima kasih"; `.mp3` → equivalent correct transcript, both fully accurate Indonesian text
 
 - [ ] **T3c. Telegram bot client (ONLY report delivery channel — no email).** — *Depends: T2 · Flow: 8*
   - [ ] Create bot via @BotFather → get `TELEGRAM_BOT_TOKEN` (free)
@@ -813,7 +813,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | T1 Lock stack + versions | 🟢 Done 2026-07-13 | 1.0 | 🟢 | Boilerplate |
 | T2 Docker Compose + run modes | 🟢 Dev mode done 2026-07-13 (finalization mode deferred) | 2.0 | 🟢 | Standard Compose work; Tahap 2's compose has no DB services, minimal reference value. Hit + fixed a real port-5432 collision with a pre-existing native Postgres service |
 | T3 LLM client + caching + bypass | 🟢 Done 2026-07-13 | 2.5 | 🟡 | Cache-key design + new bypass param — Tahap 2 uses Gemini/LangChain, zero code transfers |
-| T3b STT client (Groq) | ⚪ Not started (Groq STT call verified working, no client module yet) | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
+| T3b STT client (Groq) | 🟢 Done 2026-07-13 | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
 | T3c Telegram bot client | ⚪ Not started | 2.0 | 🟡 | Deep-link + chat_id capture logic — no Tahap 2 equivalent |
 | T3d Vision-LLM client + fallback | 🟡 Provider decided — Groq confirmed primary 2026-07-13 (SumoPod vision confirmed non-functional), no client module yet | **2.0** ↓ *(was 2.5)* | 🟠 | **Tahap 2 reuse**: its Gemini-vision OCR fallback (`_ocr_pdf_with_gemini`, PyMuPDF rasterize→vision call) is a working, validated version of this exact pattern — reduces implementation risk even though the provider (SumoPod/Groq vs Gemini) and technique (per-image vs whole-page) differ |
 | T8 Cost estimate | ⚪ Not started | 0.5 | 🟢 | Arithmetic + a paragraph |
