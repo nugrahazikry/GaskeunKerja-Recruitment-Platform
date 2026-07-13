@@ -126,11 +126,11 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
   - [x] Provider switch honoring `STT_PROVIDER` (groq|openai|local) — `local` raises `NotImplementedError` with a clear message (documented fallback per plan, not built unless Groq becomes unavailable)
   - ✅ Done when: a sample Indonesian audio clip transcribes to correct text via Groq — **verified twice**: `.m4a` → "Halo nama saya Alexander Graham Bell, saya adalah kandidat nomor 7 dan saya memiliki pengalaman hingga 50 tahun data science dengan pengalaman di Python dan juga SQL, terima kasih"; `.mp3` → equivalent correct transcript, both fully accurate Indonesian text
 
-- [ ] **T3c. Telegram bot client (ONLY report delivery channel — no email).** — *Depends: T2 · Flow: 8*
-  - [ ] Create bot via @BotFather → get `TELEGRAM_BOT_TOKEN` (free)
-  - [ ] Client wrapper: `sendDocument` (report file) + `sendMessage` (summary text)
-  - [ ] Deep-link handler: `t.me/<bot>?start=<token>` → bot receives `/start <token>` → capture `chat_id`, link it to the candidate session
-  - ✅ Done when: opening the deep-link from the token page links a `chat_id`; a test send delivers a file + message to that chat
+- [x] **T3c. Telegram bot client (ONLY report delivery channel — no email). — DONE 2026-07-13.** — *Depends: T2 · Flow: 8*
+  - [x] Create bot via @BotFather → get `TELEGRAM_BOT_TOKEN` (free) — done earlier, bot is `@GaskeunkerjaBot` ("GaskeunKerja Recruitment"), token verified live via `getMe`
+  - [x] Client wrapper: `sendDocument` (report file) + `sendMessage` (summary text) — `backend/services/telegram_client.py`; Telegram config added to `backend/config.py`
+  - [x] Deep-link handler: `t.me/<bot>?start=<token>` → bot receives `/start <token>` → capture `chat_id`, link it to the candidate session — `extract_start_token()` parses a `getUpdates` entry into `(chat_id, token)`
+  - ✅ Done when: opening the deep-link from the token page links a `chat_id`; a test send delivers a file + message to that chat — **verified live end-to-end**: user opened `https://t.me/GaskeunkerjaBot?start=test123`, `getUpdates` correctly captured `chat_id=1304618784` + `token='test123'`; `sendMessage` and `sendDocument` (a test `.txt` "report") both confirmed received in the user's actual Telegram app
 
 - [ ] **T3d. Vision-LLM client (scanned-PDF image captioning).** — *Depends: T2 · Flow: 3 (CV parsing)*
   - [ ] **Reference (2026-07-12 Tahap 2 audit):** `backend/config/utils.py::_ocr_pdf_with_gemini()` in the Tahap 2 code is a working version of this exact pattern (rasterize page → send to vision model) — same idea, different provider (Gemini vs SumoPod/Groq) and different trigger (whole-page rasterization vs NalarX's per-embedded-image approach we're using) — read it for validation, don't copy verbatim
@@ -814,7 +814,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | T2 Docker Compose + run modes | 🟢 Dev mode done 2026-07-13 (finalization mode deferred) | 2.0 | 🟢 | Standard Compose work; Tahap 2's compose has no DB services, minimal reference value. Hit + fixed a real port-5432 collision with a pre-existing native Postgres service |
 | T3 LLM client + caching + bypass | 🟢 Done 2026-07-13 | 2.5 | 🟡 | Cache-key design + new bypass param — Tahap 2 uses Gemini/LangChain, zero code transfers |
 | T3b STT client (Groq) | 🟢 Done 2026-07-13 | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
-| T3c Telegram bot client | ⚪ Not started | 2.0 | 🟡 | Deep-link + chat_id capture logic — no Tahap 2 equivalent |
+| T3c Telegram bot client | 🟢 Done 2026-07-13 | 2.0 | 🟡 | Deep-link + chat_id capture logic — no Tahap 2 equivalent |
 | T3d Vision-LLM client + fallback | 🟡 Provider decided — Groq confirmed primary 2026-07-13 (SumoPod vision confirmed non-functional), no client module yet | **2.0** ↓ *(was 2.5)* | 🟠 | **Tahap 2 reuse**: its Gemini-vision OCR fallback (`_ocr_pdf_with_gemini`, PyMuPDF rasterize→vision call) is a working, validated version of this exact pattern — reduces implementation risk even though the provider (SumoPod/Groq vs Gemini) and technique (per-image vs whole-page) differ |
 | T8 Cost estimate | ⚪ Not started | 0.5 | 🟢 | Arithmetic + a paragraph |
 | **Subtotal** | | **~11.0h** *(was 11.5h)* | | vs. **8h** scheduled (Day 1) |

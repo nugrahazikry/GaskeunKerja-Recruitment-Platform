@@ -35,3 +35,7 @@ STT_LOCAL_COMPUTE_TYPE = os.environ.get("STT_LOCAL_COMPUTE_TYPE", "float16")
 
 STORAGE_DIR = str(REPO_ROOT / os.environ.get("STORAGE_DIR", "./storage").lstrip("./"))
 CACHE_DIR = str(Path(STORAGE_DIR) / "llm_cache")
+
+TELEGRAM_ENABLED = os.environ.get("TELEGRAM_ENABLED", "true").lower() == "true"
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME")
