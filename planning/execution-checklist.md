@@ -95,14 +95,14 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 
 | Task | Status | Summary | Est. hours | Difficulty | Note |
 |---|---|---|---|---|---|
-| T1. Stack + versions | **Final result** | `backend/`+`frontend/` scaffolded, deps installed clean (frontend via Vite, backend via venv), `uvicorn`/`npm run dev` both verified booting. | 1.0 | 🟢 | Boilerplate |
-| T2. Docker Compose + run modes | **Final result** | Postgres 16 + Qdrant containers healthy; found and fixed a real port-5432 collision with a pre-existing native Postgres (remapped to 5433). Finalization mode intentionally deferred. | 2.0 | 🟢 | Standard Compose work; Tahap 2's compose has no DB services, minimal reference value |
-| T3. Unified LLM client + caching | **Final result** | `llm_client.py` built and verified: cache miss/hit/bypass all behave correctly, token usage logged. | 2.5 | 🟡 | Cache-key design + new bypass param — Tahap 2 uses Gemini/LangChain, zero code transfers |
-| T3b. STT client (Groq) | **Final result** | `stt_client.py` verified against two real Indonesian audio clips — both transcribed accurately. | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
-| T3c. Telegram bot client | **Final result** | `telegram_client.py` verified fully live — deep-link chat_id capture, message send, and document send all confirmed received. | 2.0 | 🟡 | Deep-link + chat_id capture logic — no Tahap 2 equivalent |
-| T3d. Vision-LLM client | **Final result** | `vision_client.py` verified — SumoPod vision confirmed non-functional, Groq's Llama 4 Scout confirmed working for both transcribe and describe modes. | **2.0** ↓ *(was 2.5)* | 🟠 | **Tahap 2 reuse**: its Gemini-vision OCR fallback (`_ocr_pdf_with_gemini`) is a working, validated version of this exact pattern |
-| T8. Cost estimate | **Final result** | Projected ≈$0.07/demo run, ≈$0.20 with dev re-runs, from real observed token counts + published rates. Flagged to re-verify against real logs once seed data exists. | 0.5 | 🟢 | Arithmetic + a paragraph |
-| T4. Local-LLM substitution | **To do** *(deferred)* | Cut from scope — negligible savings for real solo build hours. | — | — | — |
+| T1. Stack + versions | ✅ **Final result** | `backend/`+`frontend/` scaffolded, deps installed clean (frontend via Vite, backend via venv), `uvicorn`/`npm run dev` both verified booting. | 1.0 | 🟢 | Boilerplate |
+| T2. Docker Compose + run modes | ✅ **Final result** | Postgres 16 + Qdrant containers healthy; found and fixed a real port-5432 collision with a pre-existing native Postgres (remapped to 5433). Finalization mode intentionally deferred. | 2.0 | 🟢 | Standard Compose work; Tahap 2's compose has no DB services, minimal reference value |
+| T3. Unified LLM client + caching | ✅ **Final result** | `llm_client.py` built and verified: cache miss/hit/bypass all behave correctly, token usage logged. | 2.5 | 🟡 | Cache-key design + new bypass param — Tahap 2 uses Gemini/LangChain, zero code transfers |
+| T3b. STT client (Groq) | ✅ **Final result** | `stt_client.py` verified against two real Indonesian audio clips — both transcribed accurately. | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
+| T3c. Telegram bot client | ✅ **Final result** | `telegram_client.py` verified fully live — deep-link chat_id capture, message send, and document send all confirmed received. | 2.0 | 🟡 | Deep-link + chat_id capture logic — no Tahap 2 equivalent |
+| T3d. Vision-LLM client | ✅ **Final result** | `vision_client.py` verified — SumoPod vision confirmed non-functional, Groq's Llama 4 Scout confirmed working for both transcribe and describe modes. | **2.0** ↓ *(was 2.5)* | 🟠 | **Tahap 2 reuse**: its Gemini-vision OCR fallback (`_ocr_pdf_with_gemini`) is a working, validated version of this exact pattern |
+| T8. Cost estimate | ✅ **Final result** | Projected ≈$0.07/demo run, ≈$0.20 with dev re-runs, from real observed token counts + published rates. Flagged to re-verify against real logs once seed data exists. | 0.5 | 🟢 | Arithmetic + a paragraph |
+| T4. Local-LLM substitution | 📝 **To do** *(deferred)* | Cut from scope — negligible savings for real solo build hours. | — | — | — |
 | **Subtotal** | | | **~11.0h** *(was 11.5h)* | | vs. **8h** scheduled (Day 1) |
 
 - [x] **T1. Lock the local-first stack + versions. — DONE 2026-07-13.** — *Depends: none · Flow: infra*
@@ -352,16 +352,16 @@ scannable index of what exists, used by T1-T3.
 
 | Task | Status | Summary | Est. hours | Difficulty | Note |
 |---|---|---|---|---|---|
-| T1. DB connection | **Final result** | SQLAlchemy engine + `create_all()` wired and verified against the Docker Postgres — idempotent restart confirmed. | 0.5 | 🟢 | Tahap 2 has **zero** DB/ORM code — fully from scratch |
-| T2. Schema (17 tables) | **Final result** | All 17 models built and verified — `create_all` produces every table, FKs and JSONB/array columns confirmed correct. | 2.0 | 🟡 | Many tables, mechanically straightforward; no models to reference |
-| T3. Qdrant collections | **Final result** | `candidate_vectors` + `jd_vectors` collections created and verified with a real upsert/query round-trip. | 1.0 | 🟢 | No vector DB in Tahap 2 |
-| T4. File storage layout | **Final result** | Isolated per-candidate folders for CV + audio verified — layout, isolation, and round-trip all confirmed. | 1.0 | 🟢 | Tahap 2 only has a temp-file + in-memory dict, no structured layout to borrow |
-| T5. Repository layer | **Final result** | Generic Repository class + one instance per entity, verified with real get/list/create calls. | 1.5 | 🟡 | |
-| T6. Competency framework `[content]` | **Final result** | 10 competencies curated for **Web Developer** (re-curated 2026-07-13 after the role switch) with level descriptions + verified relations, loaded via an idempotent seed script. | 2.0 | 🟡 | Domain judgment, not code |
-| T7. Resource library `[content]` | **Final result** | 30 resources (3/competency) curated and verified — every competency has full coverage. | 1.5 | 🟡 | Domain judgment |
-| T8. Consent + audit write paths | **Final result** | Audit-log helper + consent gate verified — blocks without consent, allows once recorded. | 1.5 | 🟡 | No Tahap 2 equivalent |
-| T9. Retention policy | **Final result** | 30-day retention rule + manual cleanup helper verified — deletes expired audio, correctly leaves recent audio untouched. | 0.5 | 🟢 | |
-| T10. Seed data | **Blocked** | Role changed to Web Developer + CVs are random/untiered (user's call) + still needs Area 2 T5 (CV parsing) to exist before it can actually run. | **4.5** | 🟠 | **The real time sink** — manual curation labor across 30 real CVs, not code complexity |
+| T1. DB connection | ✅ **Final result** | SQLAlchemy engine + `create_all()` wired and verified against the Docker Postgres — idempotent restart confirmed. | 0.5 | 🟢 | Tahap 2 has **zero** DB/ORM code — fully from scratch |
+| T2. Schema (17 tables) | ✅ **Final result** | All 17 models built and verified — `create_all` produces every table, FKs and JSONB/array columns confirmed correct. | 2.0 | 🟡 | Many tables, mechanically straightforward; no models to reference |
+| T3. Qdrant collections | ✅ **Final result** | `candidate_vectors` + `jd_vectors` collections created and verified with a real upsert/query round-trip. | 1.0 | 🟢 | No vector DB in Tahap 2 |
+| T4. File storage layout | ✅ **Final result** | Isolated per-candidate folders for CV + audio verified — layout, isolation, and round-trip all confirmed. | 1.0 | 🟢 | Tahap 2 only has a temp-file + in-memory dict, no structured layout to borrow |
+| T5. Repository layer | ✅ **Final result** | Generic Repository class + one instance per entity, verified with real get/list/create calls. | 1.5 | 🟡 | |
+| T6. Competency framework `[content]` | ✅ **Final result** | 10 competencies curated for **Web Developer** (re-curated 2026-07-13 after the role switch) with level descriptions + verified relations, loaded via an idempotent seed script. | 2.0 | 🟡 | Domain judgment, not code |
+| T7. Resource library `[content]` | ✅ **Final result** | 30 resources (3/competency) curated and verified — every competency has full coverage. | 1.5 | 🟡 | Domain judgment |
+| T8. Consent + audit write paths | ✅ **Final result** | Audit-log helper + consent gate verified — blocks without consent, allows once recorded. | 1.5 | 🟡 | No Tahap 2 equivalent |
+| T9. Retention policy | ✅ **Final result** | 30-day retention rule + manual cleanup helper verified — deletes expired audio, correctly leaves recent audio untouched. | 0.5 | 🟢 | |
+| T10. Seed data | 🚧 **Blocked** | Role changed to Web Developer + CVs are random/untiered (user's call) + still needs Area 2 T5 (CV parsing) to exist before it can actually run. | **4.5** | 🟠 | **The real time sink** — manual curation labor across 30 real CVs, not code complexity |
 | **Subtotal** | | | **~16h** | | vs. **16h** scheduled (Day 2-3) — tight but plausible IF T10 doesn't overrun |
 
 - [x] **T1. DB connection locked: PostgreSQL (Docker). — DONE 2026-07-13.** — *Depends: Area4 T2 · Flow: all persistence*
@@ -483,24 +483,24 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 
 | Task | Status | Summary | Est. hours | Difficulty | Note |
 |---|---|---|---|---|---|
-| T1. Audit Tahap 2 backend | **Final result** | Full 10-point code audit done — keep/rebuild/drop verdict written into `CLAUDE.md`. | **0.25** ↓ *(was 1.0)* | 🟢 | Deep audit already produced the keep/rebuild/drop verdict this task asks for |
-| T2. Project structure | **Final result** | Layout already existed from Area 4 scaffolding — confirmed uvicorn boots and `/health` passes. | 1.0 | 🟢 | Tahap 2's structure is a LangGraph agent pipeline — not directly reusable |
-| T3. Auth | **Final result** | JWT login + token-link isolation verified end-to-end via real HTTP requests. | 2.0 | 🟡 | Tahap 2 has zero auth code — fully from scratch |
-| T4. JD full CRUD + extraction | **Final result** | Full CRUD verified end-to-end with real SumoPod extraction calls; company isolation confirmed via 404, not leakage. | 3.0 | 🟡 | No JD/employer concept exists in Tahap 2 (jobseeker-focused app) |
-| T5. CV parse + PII redaction | **Final result** | Full pipeline verified end-to-end with a real CV upload; caught and fixed a real regex false-positive bug in PII redaction along the way. | **3.75** ↓ *(was 5.0)* | 🔴 | **Tahap 2 reuse**: `pdfplumber` text-extraction pattern adopted directly; PII redaction/SumoPod integration are new work |
-| T6. Embeddings → Qdrant | **Final result** | Verified with real semantic matching — a JD correctly found its matching candidate at 0.805 similarity. | 1.5 | 🟡 | No embeddings code in Tahap 2 |
-| T7. Matching engine | **Final result** | Verified with a real strong/mid/weak scenario — scores and ranks correctly discriminated. | 3.0 | 🟠 | Tahap 2's "matching" is a token-overlap heuristic — doesn't transfer |
-| T8. Skill-gap analysis | **Final result** | Verified: real gap identified correctly, LLM output grounded to a deterministic seed, no-gap case short-circuits with zero LLM calls. | **1.0** ↓ *(was 1.5)* | 🟡 | **Tahap 2 reuse**: deterministic-seed-grounds-LLM-output pattern adapted from `_build_seed_gap()` |
-| T9. Interview question gen | **Final result** | 3 real, relevant Indonesian questions verified for a live Web Developer JD. | 1.0 | 🟡 | No interview module in Tahap 2 |
-| T9b. Recruiter edit/approve | **Final result** | Approval gate verified — edit blocked post-approval, invite blocked pre-approval. | 1.0 | 🟢 | |
-| T9c. Invite candidate | **Final result** | Invite verified end-to-end; caught and resolved a real design conflict with T5's placeholder token. | 1.0 | 🟢 | |
-| T10. Answer intake + STT | **Final result** | Consent gate + real audio transcription verified via live HTTP; token-impersonation attempt correctly rejected. | 2.0 | 🟡 | No STT in Tahap 2 |
-| T11. Rubric scoring + summary | **Final result** | Verified against a real transcript; caught and fixed a design gap around interview-summary text sourcing. | 2.5 | 🟡 | No rubric/interview scoring in Tahap 2 |
-| T12. HR decision endpoints | **To do** | Records the human pass/reject decision, no auto-finalize path. | 1.0 | 🟢 | No employer-decision flow in Tahap 2 |
-| T13. Report generation | **To do** | Deterministic report assembly, gated on a decision existing. | 2.5 | 🟡 | Different approach from Tahap 2's LLM-free-generated content, no code reuse |
-| T14. Report delivery | **To do** | PDF via adapted ReportLab code, sent through Telegram. | **2.0** ↓ *(was 3.0, weasyprint)* | 🟡 *(was 🟠)* | **Tahap 2 reuse, biggest single win**: `_build_report_pdf()` fully-working ReportLab generator, also retires the weasyprint Windows dependency risk |
-| T15. Async wiring + error handling | **To do** | Cross-cutting orchestration/retry/caching layer. | **1.75** ↓ *(was 2.0)* | 🟡 | Tahap 2's async-job pattern is a minor reference; do not copy its traceback-leaking exception handler |
-| T16. OpenAPI contract | **To do** | FastAPI auto-generated, no dedicated work beyond typed endpoints. | 0.5 | 🟢 | FastAPI-generated regardless |
+| T1. Audit Tahap 2 backend | ✅ **Final result** | Full 10-point code audit done — keep/rebuild/drop verdict written into `CLAUDE.md`. | **0.25** ↓ *(was 1.0)* | 🟢 | Deep audit already produced the keep/rebuild/drop verdict this task asks for |
+| T2. Project structure | ✅ **Final result** | Layout already existed from Area 4 scaffolding — confirmed uvicorn boots and `/health` passes. | 1.0 | 🟢 | Tahap 2's structure is a LangGraph agent pipeline — not directly reusable |
+| T3. Auth | ✅ **Final result** | JWT login + token-link isolation verified end-to-end via real HTTP requests. | 2.0 | 🟡 | Tahap 2 has zero auth code — fully from scratch |
+| T4. JD full CRUD + extraction | ✅ **Final result** | Full CRUD verified end-to-end with real SumoPod extraction calls; company isolation confirmed via 404, not leakage. | 3.0 | 🟡 | No JD/employer concept exists in Tahap 2 (jobseeker-focused app) |
+| T5. CV parse + PII redaction | ✅ **Final result** | Full pipeline verified end-to-end with a real CV upload; caught and fixed a real regex false-positive bug in PII redaction along the way. | **3.75** ↓ *(was 5.0)* | 🔴 | **Tahap 2 reuse**: `pdfplumber` text-extraction pattern adopted directly; PII redaction/SumoPod integration are new work |
+| T6. Embeddings → Qdrant | ✅ **Final result** | Verified with real semantic matching — a JD correctly found its matching candidate at 0.805 similarity. | 1.5 | 🟡 | No embeddings code in Tahap 2 |
+| T7. Matching engine | ✅ **Final result** | Verified with a real strong/mid/weak scenario — scores and ranks correctly discriminated. | 3.0 | 🟠 | Tahap 2's "matching" is a token-overlap heuristic — doesn't transfer |
+| T8. Skill-gap analysis | ✅ **Final result** | Verified: real gap identified correctly, LLM output grounded to a deterministic seed, no-gap case short-circuits with zero LLM calls. | **1.0** ↓ *(was 1.5)* | 🟡 | **Tahap 2 reuse**: deterministic-seed-grounds-LLM-output pattern adapted from `_build_seed_gap()` |
+| T9. Interview question gen | ✅ **Final result** | 3 real, relevant Indonesian questions verified for a live Web Developer JD. | 1.0 | 🟡 | No interview module in Tahap 2 |
+| T9b. Recruiter edit/approve | ✅ **Final result** | Approval gate verified — edit blocked post-approval, invite blocked pre-approval. | 1.0 | 🟢 | |
+| T9c. Invite candidate | ✅ **Final result** | Invite verified end-to-end; caught and resolved a real design conflict with T5's placeholder token. | 1.0 | 🟢 | |
+| T10. Answer intake + STT | ✅ **Final result** | Consent gate + real audio transcription verified via live HTTP; token-impersonation attempt correctly rejected. | 2.0 | 🟡 | No STT in Tahap 2 |
+| T11. Rubric scoring + summary | ✅ **Final result** | Verified against a real transcript; caught and fixed a design gap around interview-summary text sourcing. | 2.5 | 🟡 | No rubric/interview scoring in Tahap 2 |
+| T12. HR decision endpoints | 📝 **To do** | Records the human pass/reject decision, no auto-finalize path. | 1.0 | 🟢 | No employer-decision flow in Tahap 2 |
+| T13. Report generation | 📝 **To do** | Deterministic report assembly, gated on a decision existing. | 2.5 | 🟡 | Different approach from Tahap 2's LLM-free-generated content, no code reuse |
+| T14. Report delivery | 📝 **To do** | PDF via adapted ReportLab code, sent through Telegram. | **2.0** ↓ *(was 3.0, weasyprint)* | 🟡 *(was 🟠)* | **Tahap 2 reuse, biggest single win**: `_build_report_pdf()` fully-working ReportLab generator, also retires the weasyprint Windows dependency risk |
+| T15. Async wiring + error handling | 📝 **To do** | Cross-cutting orchestration/retry/caching layer. | **1.75** ↓ *(was 2.0)* | 🟡 | Tahap 2's async-job pattern is a minor reference; do not copy its traceback-leaking exception handler |
+| T16. OpenAPI contract | 📝 **To do** | FastAPI auto-generated, no dedicated work beyond typed endpoints. | 0.5 | 🟢 | FastAPI-generated regardless |
 | **Subtotal** | | | **~29.75h** *(was 33.5h)* | | vs. **32h** scheduled (Day 4-7, 4 days × 8h) |
 
 ### Foundation
@@ -692,18 +692,18 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 
 | Task | Status | Summary | Est. hours | Difficulty | Note |
 |---|---|---|---|---|---|
-| T1. Audit Tahap 2 frontend | **Final result** | Confirmed no React code exists to reuse — only the visual language, already captured in the design artifacts. | 0.5 | 🟢 | |
-| T2. Design system | **To do** | Port the locked "Enterprise Trust" visual direction into real React components. | 3.0 | 🟡 | Design locked/previewed 2026-07-12, not yet built in code |
-| T3. Vite structure + route guards | **In progress** | Vite scaffold done 2026-07-13; route guards not started. | 1.5 | 🟡 | |
-| T4. HR login | **To do** | Recruiter-only login; no candidate account exists. | 1.0 | 🟢 | |
-| T4b. JD CRUD UI | **To do** | Structured-field create/edit/delete/list for job descriptions. | 2.5 | 🟡 | |
-| T5. Shortlist | **To do** | Ranked candidates with per-competency explainability + tier status pills. | 3.0 | 🟡 | |
-| T5b. Question edit/approve UI | **To do** | HR edits/approves AI-generated interview questions. | 1.5 | 🟡 | |
-| T5c. Invite modal | **To do** | Copyable token-link modal, re-viewable after first generation. | 1.0 | 🟡 | |
-| T6. Candidate audio interview | **To do** | Full 8-state recorder machine — flagged as the single highest-risk component in the plan. | **5.5** | 🔴 | **Flagged highest-risk in the plan itself** — 8-state machine, browser permission handling, per-question upload |
-| T7. HR decision + detail + delivery | **To do** | Audio player, transcript, rubric, decision action, report send. | **4.0** | 🟠 | 2 disabled-state variants, send-error handling |
-| T8. Candidate consent + Telegram linking | **To do** | PDP consent checkbox + Telegram deep-link capture. | 1.5 | 🟡 | |
-| T9. Cross-cutting UX | **To do** | Shared loading/error/empty states across all screens. | 2.5 | 🟡 | Touches every screen |
+| T1. Audit Tahap 2 frontend | ✅ **Final result** | Confirmed no React code exists to reuse — only the visual language, already captured in the design artifacts. | 0.5 | 🟢 | |
+| T2. Design system | 📝 **To do** | Port the locked "Enterprise Trust" visual direction into real React components. | 3.0 | 🟡 | Design locked/previewed 2026-07-12, not yet built in code |
+| T3. Vite structure + route guards | 🔄 **In progress** | Vite scaffold done 2026-07-13; route guards not started. | 1.5 | 🟡 | |
+| T4. HR login | 📝 **To do** | Recruiter-only login; no candidate account exists. | 1.0 | 🟢 | |
+| T4b. JD CRUD UI | 📝 **To do** | Structured-field create/edit/delete/list for job descriptions. | 2.5 | 🟡 | |
+| T5. Shortlist | 📝 **To do** | Ranked candidates with per-competency explainability + tier status pills. | 3.0 | 🟡 | |
+| T5b. Question edit/approve UI | 📝 **To do** | HR edits/approves AI-generated interview questions. | 1.5 | 🟡 | |
+| T5c. Invite modal | 📝 **To do** | Copyable token-link modal, re-viewable after first generation. | 1.0 | 🟡 | |
+| T6. Candidate audio interview | 📝 **To do** | Full 8-state recorder machine — flagged as the single highest-risk component in the plan. | **5.5** | 🔴 | **Flagged highest-risk in the plan itself** — 8-state machine, browser permission handling, per-question upload |
+| T7. HR decision + detail + delivery | 📝 **To do** | Audio player, transcript, rubric, decision action, report send. | **4.0** | 🟠 | 2 disabled-state variants, send-error handling |
+| T8. Candidate consent + Telegram linking | 📝 **To do** | PDP consent checkbox + Telegram deep-link capture. | 1.5 | 🟡 | |
+| T9. Cross-cutting UX | 📝 **To do** | Shared loading/error/empty states across all screens. | 2.5 | 🟡 | Touches every screen |
 | **Subtotal** | | | **~28h** | | vs. **32h** scheduled (Day 8-11, 4 days × 8h) |
 
 - [ ] **T1. Audit Tahap 2 frontend — corrected scope.** — *Depends: none*
@@ -828,14 +828,14 @@ No changes from the Tahap 2 backend audit (Tahap 2 has no test suite to referenc
 
 | Task | Status | Summary | Est. hours | Difficulty | Note |
 |---|---|---|---|---|---|
-| T3. Determinism test | **To do** | 5 cache-bypassed rubric-scoring runs must agree exactly. | 1.5 | 🟡 | |
-| T3b. PII redaction test | **To do** | Mocked-request assertion that no raw PII reaches the LLM payload or the DB. | 2.0 | 🟡 | Mock setup adds time |
-| T4. Report consistency test | **To do** | 5 cache-bypassed runs must produce identical report data (not PDF bytes). | 1.5 | 🟡 | |
-| T5. Matching/tier check | **To do** | Strong-tier average score must meaningfully beat weak-tier average. | 1.0 | 🟢 | ⚠️ blocked on tiered ground truth existing — see Area 3 T10 note |
-| T6. Human-in-loop test | **To do** | Confirms no code path can finalize a candidate without HR action. | 1.0 | 🟢 | |
-| T8. Consent-gate test | **To do** | 403 without consent, success with a valid consent record. | 1.0 | 🟢 | |
-| T10. Full e2e run | **To do** | Scripted happy-path walkthrough of the entire flow, seed to Telegram delivery. | 2.0 | 🟡 | Manual scripted walkthrough |
-| T12. Demo-readiness checklist | **To do** | Rehearsal covering every frontend edge state + a real Telegram delivery check. | 2.5 | 🟡 | Rehearsal + edge states + Telegram check |
+| T3. Determinism test | 📝 **To do** | 5 cache-bypassed rubric-scoring runs must agree exactly. | 1.5 | 🟡 | |
+| T3b. PII redaction test | 📝 **To do** | Mocked-request assertion that no raw PII reaches the LLM payload or the DB. | 2.0 | 🟡 | Mock setup adds time |
+| T4. Report consistency test | 📝 **To do** | 5 cache-bypassed runs must produce identical report data (not PDF bytes). | 1.5 | 🟡 | |
+| T5. Matching/tier check | 📝 **To do** | Strong-tier average score must meaningfully beat weak-tier average. | 1.0 | 🟢 | ⚠️ blocked on tiered ground truth existing — see Area 3 T10 note |
+| T6. Human-in-loop test | 📝 **To do** | Confirms no code path can finalize a candidate without HR action. | 1.0 | 🟢 | |
+| T8. Consent-gate test | 📝 **To do** | 403 without consent, success with a valid consent record. | 1.0 | 🟢 | |
+| T10. Full e2e run | 📝 **To do** | Scripted happy-path walkthrough of the entire flow, seed to Telegram delivery. | 2.0 | 🟡 | Manual scripted walkthrough |
+| T12. Demo-readiness checklist | 📝 **To do** | Rehearsal covering every frontend edge state + a real Telegram delivery check. | 2.5 | 🟡 | Rehearsal + edge states + Telegram check |
 | **Subtotal** | | | **~12.5h** | | Spread across Day 4-12 alongside build work — same person, same hours pool |
 
 - [ ] **T3. 💎 Determinism test.** — *Depends: Area2 T11 · **Run: Day 6** (re-baselined 2026-07-12), as soon as rubric scoring exists*
