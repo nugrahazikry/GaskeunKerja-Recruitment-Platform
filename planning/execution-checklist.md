@@ -353,7 +353,7 @@ scannable index of what exists, used by T1-T3.
 |---|---|---|
 | T1. DB connection | **Final result** | SQLAlchemy engine + `create_all()` wired and verified against the Docker Postgres — idempotent restart confirmed. |
 | T2. Schema (17 tables) | **Final result** | All 17 models built and verified — `create_all` produces every table, FKs and JSONB/array columns confirmed correct. |
-| T3. Qdrant collections | **To do** | `candidate_vectors` + `jd_vectors` collections with explainability payload. |
+| T3. Qdrant collections | **Final result** | `candidate_vectors` + `jd_vectors` collections created and verified with a real upsert/query round-trip. |
 | T4. File storage layout | **To do** | Isolated per-candidate folders for CV + audio, path-pointer-only in DB. |
 | T5. Repository layer | **To do** | Thin CRUD repositories over SQLAlchemy. |
 | T6. Competency framework `[content]` | **To do** | ~8-12 competencies for the Data Analyst demo role, with lightweight relations. |
@@ -377,10 +377,10 @@ scannable index of what exists, used by T1-T3.
   - [x] `backend/models/__init__.py` now imports and registers all 17 models on `Base.metadata`; `main.py` imports the package so `create_all()` picks up the full schema
   - ✅ Done when: `create_all` builds every table; explicit `consent_records` + `audit_log` present — **verified**: cleared to just the T1 placeholder (`companies` only), booted `uvicorn`, confirmed all 17 tables now exist (`\dt`); spot-checked `audit_log` (confirms `metadata` column mapping works) and `interview_answers` (confirms FKs + the `rubric_scores`/`transcripts` reverse-reference chain all wired correctly)
 
-- [ ] **T3. Local Qdrant collections + payload schema.** — *Depends: Area4 T2 · Flow: 4*
-  - [ ] Create `candidate_vectors` + `jd_vectors` collections
-  - [ ] Payload = ids + competency metadata needed for explainable matching
-  - ✅ Done when: a test upsert + query round-trips
+- [x] **T3. Local Qdrant collections + payload schema. — DONE 2026-07-13.** — *Depends: Area4 T2 · Flow: 4*
+  - [x] Create `candidate_vectors` + `jd_vectors` collections — `backend/db/vector_store.py`, `create_collections()`; `EMBEDDING_DIMENSIONS`-sized (1536), cosine distance; wired into `main.py` startup alongside `create_all()`; `QDRANT_HOST`/`PORT`/`URL` added to `config.py`
+  - [x] Payload = ids + competency metadata needed for explainable matching — verified with a real upsert (`candidate_id` + `competencies` list payload)
+  - ✅ Done when: a test upsert + query round-trips — **verified**: both collections confirmed created (`GET /collections`), upserted a 1536-dim test vector with realistic payload, queried it back — got the exact point, correct payload, ~1.0 similarity score for the identical vector; test point cleaned up afterward
 
 - [ ] **T4. Local file storage for CV + interview audio.** — *Depends: none · Flow: 3, 5*
   - [ ] Layout: `storage/cv/<candidate_id>/original.pdf` and `storage/audio/<candidate_id>/<session>/answer_<n>.webm`
