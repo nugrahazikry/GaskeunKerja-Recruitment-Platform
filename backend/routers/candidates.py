@@ -20,6 +20,12 @@ class CandidateOut(BaseModel):
         from_attributes = True
 
 
+class InviteOut(BaseModel):
+    candidate_id: int
+    token: str
+    token_expires_at: str
+
+
 def _job_belongs_to_company(db: Session, job_id: int, company_id: int) -> bool:
     job = repo.jobs.get(db, job_id)
     return bool(job and job.company_id == company_id)
@@ -46,3 +52,29 @@ async def create_candidate(
     ingest_cv(db, candidate.id, file_bytes, alias=alias)
 
     return candidate
+
+
+@router.post("/{candidate_id}/invite", response_model=InviteOut)
+def invite_candidate(candidate_id: int, hr=Depends(get_current_hr), db: Session = Depends(get_db)):
+    """Generates a fresh, meaningful invite token — only callable once the job's
+    interview questions are approved (T9b). Regenerates the placeholder token set at
+    CV-upload time (T5), which was never meant as a real invite link."""
+    candidate = repo.candidates.get(db, candidate_id)
+    if not candidate or not _job_belongs_to_company(db, candidate.job_id, hr["company_id"]):
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    approved_questions = repo.interview_questions.list(db, job_id=candidate.job_id, status="approved")
+    if not approved_questions:
+        raise HTTPException(
+            status_code=400, detail="Cannot invite: interview questions are not approved yet"
+        )
+
+    token, expires_at = auth.generate_candidate_token()
+    candidate.token = token
+    candidate.token_expires_at = expires_at
+    db.commit()
+    db.refresh(candidate)
+
+    return InviteOut(
+        candidate_id=candidate.id, token=candidate.token, token_expires_at=candidate.token_expires_at.isoformat()
+    )

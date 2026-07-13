@@ -489,9 +489,9 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | T6. Embeddings → Qdrant | **Final result** | Verified with real semantic matching — a JD correctly found its matching candidate at 0.805 similarity. |
 | T7. Matching engine | **Final result** | Verified with a real strong/mid/weak scenario — scores and ranks correctly discriminated. |
 | T8. Skill-gap analysis | **Final result** | Verified: real gap identified correctly, LLM output grounded to a deterministic seed, no-gap case short-circuits with zero LLM calls. |
-| T9. Interview question gen | **To do** | 2-3 Indonesian questions generated from the JD. |
-| T9b. Recruiter edit/approve | **To do** | Human-in-the-loop approval gate before candidates see questions. |
-| T9c. Invite candidate | **To do** | Generates the unguessable token link, HR copies it manually. |
+| T9. Interview question gen | **Final result** | 3 real, relevant Indonesian questions verified for a live Web Developer JD. |
+| T9b. Recruiter edit/approve | **Final result** | Approval gate verified — edit blocked post-approval, invite blocked pre-approval. |
+| T9c. Invite candidate | **Final result** | Invite verified end-to-end; caught and resolved a real design conflict with T5's placeholder token. |
 | T10. Answer intake + STT | **To do** | Consent-gated audio upload + Groq transcription. |
 | T11. Rubric scoring + summary | **To do** | Fixed 3-criteria rubric at temperature=0 + AI answer summary. |
 | T12. HR decision endpoints | **To do** | Records the human pass/reject decision, no auto-finalize path. |
@@ -563,21 +563,22 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - ✅ Done when: each shortlisted candidate has a structured gap record — **verified**: real gap (missing React/Node.js/PostgreSQL for a JS/HTML/CSS candidate) correctly identified, sensible Indonesian summary generated, LLM output correctly grounded to the deterministic seed (no hallucinated extra gaps); the no-gap edge case (candidate already has everything) correctly short-circuits with zero LLM calls
 
 ### AI Interview Module (the new component)
-- [ ] **T9. Interview question generation (Flash).** — *Depends: T4 · Flow: 5*
-  - [ ] From JD → **2-3 questions** in Bahasa Indonesia (e.g. "Jelaskan proses A dalam 1 menit")
-  - [ ] Persist to `interview_questions` as status=`draft`
-  - ✅ Done when: demo JD generates 2-3 sensible, relevant Indonesian questions in `draft`
+- [x] **T9. Interview question generation (Flash). — DONE 2026-07-13.** — *Depends: T4 · Flow: 5*
+  - [x] From JD → **2-3 questions** in Bahasa Indonesia — `backend/services/interview_questions.py::generate_questions()`, `POST /jobs/{id}/questions/generate`
+  - [x] Persist to `interview_questions` as status=`draft`
+  - ✅ Done when: demo JD generates 2-3 sensible, relevant Indonesian questions in `draft` — **verified**: real call against a Web Developer JD produced 3 genuinely relevant technical questions (state management, auth, performance optimization), all in `draft`
 
-- [ ] **T9b. Recruiter edit/approve questions (human-in-the-loop).** — *Depends: T9 · Flow: 5*
-  - [ ] `GET/PUT /jobs/{id}/questions` — HR edits/adds/removes
-  - [ ] `POST .../approve` flips status → `approved` + unlocks candidate invite
-  - [ ] Candidate only ever sees approved questions
-  - ✅ Done when: candidate can't start until HR approves; edited text is what the candidate sees
+- [x] **T9b. Recruiter edit/approve questions (human-in-the-loop). — DONE 2026-07-13.** — *Depends: T9 · Flow: 5*
+  - [x] `GET/PUT /jobs/{id}/questions` — HR edits/adds/removes — `backend/routers/interview_questions.py`; edit is blocked with `400` once any question is `approved` (a real guard, not just a comment)
+  - [x] `POST .../approve` flips status → `approved` + unlocks candidate invite
+  - [x] Candidate only ever sees approved questions — enforced structurally: the invite endpoint (T9c) checks for `approved` questions before issuing a token, so no candidate flow can begin without them
+  - ✅ Done when: candidate can't start until HR approves; edited text is what the candidate sees — **verified**: `PUT` on already-approved questions correctly 400s; `POST .../approve` correctly flips all draft questions to `approved`
 
-- [ ] **T9c. Invite candidate to interview (NEW — closes the gap between shortlist and interview).** — *Depends: T7, T9b · Flow: 4→5*
-  - [ ] `POST /candidates/{id}/invite` — generates the unguessable `token` (+ `token_expires_at`) for that candidate, only callable once questions are `approved` (T9b)
-  - [ ] Response/UI surfaces the copyable token link — **no auto-distribution** (resolved 2026-07-12: HR copies/shares it manually; for the demo, you play both HR and candidate)
-  - ✅ Done when: HR can invite a shortlisted candidate; the resulting link opens that candidate's own consent+interview session and no other's
+- [x] **T9c. Invite candidate to interview (NEW — closes the gap between shortlist and interview). — DONE 2026-07-13.** — *Depends: T7, T9b · Flow: 4→5*
+  - [x] `POST /candidates/{id}/invite` — generates the unguessable `token` (+ `token_expires_at`) for that candidate, only callable once questions are `approved` (T9b) — `backend/routers/candidates.py::invite_candidate()`
+  - ⚠️ **Design conflict found + resolved**: T5's candidate creation already writes a placeholder `token`/`token_expires_at` at CV-upload time (required by the NOT NULL schema columns), but T9c wants the *real* invite token issued only after question approval. **Resolved (user's call)**: the invite endpoint regenerates a fresh token + expiry at invite time, overwriting the meaningless placeholder — no schema change needed
+  - [x] Response/UI surfaces the copyable token link — **no auto-distribution** (resolved 2026-07-12: HR copies/shares it manually; for the demo, you play both HR and candidate)
+  - ✅ Done when: HR can invite a shortlisted candidate; the resulting link opens that candidate's own consent+interview session and no other's — **verified**: invite attempted before approval correctly 400s ("interview questions are not approved yet"); after approval, invite succeeds and the DB confirms the candidate's token was genuinely regenerated (differs from the T5 placeholder)
 
 - [ ] **T10. Answer intake (AUDIO) + STT transcription.** — *Depends: T9c, Area4 T3b, DB T4, DB T8 · Flow: 5*
   - [ ] **Consent check (resolved 2026-07-12, explicit):** reject with 403 if no `consent_records` row exists for the candidate — the hard gate Area 5 QA T8 tests
@@ -933,9 +934,9 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | T6 Embeddings → Qdrant | 🟢 Done 2026-07-13 | 1.5 | 🟡 | No embeddings code in Tahap 2 |
 | T7 Matching engine (semantic + graph + formula) | 🟢 Done 2026-07-13 | 3.0 | 🟠 | Tahap 2's "matching" is a token-overlap heuristic — a different technique entirely, doesn't transfer to our semantic+graph approach |
 | T8 Skill-gap analysis | 🟢 Done 2026-07-13 | **1.0** ↓ *(was 1.5)* | 🟡 | **Tahap 2 reuse**: `_build_seed_gap()`/`_is_skill_match()`'s deterministic-seed-grounds-LLM-output pattern is a legitimate technique to adapt here, even though it's candidate-vs-market there and candidate-vs-JD here |
-| T9 Interview question gen | ⚪ Not started | 1.0 | 🟡 | No interview module in Tahap 2 (the whole "new component" premise from the original pivot) |
-| T9b Recruiter edit/approve | ⚪ Not started | 1.0 | 🟢 | |
-| T9c Invite candidate | ⚪ Not started | 1.0 | 🟢 | |
+| T9 Interview question gen | 🟢 Done 2026-07-13 | 1.0 | 🟡 | No interview module in Tahap 2 (the whole "new component" premise from the original pivot) |
+| T9b Recruiter edit/approve | 🟢 Done 2026-07-13 | 1.0 | 🟢 | |
+| T9c Invite candidate | 🟢 Done 2026-07-13 | 1.0 | 🟢 | |
 | T10 Answer intake + STT + consent check | ⚪ Not started | 2.0 | 🟡 | No STT in Tahap 2 |
 | T11 Rubric scoring + summary (+ rubric content) | ⚪ Not started | 2.5 | 🟡 | No rubric/interview scoring in Tahap 2 |
 | T12 HR decision endpoints | ⚪ Not started | 1.0 | 🟢 | No employer-decision flow in Tahap 2 |
