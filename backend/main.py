@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -20,6 +21,7 @@ from routers import (
     report,
     rubric,
 )
+from services.telegram_poller import run_telegram_poller
 
 logger = logging.getLogger("gaskeun")
 
@@ -93,6 +95,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 def on_startup():
     create_all()
     create_collections()
+    asyncio.create_task(run_telegram_poller())
 
 
 @app.get("/health")

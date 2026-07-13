@@ -700,7 +700,7 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 | T5c. Invite modal | ✅ **Final result** | Invite + copy + re-view (same link, no silent regeneration) verified live end-to-end. | 1.0 | 🟡 | Required 1 backend gap-fill: read-only `GET /candidates/{id}` so re-viewing never calls the regenerating POST /invite |
 | T6. Candidate audio interview | ✅ **Final result** | Full recorder machine verified live: real getUserMedia+MediaRecorder via Playwright's fake-device flag, real upload/STT round-trip, mic-denied path, completion guard. | **5.5** | 🔴 | Live human-mic sanity check still pending (user to confirm) |
 | T7. HR decision + detail + delivery | ✅ **Final result** | Full detail screen verified live: CV/skill-gap, audio+transcript+rubric, decision, all 3 report-send states including a real error+retry. | **4.0** | 🟠 | Required 3 backend gap-fills: full detail endpoint + audio-streaming endpoint, a real `report_sent_at` field (had been wrongly inferred), and a real cross-cutting CORS-on-error bug fix |
-| T8. Candidate consent + Telegram linking | 📝 **To do** | PDP consent checkbox + Telegram deep-link capture. | 1.5 | 🟡 | |
+| T8. Candidate consent + Telegram linking | ✅ **Final result** | Consent + required Telegram gate verified live with a real deep-link click — poller correctly captured the real chat_id. | 1.5 | 🟡 | Required 1 backend gap-fill: a background poller now actually invokes the previously-unused Telegram `get_updates`/`extract_start_token` code |
 | T9. Cross-cutting UX | 📝 **To do** | Shared loading/error/empty states across all screens. | 2.5 | 🟡 | Touches every screen |
 | **Subtotal** | | | **~28h** | | vs. **32h** scheduled (Day 8-11, 4 days × 8h) |
 
@@ -786,10 +786,12 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
   - [ ] **Non-goals honored**: single theme, desktop-only, no mobile recorder path
   - ✅ Done when: no screen shows a raw error, infinite spinner, or blank-with-no-explanation during the demo happy path
 
-- [ ] **T8. 💎 Candidate consent (token link) — Telegram linking only.** — *Depends: Area2 T5, DB T8 · Flow: 5*
-  - [ ] Candidate token page: consent checkbox (gates interview, PDP) — **no self-service CV upload for MVP** (resolved 2026-07-12: the 30 demo candidates are HR/seed-imported since their CVs come from Kaggle already; a public self-apply upload flow is out of scope this week, see Area 2 T5 note)
-  - [ ] Candidate token page: "Get your result on Telegram" button → deep-links to `t.me/<bot>?start=<token>` (Area4 T3c) — **required** step, this is the only delivery channel
-  - ✅ Done when: consent recorded; candidate links Telegram before starting the interview. **Report sending now lives on T7, not here** (resolved 2026-07-12)
+- [x] **T8. 💎 Candidate consent (token link) — Telegram linking only. — DONE 2026-07-13.** — *Depends: Area2 T5, DB T8 · Flow: 5*
+  - [x] Candidate token page: consent checkbox (gates interview, PDP) — `frontend/src/pages/CandidateConsentPage.tsx`, calls the existing `POST /candidates/{id}/consent`
+  - [x] Candidate token page: "Tautkan Telegram" button → deep-links to `t.me/<bot>?start=<token>` — **required** step, enforced by genuinely blocking "Mulai Wawancara" until `has_telegram_link=true` (not just a UI suggestion)
+  - **Real backend gap found and fixed**: "required" couldn't actually work as a hard gate — `services/telegram_client.py::get_updates`/`extract_start_token` (built in Area 4 T3c) were never invoked by anything; nothing polled Telegram or wrote the resulting `chat_id` anywhere. Consulted the user on 3 options (build a real poller / add a manual-only re-check button / soften "required" to skippable); **user chose to build a real poller**. Added `backend/services/telegram_poller.py` — a simple `asyncio` background loop (3s interval) started on FastAPI startup, calling `get_updates`/`extract_start_token` and writing `chat_id` onto the matching candidate. Runs inside the same process (no separate cron needed for a local MVP using `getUpdates`, not a webhook).
+  - [x] Frontend "Sudah tautkan? Cek status" button re-fetches candidate self-info on demand, since the frontend has no other way to know a background Telegram interaction happened
+  - ✅ Done when: consent recorded; candidate links Telegram before starting the interview. **Report sending now lives on T7, not here** (resolved 2026-07-12) — **verified with a real, live end-to-end test, not a mock**: recorded real consent for a real seeded candidate, generated the real `t.me/GaskeunkerjaBot?start=<token>` deep-link, **the user clicked the real link and pressed Start in their actual Telegram app**, the poller picked it up and wrote a real `chat_id` (`1304618784`) to the candidate row within the poll interval, and reloading the consent page correctly showed "Telegram berhasil ditautkan" with the interview now unblocked. Test consent record and chat_id reset afterward to keep the seed data clean.
 
 - [ ] `[deferred]` **Full HR dashboard shell / nav polish beyond the JD list (T4b)** — minimal nav only.
 - [ ] `[deferred]` **Responsive/usability polish beyond demo happy-path.**
