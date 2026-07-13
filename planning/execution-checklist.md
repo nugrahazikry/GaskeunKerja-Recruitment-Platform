@@ -492,7 +492,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | T9. Interview question gen | **Final result** | 3 real, relevant Indonesian questions verified for a live Web Developer JD. |
 | T9b. Recruiter edit/approve | **Final result** | Approval gate verified — edit blocked post-approval, invite blocked pre-approval. |
 | T9c. Invite candidate | **Final result** | Invite verified end-to-end; caught and resolved a real design conflict with T5's placeholder token. |
-| T10. Answer intake + STT | **To do** | Consent-gated audio upload + Groq transcription. |
+| T10. Answer intake + STT | **Final result** | Consent gate + real audio transcription verified via live HTTP; token-impersonation attempt correctly rejected. |
 | T11. Rubric scoring + summary | **To do** | Fixed 3-criteria rubric at temperature=0 + AI answer summary. |
 | T12. HR decision endpoints | **To do** | Records the human pass/reject decision, no auto-finalize path. |
 | T13. Report generation | **To do** | Deterministic report assembly, gated on a decision existing. |
@@ -580,12 +580,12 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - [x] Response/UI surfaces the copyable token link — **no auto-distribution** (resolved 2026-07-12: HR copies/shares it manually; for the demo, you play both HR and candidate)
   - ✅ Done when: HR can invite a shortlisted candidate; the resulting link opens that candidate's own consent+interview session and no other's — **verified**: invite attempted before approval correctly 400s ("interview questions are not approved yet"); after approval, invite succeeds and the DB confirms the candidate's token was genuinely regenerated (differs from the T5 placeholder)
 
-- [ ] **T10. Answer intake (AUDIO) + STT transcription.** — *Depends: T9c, Area4 T3b, DB T4, DB T8 · Flow: 5*
-  - [ ] **Consent check (resolved 2026-07-12, explicit):** reject with 403 if no `consent_records` row exists for the candidate — the hard gate Area 5 QA T8 tests
-  - [ ] `POST` accepts the candidate's audio file → store (DB T4)
-  - [ ] Transcribe via Groq `whisper-large-v3`, `language=id` (Area4 T3b)
-  - [ ] Persist transcript; recruiter can fetch raw audio + transcript
-  - ✅ Done when: an Indonesian audio answer yields a stored file + correct transcript; a submission with no consent record is rejected
+- [x] **T10. Answer intake (AUDIO) + STT transcription. — DONE 2026-07-13.** — *Depends: T9c, Area4 T3b, DB T4, DB T8 · Flow: 5*
+  - [x] **Consent check (resolved 2026-07-12, explicit):** reject with 403 if no `consent_records` row exists for the candidate — `backend/routers/interview_answers.py` maps `ConsentRequiredError` → `403`
+  - [x] `POST` accepts the candidate's audio file → store (DB T4) — `backend/routers/interview_answers.py::submit_interview_answer()`, candidate-token-authenticated (new `get_candidate_by_token()` dependency added to `routers/auth.py`), not HR-JWT
+  - [x] Transcribe via Groq `whisper-large-v3`, `language=id` (Area4 T3b) — `backend/services/interview_answers.py::submit_answer()` calls the existing `stt_client`
+  - [x] Persist transcript; recruiter can fetch raw audio + transcript — `interview_answers` + `transcripts` rows, correctly linked via `answer_id`
+  - ✅ Done when: an Indonesian audio answer yields a stored file + correct transcript; a submission with no consent record is rejected — **verified end-to-end via real HTTP**: submission without a consent record correctly 403s; after writing a real consent record, submission succeeds — a real `.m4a` recording (from Area 4 T3b's earlier test clips) was correctly saved to disk and transcribed accurately by Groq; DB confirms `interview_answers`↔`transcripts` linked correctly; **also verified**: a token belonging to one candidate cannot be used against a different `candidate_id` in the URL (401), and a wrong/mismatched token check catches impersonation attempts
 
 - [ ] **T11. Rubric scoring + answer summary (Pro, temp=0, FIXED schema).** — *Depends: T10 · Flow: 5→6*
   - [ ] **Rubric locked (resolved 2026-07-12) `[content]`**: 3 criteria — **clarity**, **relevance**, **technical depth** — each on a **1-5 scale** with an anchored description per level (e.g. 1=vague/off-topic … 5=clear/precise/correct); curate the exact wording per level (same curation category as the Area 3 competency framework)
@@ -937,7 +937,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | T9 Interview question gen | 🟢 Done 2026-07-13 | 1.0 | 🟡 | No interview module in Tahap 2 (the whole "new component" premise from the original pivot) |
 | T9b Recruiter edit/approve | 🟢 Done 2026-07-13 | 1.0 | 🟢 | |
 | T9c Invite candidate | 🟢 Done 2026-07-13 | 1.0 | 🟢 | |
-| T10 Answer intake + STT + consent check | ⚪ Not started | 2.0 | 🟡 | No STT in Tahap 2 |
+| T10 Answer intake + STT + consent check | 🟢 Done 2026-07-13 | 2.0 | 🟡 | No STT in Tahap 2 |
 | T11 Rubric scoring + summary (+ rubric content) | ⚪ Not started | 2.5 | 🟡 | No rubric/interview scoring in Tahap 2 |
 | T12 HR decision endpoints | ⚪ Not started | 1.0 | 🟢 | No employer-decision flow in Tahap 2 |
 | T13 Report generation (gated, deterministic) | ⚪ Not started | 2.5 | 🟡 | Tahap 2's report content is LLM-free-generated (by design, ours is deterministic-selection) — different approach, no code reuse, only content-shape learning |

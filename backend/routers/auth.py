@@ -39,3 +39,19 @@ def get_current_hr(authorization: str = Header(...)) -> dict:
         return auth.verify_hr_jwt(token)
     except auth.InvalidTokenError as e:
         raise HTTPException(status_code=401, detail=str(e)) from e
+
+
+def get_candidate_by_token(token: str, db: Session = Depends(get_db)):
+    """Dependency: resolves a candidate's own unguessable token to their row, scoped to
+    exactly that candidate's session — never returns another candidate's data. Rejects
+    expired or unknown tokens with 401 (a shared 'link tidak valid' state at the API level,
+    per Area 1 T3's frontend guard)."""
+    candidates = repo.candidates.list(db, token=token)
+    if not candidates:
+        raise HTTPException(status_code=401, detail="Invalid or unknown token")
+
+    candidate = candidates[0]
+    if not auth.is_candidate_token_valid(candidate.token_expires_at):
+        raise HTTPException(status_code=401, detail="Token has expired")
+
+    return candidate
