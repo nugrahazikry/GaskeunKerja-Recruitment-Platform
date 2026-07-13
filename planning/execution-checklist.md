@@ -354,7 +354,7 @@ scannable index of what exists, used by T1-T3.
 | T1. DB connection | **Final result** | SQLAlchemy engine + `create_all()` wired and verified against the Docker Postgres — idempotent restart confirmed. |
 | T2. Schema (17 tables) | **Final result** | All 17 models built and verified — `create_all` produces every table, FKs and JSONB/array columns confirmed correct. |
 | T3. Qdrant collections | **Final result** | `candidate_vectors` + `jd_vectors` collections created and verified with a real upsert/query round-trip. |
-| T4. File storage layout | **To do** | Isolated per-candidate folders for CV + audio, path-pointer-only in DB. |
+| T4. File storage layout | **Final result** | Isolated per-candidate folders for CV + audio verified — layout, isolation, and round-trip all confirmed. |
 | T5. Repository layer | **To do** | Thin CRUD repositories over SQLAlchemy. |
 | T6. Competency framework `[content]` | **To do** | ~8-12 competencies for the Data Analyst demo role, with lightweight relations. |
 | T7. Resource library `[content]` | **To do** | ~3 curated resources per competency. |
@@ -382,12 +382,12 @@ scannable index of what exists, used by T1-T3.
   - [x] Payload = ids + competency metadata needed for explainable matching — verified with a real upsert (`candidate_id` + `competencies` list payload)
   - ✅ Done when: a test upsert + query round-trips — **verified**: both collections confirmed created (`GET /collections`), upserted a 1536-dim test vector with realistic payload, queried it back — got the exact point, correct payload, ~1.0 similarity score for the identical vector; test point cleaned up afterward
 
-- [ ] **T4. Local file storage for CV + interview audio.** — *Depends: none · Flow: 3, 5*
-  - [ ] Layout: `storage/cv/<candidate_id>/original.pdf` and `storage/audio/<candidate_id>/<session>/answer_<n>.webm`
-  - [ ] Naming convention + per-candidate folder isolation
-  - [ ] DB stores only the **file path pointer**; the file itself never enters Postgres
-  - [ ] `parsed_profiles` (structured, anonymized skill data) is the separate DB row the app reads/displays for matching/reports; the **raw original PDF is still shown to HR as-is** on request (resolved: redaction scope is LLM-input + structured data only, not the stored file)
-  - ✅ Done when: CV + audio land in the right isolated folders, path retrievable by the recruiter
+- [x] **T4. Local file storage for CV + interview audio. — DONE 2026-07-13.** — *Depends: none · Flow: 3, 5*
+  - [x] Layout: `storage/cv/<candidate_id>/original.pdf` and `storage/audio/<candidate_id>/<session>/answer_<n>.webm` — `backend/services/storage.py` (`cv_path()`, `audio_path()`, `save_cv()`, `save_audio()`)
+  - [x] Naming convention + per-candidate folder isolation — verified: candidate 1 and candidate 2's CVs land in distinct folders (`cv/1/` vs `cv/2/`)
+  - [x] DB stores only the **file path pointer**; the file itself never enters Postgres — `save_cv()`/`save_audio()` return the path string, which is what `parsed_profiles.raw_cv_path` / `interview_answers.audio_path` store
+  - [x] `parsed_profiles` (structured, anonymized skill data) is the separate DB row the app reads/displays for matching/reports; the **raw original PDF is still shown to HR as-is** on request (resolved: redaction scope is LLM-input + structured data only, not the stored file) — schema already supports this (T2)
+  - ✅ Done when: CV + audio land in the right isolated folders, path retrievable by the recruiter — **verified**: saved a CV + an audio file for candidate 1, confirmed both exist on disk at the exact expected paths; saved a second candidate's CV and confirmed the paths don't collide; read the saved CV back and confirmed byte-for-byte content match
 
 - [ ] **T5. Data access layer (repository pattern).** — *Depends: T2 · Flow: all*
   - [ ] Thin repositories/CRUD over SQLAlchemy (no Alembic)
