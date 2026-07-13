@@ -14,7 +14,7 @@
 
 | Area | Status | Core tasks | Deferred | Primary days |
 |---|---|---|---|---|
-| 4. Cost / Tooling (dev env) | 🟢 Decisions locked (vision: SumoPod primary, Groq fallback, verify Day 1) | 7 | 1 | Day 1 |
+| 4. Cost / Tooling (dev env) | 🟡 In progress — env vars set + Day-1 API checks passed; Docker/clients not yet built | 7 | 1 | Day 1 |
 | 3. Database + datasets | ⚪ Not started | 9 | 0 | Day 2–3 |
 | 2. Backend & AI | 🟡 Decisions locked, 4 gaps resolved | 16 | 0 | Day 4–7 |
 | 1. Frontend UI/UX | 🟡 Decisions locked, UX gaps resolved | 13 | 2 | Day 8–11 |
@@ -72,7 +72,7 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 
 ---
 
-## Area 4 — Cost / Tooling (Dev Environment)  ·  Status: 🟢 Decisions locked (ready to build Day 1)
+## Area 4 — Cost / Tooling (Dev Environment)  ·  Status: 🟡 In progress (env + API verification done; Docker + client code not started)
 
 > Set up FIRST — Areas 2/3 build on this. Cost story: keep it local + cache SumoPod calls.
 > **Locked:** LLM=SumoPod (OpenAI-compat), STT=Groq whisper-large-v3 API, embeddings=local
@@ -92,11 +92,13 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 > new TTS dependency.
 
 - [ ] **T1. Lock the local-first stack + versions.** — *Depends: none · Flow: infra*
-  - [ ] Pin frontend deps: React + Vite (in `package.json`)
-  - [ ] Pin backend deps: FastAPI + uvicorn, `psycopg`, `qdrant-client`, `sentence-transformers`, `openai` SDK (used for SumoPod + Groq + vision via `base_url`)
-  - [ ] Pin PDF deps: `pypdf` (text extraction + embedded-image extraction), `Pillow` (image decode/re-encode) — **no OCR binary needed** (replicated from NalarX: vision-LLM captioning instead of Tesseract; see Area 3 T5 note)
-  - [ ] Commit exact versions — no floating `latest`
-  - ✅ Done when: a fresh clone documents exact versions across `requirements.txt` + `package.json`
+  - [x] **Folders scaffolded 2026-07-13**: `backend/` (routers/services/models/db/tests, each a Python package) + `frontend/` (real Vite React-TS app via `npm create vite@5`, not hand-written — `create-vite@latest` requires Node ≥20.19, this machine has 18.16, used `@5` instead; `npm install` succeeded, 175 packages, only non-fatal engine warnings)
+  - [x] Pin frontend deps: React 18.3 + Vite 5.4 + TypeScript 5.6, generated in `frontend/package.json` by the scaffolder
+  - [ ] Pin backend deps: draft `requirements.txt` written (fastapi, uvicorn, sqlalchemy, psycopg, qdrant-client, openai, pyjwt, pypdf, Pillow, httpx) — **not yet `pip install`-ed or version-verified to actually resolve together**
+  - [ ] Pin PDF deps: `pypdf` + `Pillow` already in the draft `requirements.txt` above — **no OCR binary needed** (replicated from NalarX: vision-LLM captioning instead of Tesseract; see Area 3 T5 note)
+  - [ ] Commit exact versions — no floating `latest` (frontend done via lockfile; backend still needs a `pip freeze` pass after first install)
+  - ⚠️ **Open item**: Node is 18.16 (2023), current Vite/ESLint tooling wants 18.18+/20.9+/21.1+ — user is installing `nvm-windows` + Node 22 to close this gap; re-verify `npm install` cleanly (no engine warnings) once done
+  - ✅ Done when: a fresh clone documents exact versions across `requirements.txt` + `package.json` — **frontend done, backend pending first real `pip install`**
 
 - [ ] **T2. Docker Compose (DBs) + run modes.** — *Depends: T1 · Flow: infra*
   - [ ] Compose services: `postgres` + `qdrant` with named volumes + healthchecks
@@ -107,7 +109,8 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
   - ✅ Done when: dev = `docker compose up` (DBs) + `uvicorn` + `npm run dev` works; finalization = full `docker compose up` works
 
 - [ ] **T3. Unified LLM client (SumoPod) + response caching.** — *Depends: T2 · Flow: 2,3,5*
-  - [ ] `openai`-SDK client with `base_url=LLM_BASE_URL`, `api_key=LLM_API_KEY`
+  - [x] **API key + model access verified 2026-07-13** (one-off test script, not yet the real client module): new `LLM_API_KEY` confirmed working against `gpt-4o-mini`, `deepseek-v4-flash`, `deepseek-v4-pro`, and embeddings (`gemini/gemini-embedding-001`, 1536-dim truncation confirmed)
+  - [ ] `openai`-SDK client with `base_url=LLM_BASE_URL`, `api_key=LLM_API_KEY` — **module code not yet written**
   - [ ] Helpers for `deepseek-v4-flash` and `deepseek-v4-pro`
   - [ ] Enforce `temperature=0` for scoring calls
   - [ ] Disk cache keyed on (prompt hash, model, temp) so re-runs don't re-bill
@@ -129,12 +132,12 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 
 - [ ] **T3d. Vision-LLM client (scanned-PDF image captioning).** — *Depends: T2 · Flow: 3 (CV parsing)*
   - [ ] **Reference (2026-07-12 Tahap 2 audit):** `backend/config/utils.py::_ocr_pdf_with_gemini()` in the Tahap 2 code is a working version of this exact pattern (rasterize page → send to vision model) — same idea, different provider (Gemini vs SumoPod/Groq) and different trigger (whole-page rasterization vs NalarX's per-embedded-image approach we're using) — read it for validation, don't copy verbatim
-  - [ ] **Verify first:** send one test image to SumoPod's `deepseek-v4` endpoint as an `image_url` content block — confirm it actually returns a real transcription, not a text-only refusal/ignore (this API key requires auth, so it can't be checked without running it live)
-  - [ ] **If SumoPod supports vision:** use it as the client — one fewer provider, matches the "SumoPod for all LLM" preference
-  - [ ] **If SumoPod does NOT support vision:** fall back to **Groq's vision model**, reusing the same `openai`-SDK client/key already being set up for STT (T3b) — documented fallback, not a new decision to make mid-build. Pin the exact model ID from Groq's current catalog at build time (vision-preview model names change) and record it in `.env.example`'s `VISION_MODEL`
-  - [ ] Client call: image bytes → base64 → `image_url` content block, same pattern as NalarX `image_captioning.py`
+  - [x] **Verify first — DONE 2026-07-13:** sent a test image to SumoPod's `deepseek-v4-pro` as an `image_url` content block. **Confirmed NOT supported** — model's own `reasoning_content` showed it reasoning "no image was provided," `prompt_tokens` too low to have ingested image data, returned empty (`finish_reason: length`)
+  - [x] ~~If SumoPod supports vision~~ — ruled out by the verification above
+  - [x] **Groq vision model selected + verified 2026-07-13:** `meta-llama/llama-4-scout-17b-16e-instruct` — sent the same test image, correctly read back the embedded text (`prompt_tokens: 174`, correct output). Pinned in `.env`/`.env.example` as `VISION_MODEL`, `VISION_PROVIDER=groq` (now primary, not fallback). Reuses the Groq STT client/key from T3b
+  - [ ] Client call: image bytes → base64 → `image_url` content block, same pattern as NalarX `image_captioning.py` — **not yet built as reusable module code** (only a one-off test script exists)
   - [ ] Two prompt modes: **transcribe** (verbatim read-out, for images on empty-text pages) and **describe** (caption, for images on pages with existing text)
-  - ✅ Done when: a sample scanned-CV image returns an accurate verbatim transcription, via whichever provider passed the Day-1 verification
+  - ✅ Done when: a sample scanned-CV image returns an accurate verbatim transcription, via whichever provider passed the Day-1 verification — **verification sub-step done; module code + two-mode prompting still to build**
 
 - [ ] **T8. True minimal cost estimate.** — *Depends: T3, T3b · Flow: reporting*
   - [ ] Tally a full demo run from usage logs (SumoPod tokens + Groq minutes)
