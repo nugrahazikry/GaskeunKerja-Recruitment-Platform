@@ -493,7 +493,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | T9b. Recruiter edit/approve | **Final result** | Approval gate verified — edit blocked post-approval, invite blocked pre-approval. |
 | T9c. Invite candidate | **Final result** | Invite verified end-to-end; caught and resolved a real design conflict with T5's placeholder token. |
 | T10. Answer intake + STT | **Final result** | Consent gate + real audio transcription verified via live HTTP; token-impersonation attempt correctly rejected. |
-| T11. Rubric scoring + summary | **To do** | Fixed 3-criteria rubric at temperature=0 + AI answer summary. |
+| T11. Rubric scoring + summary | **Final result** | Verified against a real transcript; caught and fixed a design gap around interview-summary text sourcing. |
 | T12. HR decision endpoints | **To do** | Records the human pass/reject decision, no auto-finalize path. |
 | T13. Report generation | **To do** | Deterministic report assembly, gated on a decision existing. |
 | T14. Report delivery | **To do** | PDF via adapted ReportLab code, sent through Telegram. |
@@ -587,12 +587,14 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - [x] Persist transcript; recruiter can fetch raw audio + transcript — `interview_answers` + `transcripts` rows, correctly linked via `answer_id`
   - ✅ Done when: an Indonesian audio answer yields a stored file + correct transcript; a submission with no consent record is rejected — **verified end-to-end via real HTTP**: submission without a consent record correctly 403s; after writing a real consent record, submission succeeds — a real `.m4a` recording (from Area 4 T3b's earlier test clips) was correctly saved to disk and transcribed accurately by Groq; DB confirms `interview_answers`↔`transcripts` linked correctly; **also verified**: a token belonging to one candidate cannot be used against a different `candidate_id` in the URL (401), and a wrong/mismatched token check catches impersonation attempts
 
-- [ ] **T11. Rubric scoring + answer summary (Pro, temp=0, FIXED schema).** — *Depends: T10 · Flow: 5→6*
-  - [ ] **Rubric locked (resolved 2026-07-12) `[content]`**: 3 criteria — **clarity**, **relevance**, **technical depth** — each on a **1-5 scale** with an anchored description per level (e.g. 1=vague/off-topic … 5=clear/precise/correct); curate the exact wording per level (same curation category as the Area 3 competency framework)
-  - [ ] Score the **transcript** per criterion at **temperature=0**
-  - [ ] Produce an **AI summary of the answer's main points** for the recruiter
-  - [ ] Persist to `rubric_scores` (one row per criterion, per `interview_answers` schema)
-  - ✅ Done when: same transcript → identical score across runs (QA T3); recruiter gets a readable summary
+- [x] **T11. Rubric scoring + answer summary (Pro, temp=0, FIXED schema). — DONE 2026-07-13.** — *Depends: T10 · Flow: 5→6*
+  - [x] **Rubric locked (resolved 2026-07-12) `[content]`**: 3 criteria — **clarity**, **relevance**, **technical depth** — each on a **1-5 scale** with an anchored description per level — `backend/services/rubric_data.py`, full Indonesian 1-5 level descriptions per criterion, authored this session
+  - [x] Score the **transcript** per criterion at **temperature=0** — `backend/services/rubric.py::score_answer()`, uses `chat_pro()` (Area 4 T3) which always enforces `LLM_TEMPERATURE_SCORING`
+  - [x] Produce an **AI summary of the answer's main points** for the recruiter — same call returns a `summary` field
+  - [x] Persist to `rubric_scores` (one row per criterion, per `interview_answers` schema) — `backend/services/rubric_persist.py::score_and_persist_answer()`
+  - ⚠️ **Design gap found + fixed during build**: `interview_summaries.ai_summary_text` needs a real "main points" summary, but no per-answer summary column exists on `interview_answers` to source it from later. Fixed by threading each answer's `score_answer()`-produced `summary` field through the caller (`routers/rubric.py::build_interview_summary()` collects `per_answer_summaries` from each scored answer) rather than adding a new column or a wasted extra LLM call
+  - [x] `backend/routers/rubric.py` — `POST /candidates/{id}/answers/{answer_id}/score`, `POST /candidates/{id}/interview-summary`
+  - ✅ Done when: same transcript → identical score across runs (QA T3); recruiter gets a readable summary — **verified**: real scoring against a real transcript produced sensible, differentiated scores (clarity=4, relevance=3, technical_depth=2) with genuine per-criterion rationale reflecting the transcript's actual thin content; repeated calls returned identical results; `rubric_scores` confirmed persisted correctly (one row per criterion); `interview-summary` endpoint correctly aggregated `overall_score=3.0` (average) with a real, non-placeholder summary text — confirming the design-gap fix above actually works, not just compiles
 
 - [ ] **T12. Human-in-the-loop endpoints — no auto-reject.** — *Depends: T11, DB T8 · Flow: 6→7*
   - [ ] HR reads AI score/summary
@@ -938,7 +940,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 | T9b Recruiter edit/approve | 🟢 Done 2026-07-13 | 1.0 | 🟢 | |
 | T9c Invite candidate | 🟢 Done 2026-07-13 | 1.0 | 🟢 | |
 | T10 Answer intake + STT + consent check | 🟢 Done 2026-07-13 | 2.0 | 🟡 | No STT in Tahap 2 |
-| T11 Rubric scoring + summary (+ rubric content) | ⚪ Not started | 2.5 | 🟡 | No rubric/interview scoring in Tahap 2 |
+| T11 Rubric scoring + summary (+ rubric content) | 🟢 Done 2026-07-13 | 2.5 | 🟡 | No rubric/interview scoring in Tahap 2 |
 | T12 HR decision endpoints | ⚪ Not started | 1.0 | 🟢 | No employer-decision flow in Tahap 2 |
 | T13 Report generation (gated, deterministic) | ⚪ Not started | 2.5 | 🟡 | Tahap 2's report content is LLM-free-generated (by design, ours is deterministic-selection) — different approach, no code reuse, only content-shape learning |
 | T14 Report delivery — **PDF library swapped to ReportLab** (resolved 2026-07-12) | ⚪ Not started | **2.0** ↓ *(was 3.0, weasyprint)* | 🟡 *(was 🟠)* | **Tahap 2 reuse, biggest single win**: `_build_report_pdf()` is a fully-working ~700-line ReportLab generator with custom flowables for skill chips. Adapting it to our schema retires both the hardest part of this task AND the weasyprint Windows Pango/Cairo dependency risk (ReportLab is pure Python, no system libs) |
