@@ -163,7 +163,7 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 
 ---
 
-## Area 3 — Database + Reference Datasets  ·  Status: ⚪ Not started
+## Area 3 — Database + Reference Datasets  ·  Status: 🟡 In progress (T1 done)
 
 > **Blocks Area 2.** Schema early; datasets are `[content]` and gate the report (Area 2 T13) — start Day 2, don't slip.
 > Resolved: **PostgreSQL in Docker, via SQLAlchemy, NO Alembic** (`create_all` on fresh demo DB).
@@ -351,7 +351,7 @@ scannable index of what exists, used by T1-T3.
 
 | Task | Status | Summary |
 |---|---|---|
-| T1. DB connection | **To do** | SQLAlchemy engine + `create_all()` against the Docker Postgres from Area 4 T2. |
+| T1. DB connection | **Final result** | SQLAlchemy engine + `create_all()` wired and verified against the Docker Postgres — idempotent restart confirmed. |
 | T2. Schema (17 tables) | **To do** | Full happy-path entity set, per the schema reference above. |
 | T3. Qdrant collections | **To do** | `candidate_vectors` + `jd_vectors` collections with explainability payload. |
 | T4. File storage layout | **To do** | Isolated per-candidate folders for CV + audio, path-pointer-only in DB. |
@@ -362,10 +362,10 @@ scannable index of what exists, used by T1-T3.
 | T9. Retention policy | **To do** | Light retention rule scoped to the 1 live candidate's real consented audio. |
 | T10. Seed data | **To do** | Kaggle-sourced, curated, anonymized, tiered 30-candidate seed set — the single biggest time sink in the plan. |
 
-- [ ] **T1. DB connection locked: PostgreSQL (Docker).** — *Depends: Area4 T2 · Flow: all persistence*
-  - [ ] SQLAlchemy engine + session factory from `DATABASE_URL`
-  - [ ] `create_all()` on startup (no migrations)
-  - ✅ Done when: backend creates all tables on boot against Compose Postgres
+- [x] **T1. DB connection locked: PostgreSQL (Docker). — DONE 2026-07-13.** — *Depends: Area4 T2 · Flow: all persistence*
+  - [x] SQLAlchemy engine + session factory from `DATABASE_URL` — `backend/db/session.py` (`engine`, `SessionLocal`, `Base`, `get_db()`); `DATABASE_URL` added to `backend/config.py`
+  - [x] `create_all()` on startup (no migrations) — wired into `main.py`'s `@app.on_event("startup")`; one placeholder model (`backend/models/company.py::Company`, the `companies` table) added just to give `create_all()` something real to prove against — the full 17-table schema is T2's job, not T1's
+  - ✅ Done when: backend creates all tables on boot against Compose Postgres — **verified**: cleared the DB (`\dt` → no relations), booted `uvicorn`, confirmed `companies` table created with correct schema (`\d companies`); restarted `uvicorn` again against the now-existing table — booted clean with no error, confirming `create_all()` is safely idempotent
 
 - [ ] **T2. Schema for the ~17 happy-path entities.** — *Depends: T1 · Flow: all*
   - [ ] Core: `companies`, `hr_users`, `jobs`, `jd_competencies`, `candidates`, `parsed_profiles`

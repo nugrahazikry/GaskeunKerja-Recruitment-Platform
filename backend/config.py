@@ -42,3 +42,5 @@ CACHE_DIR = str(Path(STORAGE_DIR) / "llm_cache")
 TELEGRAM_ENABLED = os.environ.get("TELEGRAM_ENABLED", "true").lower() == "true"
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME")
+
+DATABASE_URL = _require("DATABASE_URL")
