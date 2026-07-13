@@ -80,8 +80,11 @@ GitHub: `https://github.com/nugrahazikry/AI-Powered-Skill-Gap-Analysis`. Per Tah
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
 
+**⚠️ MANDATORY, not optional — this was skipped once already (2026-07-13, Area 3 T10 seed-data cleanup) and caused a real, avoidable cost: cleaning up FK-linked rows across `candidates`/`match_scores`/`parsed_profiles`/`interview_questions`/`jd_competencies`/`jobs`/`hr_users`/`companies` took 5+ failed `DELETE` attempts, discovering the foreign-key dependency order one constraint-violation error at a time, instead of querying the graph once up front. Do not repeat this.**
+
 Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- **Before any multi-table DB operation** (cleanup/delete/migration touching more than one model) **or any troubleshooting/debugging session** (an error, an unexpected state, "why is X slow/stuck/failing"): run `graphify query`/`graphify path`/`graphify explain` FIRST, before trial-and-error edits or sequential command attempts. This applies even under time pressure or mid-debugging-loop — especially then, since that's exactly when it's easiest to skip.
+- For codebase questions generally, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships (e.g. FK/dependency chains before a cascading delete) and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
