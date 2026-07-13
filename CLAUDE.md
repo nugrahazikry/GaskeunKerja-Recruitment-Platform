@@ -75,3 +75,13 @@ GitHub: `https://github.com/nugrahazikry/AI-Powered-Skill-Gap-Analysis`. Per Tah
 - **Every task should trace to the end-to-end flow** in `direction B summary.md` §2. If a task doesn't serve that flow or a submission claim, question it.
 - **Keep the MVP honest**: the goal is a working local end-to-end demo for the hackathon (video + pilot-ready), not a production system. Prefer the simplest thing that demonstrates the flow.
 - Language: Bahasa Indonesia for anything destined for the submission; English fine for internal planning.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

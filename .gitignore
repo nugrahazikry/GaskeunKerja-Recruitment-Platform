@@ -30,3 +30,6 @@ seed/raw/cv/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# graphify local knowledge graph (regeneratable via `graphify .`)
+graphify-out/
