@@ -30,6 +30,7 @@ pydantic_core==2.27.2
 PyJWT==2.10.1
 pypdf==5.1.0
 python-dotenv==1.0.1
+python-multipart==0.0.20
 pywin32==312
 PyYAML==6.0.3
 qdrant-client==1.12.1
