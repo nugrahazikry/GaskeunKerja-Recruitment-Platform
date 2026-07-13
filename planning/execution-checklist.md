@@ -16,9 +16,9 @@
 |---|---|---|---|---|
 | 4. Cost / Tooling (dev env) | 🟢 Done (T1-T3d, T8 all done; T4 deferred) | 7 | 1 | Day 1 |
 | 3. Database + datasets | 🟡 In progress (T1-T9 done; T10 blocked on Kaggle CV/audio seed material) | 9 | 0 | Day 2–3 |
-| 2. Backend & AI | 🟡 In progress (T1-T11 done; T12-T16 to do) | 16 | 0 | Day 4–7 |
+| 2. Backend & AI | 🟢 Done (all 16 tasks T1-T16 verified end-to-end) | 16 | 0 | Day 4–7 |
 | 1. Frontend UI/UX | 🟡 In progress (T1 done, T3 partial; rest to do) | 13 | 2 | Day 8–11 |
-| 5. QA | ⚪ Not started (blocked on Area 2 T12-T16 landing) | 8 | 5 | Day 4-12 (shifted left, spans build; final pass Day 12 — see banner) |
+| 5. QA | ⚪ Not started (Area 2 now done — can start) | 8 | 5 | Day 4-12 (shifted left, spans build; final pass Day 12 — see banner) |
 
 Status values: ⚪ Not started · 🟡 In progress · 🟢 Done/locked.
 
@@ -434,7 +434,7 @@ scannable index of what exists, used by T1-T3.
 
 ---
 
-## Area 2 — Backend & AI Integration  ·  Status: 🟡 In progress (T1-T11 done; T12-T16 to do)
+## Area 2 — Backend & AI Integration  ·  Status: 🟢 Done (all 18 tasks T1-T16 verified end-to-end)
 
 > Largest area, core of the MVP. Reuse Tahap 2 FastAPI + CV-parse. All LLM via SumoPod + caching (Area4 T3).
 > Resolved: **T7 semantic+graph**, **T10 audio→Groq STT**, **T11 rubric temp=0**, **+T9b recruiter edit/approve**.
@@ -500,7 +500,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | T13. Report generation | ✅ **Final result** | Verified end-to-end: gating, real curated resource citations, and determinism all confirmed. | 2.5 | 🟡 | Different approach from Tahap 2's LLM-free-generated content, no code reuse |
 | T14. Report delivery | ✅ **Final result** | Verified with a real live Telegram send — user confirmed both PDF and summary arrived. Corrected a stale file citation along the way. | **2.0** ↓ *(was 3.0, weasyprint)* | 🟡 *(was 🟠)* | **Tahap 2 reuse**: real `_build_report_pdf()` found in `app.py` (not the file the plan cited) — adapted its panel-styling technique, pure-Python ReportLab retires the weasyprint Windows dependency risk |
 | T15. Async wiring + error handling | ✅ **Final result** | Verified: retry logic behaves correctly, exception handler leaks nothing (unlike Tahap 2's). | **1.75** ↓ *(was 2.0)* | 🟡 | Tahap 2's async-job pattern is a minor reference; do not copy its traceback-leaking exception handler |
-| T16. OpenAPI contract | 📝 **To do** | FastAPI auto-generated, no dedicated work beyond typed endpoints. | 0.5 | 🟢 | FastAPI-generated regardless |
+| T16. OpenAPI contract | ✅ **Final result** | Verified: 17 typed paths + 21 schemas exported correctly, genuinely usable for frontend codegen. | 0.5 | 🟢 | FastAPI-generated regardless |
 | **Subtotal** | | | **~29.75h** *(was 33.5h)* | | vs. **32h** scheduled (Day 4-7, 4 days × 8h) |
 
 ### Foundation
@@ -627,10 +627,10 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - [x] **⚠️ Do NOT replicate Tahap 2's exception handler (2026-07-12 audit finding):** its global `@app.exception_handler(Exception)` returns raw Python tracebacks as JSON in 500 responses — a real security anti-pattern. Ours must return a generic error message, log the traceback server-side only — `backend/main.py`: two handlers — `http_exception_handler` (passes through our own intentional `HTTPException`s with their real, safe detail) and `unhandled_exception_handler` (catches everything else, logs the full traceback server-side via `logger.exception()`, returns only a generic message + a correlation `error_id`)
   - ✅ Done when: full pipeline runs end-to-end without manual step-poking; a forced 500 never leaks a stack trace to the client — **verified**: retry decorator tested directly — succeeds after 2 transient failures on the 3rd attempt, and correctly exhausts + raises after all attempts fail; exception handlers tested directly — a forced `RuntimeError` containing deliberately sensitive-looking text returned only `{"detail": "An unexpected error occurred.", "error_id": "..."}`, no traceback or internal detail in the response body; a real `HTTPException(404, "Job not found")` correctly passed through with its actual detail intact
 
-- [ ] **T16. Publish OpenAPI contract for frontend.** — *Depends: T15 · Flow: integration*
-  - [ ] Ensure endpoints are typed
-  - [ ] Export `/openapi.json` for Area 1 wiring
-  - ✅ Done when: frontend can generate/consume the contract
+- [x] **T16. Publish OpenAPI contract for frontend. — DONE 2026-07-13.** — *Depends: T15 · Flow: integration*
+  - [x] Ensure endpoints are typed — every router uses Pydantic request/response models (`response_model=...`), not raw dicts
+  - [x] Export `/openapi.json` for Area 1 wiring — FastAPI auto-generates this, no hand-written work needed
+  - ✅ Done when: frontend can generate/consume the contract — **verified**: fetched `/openapi.json` from the live server, confirmed OpenAPI 3.1.0, **17 endpoint paths** (all of T3-T14's routers) and **21 typed component schemas** registered; spot-checked `JobOut`'s schema — correct field names, types, and a `required` list, genuinely usable for typed client generation (e.g. `openapi-typescript`) once Area 1 wires the frontend
 
 ---
 
