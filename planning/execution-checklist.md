@@ -104,7 +104,7 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
 | T8. Cost estimate | **Final result** | Projected ≈$0.07/demo run, ≈$0.20 with dev re-runs, from real observed token counts + published rates. Flagged to re-verify against real logs once seed data exists. |
 | T4. Local-LLM substitution | **To do** *(deferred)* | Cut from scope — negligible savings for real solo build hours. |
 
-
+- [x] **T1. Lock the local-first stack + versions. — DONE 2026-07-13.** — *Depends: none · Flow: infra*
   - [x] **Folders scaffolded 2026-07-13**: `backend/` (routers/services/models/db/tests, each a Python package) + `frontend/` (real Vite React-TS app via `npm create vite@5`)
   - [x] Pin frontend deps: React 18.3 + Vite 5.4 + TypeScript 5.6, generated in `frontend/package.json` by the scaffolder
   - [x] **Node upgraded 2026-07-13**: was 18.16 (2023), now **22.23.1** via freshly reinstalled `nvm-windows` (first install attempt silently removed the old Node without completing its own setup — required a clean admin-mode reinstall). `frontend/` deps reinstalled clean under Node 22 — **0 engine warnings** (previously 2). Confirmed `npm run dev` boots Vite on port 5173, matching `.env`'s `FRONTEND_PORT`
