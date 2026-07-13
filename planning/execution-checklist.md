@@ -109,15 +109,16 @@ HR logs in → posts JD → AI generates interview questions (Flash, 2-3)
   - [x] Document both run modes — `README.md` created at repo root (prereqs, dev-mode steps, the port-5433 note, stop/reset commands)
   - ✅ Done when: dev = `docker compose up` (DBs) + `uvicorn` + `npm run dev` works — **verified**; finalization = full `docker compose up` works — **deferred, not yet attempted**
 
-- [ ] **T3. Unified LLM client (SumoPod) + response caching.** — *Depends: T2 · Flow: 2,3,5*
-  - [x] **API key + model access verified 2026-07-13** (one-off test script, not yet the real client module): new `LLM_API_KEY` confirmed working against `gpt-4o-mini`, `deepseek-v4-flash`, `deepseek-v4-pro`, and embeddings (`gemini/gemini-embedding-001`, 1536-dim truncation confirmed)
-  - [ ] `openai`-SDK client with `base_url=LLM_BASE_URL`, `api_key=LLM_API_KEY` — **module code not yet written**
-  - [ ] Helpers for `deepseek-v4-flash` and `deepseek-v4-pro`
-  - [ ] Enforce `temperature=0` for scoring calls
-  - [ ] Disk cache keyed on (prompt hash, model, temp) so re-runs don't re-bill
-  - [ ] **Cache-bypass parameter (resolved 2026-07-12)**: an explicit `bypass_cache=True` (or equivalent) the client honors — needed by Area 5 T3/T4's determinism tests, which must force genuinely independent calls, not replay cached responses
-  - [ ] Log token usage per call
-  - ✅ Done when: a test call to each model returns; second demo run makes ~0 new SumoPod calls; token line prints; a `bypass_cache` call always hits the live API
+- [x] **T3. Unified LLM client (SumoPod) + response caching. — DONE 2026-07-13.** — *Depends: T2 · Flow: 2,3,5*
+  - [x] **API key + model access verified 2026-07-13**: new `LLM_API_KEY` confirmed working against `gpt-4o-mini`, `deepseek-v4-flash`, `deepseek-v4-pro`, and embeddings (`gemini/gemini-embedding-001`, 1536-dim truncation confirmed)
+  - [x] `openai`-SDK client with `base_url=LLM_BASE_URL`, `api_key=LLM_API_KEY` — `backend/services/llm_client.py`, plus `backend/config.py` (central env loader) and `backend/services/llm_cache.py` (disk cache helper)
+  - [x] Helpers for `deepseek-v4-flash` and `deepseek-v4-pro` — `chat_flash()` / `chat_pro()`
+  - [x] Enforce `temperature=0` for scoring calls — `chat_pro()` always uses `LLM_TEMPERATURE_SCORING` from `.env`, not caller-supplied
+  - [x] Disk cache keyed on (prompt hash, model, temp) — JSON files under `storage/llm_cache/`, key = `sha256(model, messages, temperature)`
+  - [x] **Cache-bypass parameter**: `bypass_cache=True` kwarg on `chat()`/`chat_flash()`/`chat_pro()`, verified to force a live API call even with identical input already cached
+  - [x] Log token usage per call — `prompt_tokens`/`completion_tokens`/`total_tokens` logged on cache miss; cache hits log `tokens=0`
+  - [x] **Bug found + fixed during verification**: `STORAGE_DIR=./storage` in `.env` is a relative path meant to resolve at the **repo root** (`implementation/storage/`), but the first test run (invoked from `backend/`) created a stray `backend/storage/` instead. Fixed in `config.py` by resolving `STORAGE_DIR` against `REPO_ROOT` explicitly, regardless of the process's cwd. Re-verified: cache now correctly lands at `implementation/storage/llm_cache/`
+  - ✅ Done when: a test call to each model returns — **verified**: call 1 (flash) real API 1.4s, tokens logged 14/54/68; call 2 same input → cache hit, 0.00s, `tokens=0`; call 3 `bypass_cache=True` → forced real API call again, 1.09s; call 4 (`chat_pro`) → real call, `temperature=0` enforced
 
 - [ ] **T3b. STT client (Groq `whisper-large-v3`, Bahasa Indonesia).** — *Depends: T2 · Flow: 5*
   - [ ] Second `openai`-SDK client with `base_url=STT_BASE_URL` (Groq), `api_key=STT_API_KEY`
@@ -811,7 +812,7 @@ resolved this session). Adjusted lines are marked **↓ (Tahap 2 reuse)**.
 |---|---|---|---|---|
 | T1 Lock stack + versions | 🟢 Done 2026-07-13 | 1.0 | 🟢 | Boilerplate |
 | T2 Docker Compose + run modes | 🟢 Dev mode done 2026-07-13 (finalization mode deferred) | 2.0 | 🟢 | Standard Compose work; Tahap 2's compose has no DB services, minimal reference value. Hit + fixed a real port-5432 collision with a pre-existing native Postgres service |
-| T3 LLM client + caching + bypass | ⚪ Not started (API access verified, no client module yet) | 2.5 | 🟡 | Cache-key design + new bypass param — Tahap 2 uses Gemini/LangChain, zero code transfers |
+| T3 LLM client + caching + bypass | 🟢 Done 2026-07-13 | 2.5 | 🟡 | Cache-key design + new bypass param — Tahap 2 uses Gemini/LangChain, zero code transfers |
 | T3b STT client (Groq) | ⚪ Not started (Groq STT call verified working, no client module yet) | 1.0 | 🟢 | Thin wrapper — no Tahap 2 equivalent (no STT anywhere in that repo) |
 | T3c Telegram bot client | ⚪ Not started | 2.0 | 🟡 | Deep-link + chat_id capture logic — no Tahap 2 equivalent |
 | T3d Vision-LLM client + fallback | 🟡 Provider decided — Groq confirmed primary 2026-07-13 (SumoPod vision confirmed non-functional), no client module yet | **2.0** ↓ *(was 2.5)* | 🟠 | **Tahap 2 reuse**: its Gemini-vision OCR fallback (`_ocr_pdf_with_gemini`, PyMuPDF rasterize→vision call) is a working, validated version of this exact pattern — reduces implementation risk even though the provider (SumoPod/Groq vs Gemini) and technique (per-image vs whole-page) differ |
