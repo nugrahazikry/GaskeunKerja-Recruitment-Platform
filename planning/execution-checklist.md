@@ -482,7 +482,7 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
 | Task | Status | Summary |
 |---|---|---|
 | T1. Audit Tahap 2 backend | **Final result** | Full 10-point code audit done — keep/rebuild/drop verdict written into `CLAUDE.md`. |
-| T2. Project structure | **To do** | `routers/services/models/db` FastAPI layout + env loading. |
+| T2. Project structure | **Final result** | Layout already existed from Area 4 scaffolding — confirmed uvicorn boots and `/health` passes. |
 | T3. Auth | **To do** | JWT for HR login, unguessable token links for candidates. |
 | T4. JD full CRUD + extraction | **To do** | Structured-field CRUD + Flash-model competency extraction, soft-delete only. |
 | T5. CV parse + PII redaction | **To do** | Text/vision-fallback extraction merged, then mandatory PII redaction before any LLM call — highest-difficulty task in the plan. |
@@ -508,10 +508,10 @@ Module #14 is cross-cutting (no dedicated router/service file — wraps the othe
   - [x] Note what's real vs merely designed (esp. security) — **confirmed absent, not just unverified**: zero auth code (no JWT, no login endpoint, all endpoints unauthenticated), zero DB/ORM (in-memory dict only, lost on restart), zero vector DB/embeddings/KGE. Full corrected inventory in `CLAUDE.md` § Existing Code To Reuse
   - ✅ Done when: a written keep/rebuild/drop verdict per component exists — **see `CLAUDE.md` correction + this file's § Effort & Difficulty Estimates for the per-task breakdown**
 
-- [ ] **T2. Project structure.** — *Depends: T1, Area4 T2 · Flow: all*
-  - [ ] `routers/ services/ models/ db/ services/llm.py config`
-  - [ ] Env loading for keys
-  - ✅ Done when: uvicorn boots; `/health` returns ok
+- [x] **T2. Project structure. — DONE (already existed from Area 4 scaffolding, confirmed 2026-07-13).** — *Depends: T1, Area4 T2 · Flow: all*
+  - [x] `routers/ services/ models/ db/ services/llm.py config` — all present as Python packages since Area 4's initial scaffolding; `routers/` is an empty package pending actual endpoint files (T3+)
+  - [x] Env loading for keys — centralized in `config.py`, already used by every service module built so far
+  - ✅ Done when: uvicorn boots; `/health` returns ok — **re-verified**: booted clean, `GET /health` → `200 {"status":"ok"}`
 
 - [ ] **T3. Auth — HR-only login + tokenized candidate links.** — *Depends: T2 · Flow: all (isolation)*
   - [ ] JWT issue/verify for **recruiter/HR only** (seeded account; no candidate signup)
