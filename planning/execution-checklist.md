@@ -355,7 +355,7 @@ scannable index of what exists, used by T1-T3.
 | T2. Schema (17 tables) | **Final result** | All 17 models built and verified — `create_all` produces every table, FKs and JSONB/array columns confirmed correct. |
 | T3. Qdrant collections | **Final result** | `candidate_vectors` + `jd_vectors` collections created and verified with a real upsert/query round-trip. |
 | T4. File storage layout | **Final result** | Isolated per-candidate folders for CV + audio verified — layout, isolation, and round-trip all confirmed. |
-| T5. Repository layer | **To do** | Thin CRUD repositories over SQLAlchemy. |
+| T5. Repository layer | **Final result** | Generic Repository class + one instance per entity, verified with real get/list/create calls. |
 | T6. Competency framework `[content]` | **To do** | ~8-12 competencies for the Data Analyst demo role, with lightweight relations. |
 | T7. Resource library `[content]` | **To do** | ~3 curated resources per competency. |
 | T8. Consent + audit write paths | **To do** | Audit-log helper + consent gate enforcement. |
@@ -389,9 +389,9 @@ scannable index of what exists, used by T1-T3.
   - [x] `parsed_profiles` (structured, anonymized skill data) is the separate DB row the app reads/displays for matching/reports; the **raw original PDF is still shown to HR as-is** on request (resolved: redaction scope is LLM-input + structured data only, not the stored file) — schema already supports this (T2)
   - ✅ Done when: CV + audio land in the right isolated folders, path retrievable by the recruiter — **verified**: saved a CV + an audio file for candidate 1, confirmed both exist on disk at the exact expected paths; saved a second candidate's CV and confirmed the paths don't collide; read the saved CV back and confirmed byte-for-byte content match
 
-- [ ] **T5. Data access layer (repository pattern).** — *Depends: T2 · Flow: all*
-  - [ ] Thin repositories/CRUD over SQLAlchemy (no Alembic)
-  - ✅ Done when: each entity has get/create used by services
+- [x] **T5. Data access layer (repository pattern). — DONE 2026-07-13.** — *Depends: T2 · Flow: all*
+  - [x] Thin repositories/CRUD over SQLAlchemy (no Alembic) — `backend/db/repository.py` (generic `Repository[ModelType]`: `get`/`list`/`create`), `backend/db/repositories.py` (one instance per entity, all 17)
+  - ✅ Done when: each entity has get/create used by services — **verified**: created a `Company` + a linked `HRUser` through the repositories, fetched the company back by id, listed `hr_users` filtered by `company_id` (correct single result), confirmed `get()` on a nonexistent id returns `None` rather than raising; test rows cleaned up afterward (children deleted before parents, respecting FKs)
 
 - [ ] **T6. `[content]` Competency framework — ONE demo role: Data Analyst (IT).** — *Depends: T2 · Flow: 4, 8*
   - [ ] List ~8-12 competencies with levels (e.g. SQL, Excel/spreadsheet, data visualization, statistics, Python/R, data cleaning, dashboarding, business communication)
