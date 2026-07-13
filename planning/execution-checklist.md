@@ -18,7 +18,7 @@
 | 3. Database + datasets | 🟢 Done (all 10 tasks T1-T10 verified end-to-end) | 9 | 0 | Day 2–3 |
 | 2. Backend & AI | 🟢 Done (all 16 tasks T1-T16 verified end-to-end) | 16 | 0 | Day 4–7 |
 | 1. Frontend UI/UX | 🟢 Done (all 13 tasks T1-T9 verified end-to-end) | 13 | 0 | Day 8–11 |
-| 5. QA | ⚪ Not started (Areas 2 and 3 now done — can start) | 8 | 5 | Day 4-12 (shifted left, spans build; final pass Day 12 — see banner) |
+| 5. QA | ⚪ Not started (Areas 1-4 now all done — starting now) | 9 | 5 | Day 4-12 (shifted left, spans build; final pass Day 12 — see banner) |
 
 Status values: ⚪ Not started · 🟡 In progress · 🟢 Done/locked.
 
@@ -798,7 +798,23 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 
 ---
 
-## Area 5 — QA  ·  Status: ⚪ Not started
+## Area 5 — QA  ·  Status: ⚪ Not started (Areas 1-4 all done — starting now)
+
+> **⚠️ Updated 2026-07-13 (pre-Area-5-execution planning session).** Two things resolved with the
+> user before build starts:
+> 1. **T5's tiering blocker is resolved**: a small dedicated tiered fixture (2 strong/2 mid/2 weak,
+>    curated fresh for the Web Developer JD) will be added, decoupled from the main 30-CV demo pool
+>    — the demo pool stays as-is (random/untiered, per the 2026-07-13 Area 3 decision). New task
+>    **T5-fixture** below.
+> 2. **New task T11 added: visible end-to-end scenario suite.** The user asked to watch Playwright
+>    drive the real app on their own screen (not headless/background) for a set of realistic
+>    end-to-end scenarios, to independently confirm sufficiency of the whole system beyond the
+>    per-task verifications already done throughout Areas 1-4. **This applies only to Area 5 test
+>    runs** — headless/background Playwright remains the default for verifying edits in any other
+>    area. 7 scenarios agreed (5 requested + 2 more the user asked for, for a fuller sufficiency
+>    check): happy-path full lifecycle, candidate-blocked paths, HR-blocked paths, failure+retry
+>    paths, multi-actor/concurrency-adjacent status correctness, data-integrity tracing, and
+>    seed-data hygiene after test runs. Full breakdown in T11 below.
 
 > Collapsed to the highest-stakes claim tests (💎) + one e2e. Broad coverage + security matrix deferred.
 > ⚠️ **Rewritten 2026-07-12** — the previous version predated most of the Area 1-4 gap-closing passes
@@ -825,7 +841,7 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 | T4's "identical report" comparison could false-fail on PDF metadata (creation timestamp etc.) if it diffed rendered bytes | **Compare the underlying report data, before PDF rendering — not the PDF bytes** |
 | T3/T4's cache-bypassed tests have a real recurring API cost with no guardrail against careless repeat runs | **Explicit note: run once per feature, not in a tight edit-test loop** |
 
-**Failure gate (resolved 2026-07-12):** if any 💎 claim test (T3, T3b, T4, T5, T6, T8) fails on the day it's run, fix it before starting the next day's build tasks. This is the entire point of shifting them left — a noted-but-deferred failure defeats the purpose.
+**Failure gate (resolved 2026-07-12, extended 2026-07-13):** if any 💎 claim test (T3, T3b, T4, T5, T5-fixture, T6, T8, T11) fails on the day it's run, fix it before starting the next day's build tasks. This is the entire point of shifting them left — a noted-but-deferred failure defeats the purpose. T11's scenarios apply this per-scenario: a failing scenario is fixed before moving to the next one, not batched to the end.
 
 **Cost guardrail (resolved 2026-07-12):** T3 and T4 each make 5 genuinely independent, cache-bypassed Deepseek calls per run. Cheap individually, but run them **once when the feature is believed complete** — not repeatedly inside an edit-test-edit debugging loop. This is exactly the repeated-spend pattern Area 4's whole caching strategy exists to avoid.
 
@@ -838,12 +854,14 @@ No changes from the Tahap 2 backend audit (Tahap 2 has no test suite to referenc
 | T3. Determinism test | 📝 **To do** | 5 cache-bypassed rubric-scoring runs must agree exactly. | 1.5 | 🟡 | |
 | T3b. PII redaction test | 📝 **To do** | Mocked-request assertion that no raw PII reaches the LLM payload or the DB. | 2.0 | 🟡 | Mock setup adds time |
 | T4. Report consistency test | 📝 **To do** | 5 cache-bypassed runs must produce identical report data (not PDF bytes). | 1.5 | 🟡 | |
-| T5. Matching/tier check | 📝 **To do** | Strong-tier average score must meaningfully beat weak-tier average. | 1.0 | 🟢 | ⚠️ blocked on tiered ground truth existing — see Area 3 T10 note |
+| T5-fixture. Tiered test CVs | 📝 **To do** | Curate 6 small dedicated CVs (2 strong/2 mid/2 weak) for the Web Developer JD, separate from the 30-CV demo pool. | 1.0 | 🟢 | Unblocks T5 |
+| T5. Matching/tier check | 📝 **To do** | Strong-tier average score must meaningfully beat weak-tier average. | 1.0 | 🟢 | Now unblocked — asserts against T5-fixture, not the demo pool |
 | T6. Human-in-loop test | 📝 **To do** | Confirms no code path can finalize a candidate without HR action. | 1.0 | 🟢 | |
 | T8. Consent-gate test | 📝 **To do** | 403 without consent, success with a valid consent record. | 1.0 | 🟢 | |
 | T10. Full e2e run | 📝 **To do** | Scripted happy-path walkthrough of the entire flow, seed to Telegram delivery. | 2.0 | 🟡 | Manual scripted walkthrough |
+| T11. 💎 Visible e2e scenario suite (NEW) | 📝 **To do** | 7 realistic scenarios, run live in a visible (non-headless) browser on the user's screen. | 4.0 | 🟠 | New — user-requested sufficiency check, distinct from T10's single happy-path script |
 | T12. Demo-readiness checklist | 📝 **To do** | Rehearsal covering every frontend edge state + a real Telegram delivery check. | 2.5 | 🟡 | Rehearsal + edge states + Telegram check |
-| **Subtotal** | | | **~12.5h** | | Spread across Day 4-12 alongside build work — same person, same hours pool |
+| **Subtotal** | | | **~17.5h** | | Spread across Day 4-12 alongside build work — same person, same hours pool |
 
 - [ ] **T3. 💎 Determinism test.** — *Depends: Area2 T11 · **Run: Day 6** (re-baselined 2026-07-12), as soon as rubric scoring exists*
   - [ ] Same **transcript** → same rubric score across **5 repeated runs, cache BYPASSED** for these calls (a determinism test that hits the Area 4 T3 cache after run 1 would just replay the same response and prove nothing about the LLM). Run once per feature, not in a tight debug loop (see cost guardrail above)
@@ -861,11 +879,16 @@ No changes from the Tahap 2 backend audit (Tahap 2 has no test suite to referenc
   - [ ] **Compare the underlying report data, not rendered PDF bytes (resolved 2026-07-12)** — diff the structured content returned by `services.report.build_report()` (the `report` dict, before `report_pdf.py` renders it) across the 5 runs; comparing raw PDF bytes risks a false failure from non-deterministic metadata (creation timestamp, producer string) that ReportLab — like most PDF libraries — can embed even when visible content is identical (updated 2026-07-13: T13/T14 built with ReportLab, not weasyprint — same principle applies regardless of library)
   - ✅ Done when: all 5 genuinely independent runs produce identical report **data** (PDF rendering itself is not the thing being asserted)
 
-- [ ] **T5. Matching formula / curated-tier check (promoted from manual-only).** — *Depends: Area2 T7, DB T10 · **Run: Day 5** (re-baselined 2026-07-12), right after matching is built*
-  - ⚠️ **Blocked by a 2026-07-13 scope change**: Area 3 T10's CVs are now confirmed random/untiered (user's decision, "for testing purposes only" — see Area 3 T10 notes), so **there is no strong/mid/weak ground truth for this test to assert against**. As written, this test cannot run. **Needs a decision before Day 5**: either (a) go back and actually tier a subset of the 30 for this test's sake, (b) curate a small separate tiered fixture just for this test, decoupled from the demo's main 30, or (c) demote this to a lighter manual sanity-check instead of an asserted test. Not yet decided — flag to revisit when Area 5 build starts
-  - [ ] Read the **intended tier per candidate from the seed manifest** (Area 3 T10 now tags strong/mid/weak per candidate at curation time — not re-derived here) — **no longer possible on the current 30 CVs, see blocker above**
-  - [ ] **Aggregate comparison (resolved 2026-07-12)**: assert the strong-tier **average** score is meaningfully higher than the weak-tier **average** — not a strict per-candidate ordering, which would be brittle against natural noise in real, manually-curated CV data
-  - ✅ Done when: the average-score gap confirms the ranking visibly discriminates — catches a formula bug or bad curation before it's on camera, without false alarms from one ambiguous real-world CV
+- [ ] **T5-fixture. 💎 Curate a small dedicated tiered CV fixture (NEW — resolves the 2026-07-13 blocker below).** — *Depends: none · **Run: before T5***
+  - [ ] Curate **6 small CVs** for the Web Developer JD, clearly and deliberately fit-differentiated: **2 strong** (real HTML/CSS/JavaScript/frontend-framework/backend experience matching the JD's competencies), **2 mid** (some overlapping skills, e.g. general programming but no frontend framework), **2 weak** (clearly unrelated background, e.g. accounting/admin roles like several already in the random 30)
+  - [ ] Ingest these 6 through the real pipeline (same `ingest_cv`/embed/match flow as the demo pool) as a **separate, clearly-labeled set** (e.g. alias prefix `FIXTURE-` or a dedicated tag) — never mixed into the 30-CV demo pool, so the demo's "realistic random CVs" framing stays intact
+  - ✅ Done when: 6 fixture candidates exist with real `match_scores` against the Web Developer JD, tagged by intended tier, fully separate from the 30-CV demo set
+
+- [ ] **T5. Matching formula / curated-tier check (promoted from manual-only, unblocked 2026-07-13).** — *Depends: Area2 T7, DB T10, T5-fixture · **Run: Day 5** (re-baselined 2026-07-12), right after matching is built*
+  - [x] ~~Blocked by a 2026-07-13 scope change~~ — **resolved same day**: rather than tiering the random demo pool (ambiguous on real messy resumes) or dropping the assertion entirely, added a small dedicated tiered fixture (**T5-fixture** above) — decouples this test's ground truth from the demo pool's intentionally-random framing
+  - [ ] Read the **intended tier per fixture candidate** (tagged at T5-fixture curation time)
+  - [ ] **Aggregate comparison (resolved 2026-07-12)**: assert the strong-tier **average** score is meaningfully higher than the weak-tier **average** — not a strict per-candidate ordering, which would be brittle against natural noise even in a deliberately-curated fixture
+  - ✅ Done when: the average-score gap confirms the ranking visibly discriminates — catches a formula bug before it's on camera, without false alarms from one ambiguous CV
 
 - [ ] **T6. 💎 Human-in-the-loop test.** — *Depends: Area2 T12 · **Run: Day 6** (re-baselined 2026-07-12), as soon as decision endpoints exist*
   - [ ] Confirm no code path finalizes a candidate without HR action
@@ -884,6 +907,17 @@ No changes from the Tahap 2 backend audit (Tahap 2 has no test suite to referenc
   - [ ] HR: review candidate detail (audio player + transcript + AI summary + rubric) → record decision → **send report via Telegram** (real send, not email)
   - [ ] Spot-check the 2-3 synthetic candidates show their pre-seeded "Terkirim" state correctly, and a profile-only candidate shows "Belum Diundang"
   - ✅ Done when: one clean pass with no manual DB fiddling, matching the actual current flow end to end
+
+- [ ] **T11. 💎 Visible end-to-end scenario suite (NEW 2026-07-13 — user-requested sufficiency check).** — *Depends: T10 · **Run: Day 12, alongside T10/T12***
+  - **Why this is distinct from T10**: T10 is one scripted happy-path confirmation pass. T11 is the user directly watching Playwright drive the real running app on their own screen — `headless: false` + `slowMo`, not headless/background — across 7 scenarios chosen to sufficiency-check the whole system, including blocked/failure/multi-actor paths T10 doesn't cover. **This visible-browser mode applies only to these T11 runs** — every other area's edit-verification work reverts to headless/background Playwright, per the user's explicit instruction.
+  - [ ] **Scenario 1 — Happy path, full lifecycle**: HR logs in → creates a JD → questions generate/approve → HR invites a real ranked candidate → candidate consents + links Telegram (real click, per the T8 pattern) → candidate completes the audio interview (fake-media-stream, real MediaRecorder code path) → HR reviews (audio/transcript/rubric/skill-gap) → HR records a decision → HR sends the report → Telegram delivery confirmed
+  - [ ] **Scenario 2 — Candidate-blocked paths**: expired/invalid token → "link tidak valid" screen; no consent yet → forced to consent screen; mic permission denied → blocking message + retry; interview already completed → reload shows "sudah selesai" instead of the recorder
+  - [ ] **Scenario 3 — HR-blocked paths**: inviting before questions are approved → 400 error surfaces correctly; JD form validation (empty title, empty responsibilities+requirements) → blocked with message; re-opening an already-issued invite link → shows the identical token, never regenerates
+  - [ ] **Scenario 4 — Failure + retry paths**: audio upload failure mid-interview → error shown, retry doesn't lose the recording; report send with no Telegram link → disabled state; report send with a broken Telegram delivery (real invalid chat_id, per the T7 pattern) → real error + retry, not a crash or a masked CORS failure
+  - [ ] **Scenario 5 — Multi-actor / concurrency-adjacent status correctness**: on one JD's shortlist, simultaneously show one "Belum diundang," one "Menunggu wawancara," one "Selesai wawancara" candidate — confirm each status pill is independently correct; confirm a synthetic seeded candidate (pre-loaded decision, no real interview) displays its "Terkirim"/finished state correctly
+  - [ ] **Scenario 6 — Data-integrity tracing**: for one candidate pushed through the full pipeline, verify CV → parsed profile → embedding → match score → skill-gap → interview → rubric → summary → decision → report all trace back correctly to that *same* candidate with no cross-contamination — checked against the DB directly, not just the UI
+  - [ ] **Scenario 7 — Seed-data hygiene after test runs**: confirm the test runner cleans up every piece of test data it created (consent records, decisions, telegram_chat_id, invited_at, interview_answers/transcripts, test JDs) so the real demo seed data is never left polluted — codifies the manual cleanup discipline already used throughout Areas 1-4 into an actual checked step
+  - ✅ Done when: all 7 scenarios have been run **visibly on the user's screen** with the user confirming each one in real time, and the seed DB is verified clean afterward (Scenario 7)
 
 - [ ] **T12. Demo-readiness checklist — now includes the edge-state walkthrough (promoted from happy-path-only).** — *Depends: T10*
   - [ ] Happy-path script written and rehearsed
