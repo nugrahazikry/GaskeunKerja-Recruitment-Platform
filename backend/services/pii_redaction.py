@@ -24,24 +24,33 @@ _PHONE_RE = re.compile(r"(\+?\(?\d{2,4}\)?[\-\s]\d{3,4}[\-\s]\d{3,4}(?:[\-\s]\d{
 
 _NAME_DETECTION_PROMPT = """\
 Anda membaca teks CV berikut. Temukan nama lengkap kandidat (pemilik CV ini) jika disebutkan \
-secara eksplisit di dalam teks.
+secara eksplisit di dalam teks, di mana pun posisinya dalam dokumen.
 
 Kembalikan HANYA JSON: {{"name": "<nama lengkap>"}} jika ditemukan, atau {{"name": null}} jika \
 tidak ada nama yang jelas disebutkan. Jangan menebak nama dari nama perusahaan, produk, atau \
 istilah teknis — hanya nama orang.
 
-Teks CV (200 karakter pertama sudah cukup untuk tugas ini):
+Teks CV:
 {cv_text_snippet}"""
+
+# Real cap for pathological/oversized inputs only — every real CV tested (8 samples,
+# including a real user's own resumes) fit well under this. NOT a "names are near the
+# top" assumption: one tested CV had its extracted text order put the name past 1400
+# characters (pypdf's extraction order followed the PDF's visual layout, not a
+# top-to-bottom reading order), which a smaller fixed prefix window missed entirely —
+# a real, confirmed PII leak, not a hypothetical. Send the whole text; only truncate to
+# avoid an unbounded prompt on a genuinely oversized document.
+_MAX_TEXT_LENGTH = 20000
 
 
 def detect_candidate_name(cv_text: str) -> str | None:
     """One cheap Flash call: find the candidate's real name in the raw (pre-redaction)
     CV text, if present, so redact_pii() has something concrete to replace.
 
-    Only the first part of the text is sent — names appear near the top of virtually
-    every resume format, and keeping this prompt small keeps the extra call cheap.
+    Sends the FULL text (up to _MAX_TEXT_LENGTH) rather than a fixed-size prefix — see
+    the module-level note above for why a small prefix window is unsafe.
     """
-    snippet = cv_text[:800]
+    snippet = cv_text[:_MAX_TEXT_LENGTH]
     prompt = _NAME_DETECTION_PROMPT.format(cv_text_snippet=snippet)
     raw = llm_client.chat_flash([{"role": "user", "content": prompt}])
 

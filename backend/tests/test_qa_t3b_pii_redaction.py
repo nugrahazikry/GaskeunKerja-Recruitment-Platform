@@ -93,3 +93,33 @@ def test_name_detection_correctly_declines_on_name_free_text():
     )
     result = pii_redaction.detect_candidate_name(name_free_text)
     assert result is None, f"expected no name detected on name-free text, got {result!r}"
+
+
+def test_name_detected_when_it_appears_late_in_a_long_document():
+    """REGRESSION TEST for a real leak found 2026-07-13 during a manual real-CV check
+    (against the user's own actual resumes, tested in-memory only, never persisted): the
+    first version of detect_candidate_name() truncated to a fixed 800-character prefix,
+    assuming names appear near the top of virtually every resume. One real CV's
+    pypdf-extracted text order put personal-info fields (address/email/phone) FIRST and
+    the name-as-styled-text-box LAST, past character position 1400 — the 800-char window
+    missed it entirely, a genuine unredacted PII leak on a real document, not a
+    hypothetical. Fixed by sending the full text (up to a generous 20000-char cap) instead
+    of a fixed prefix. This test reproduces the same shape (long preamble, name at the
+    end) with synthetic content — not the user's real CV text, which is never committed."""
+    long_preamble = "Alamat: Jl. Contoh No. 1\nEmail: test.regression@example.com\n" + (
+        "Riwayat pekerjaan tidak relevan yang sengaja dibuat panjang. " * 40
+    )
+    name_near_end = "\n\nBudi Regression Test\nCurriculum Vitae"
+    text_with_late_name = long_preamble + name_near_end
+
+    assert len(text_with_late_name) > 800, "test setup error: text must exceed the old 800-char window"
+    assert "Budi Regression Test" not in text_with_late_name[:800], (
+        "test setup error: the name must fall outside the old 800-char window to "
+        "actually reproduce the bug"
+    )
+
+    result = pii_redaction.detect_candidate_name(text_with_late_name)
+    assert result == "Budi Regression Test", (
+        f"name positioned past char 800 was not detected — the truncation bug may have "
+        f"regressed: got {result!r}"
+    )
