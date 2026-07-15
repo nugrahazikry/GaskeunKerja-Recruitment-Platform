@@ -18,6 +18,7 @@ Run: python -m seed.load_demo_data (from backend/, with .venv active)
 
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from db import repositories as repo
@@ -104,9 +105,16 @@ def _seed_synthetic_interview(db, candidate, question, audio_clip_path: Path, se
     scored = score_and_persist_answer(db, answer.id)
     compute_and_persist_interview_summary(db, candidate.id, [scored["summary"]])
 
-    repo.hr_decisions.create(
+    decision_row = repo.hr_decisions.create(
         db, candidate_id=candidate.id, decision=decision, decided_by=hr_id, notes="Seed data — synthetic candidate"
     )
+
+    # Demo them as fully-processed examples (Area 1 T7/T12's "Terkirim" — disabled,
+    # already-sent — state), not re-triggerable on camera. A fabricated chat_id is fine
+    # since send_report() is never actually called for these candidates.
+    candidate.telegram_chat_id = f"synthetic-{candidate.id}"
+    decision_row.report_sent_at = datetime.now(timezone.utc)
+    db.commit()
 
 
 def load():

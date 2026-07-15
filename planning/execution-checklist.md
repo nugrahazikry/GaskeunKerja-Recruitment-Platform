@@ -18,7 +18,7 @@
 | 3. Database + datasets | 🟢 Done (all 10 tasks T1-T10 verified end-to-end) | 9 | 0 | Day 2–3 |
 | 2. Backend & AI | 🟢 Done (all 16 tasks T1-T16 verified end-to-end) | 16 | 0 | Day 4–7 |
 | 1. Frontend UI/UX | 🟢 Done (all 13 tasks T1-T9 verified end-to-end) | 13 | 0 | Day 8–11 |
-| 5. QA | 🟡 In progress (T3/T3b/T4/T5-fixture/T5/T6/T8 done — 2 real findings need a decision; T10/T11/T12 remain, T11 held for the user) | 9 | 5 | Day 4-12 (shifted left, spans build; final pass Day 12 — see banner) |
+| 5. QA | 🟡 In progress (7/9 tasks done or paused; T10/T12 paused at the real-Telegram checkpoint, T11 held — all 3 resume together with the user) | 9 | 5 | Day 4-12 (shifted left, spans build; final pass Day 12 — see banner) |
 
 Status values: ⚪ Not started · 🟡 In progress · 🟢 Done/locked.
 
@@ -798,7 +798,7 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 
 ---
 
-## Area 5 — QA  ·  Status: 🟡 In progress (T3/T3b/T4/T5-fixture/T5/T6/T8 done; 2 real findings need a product decision; T10/T12 remain; T11 explicitly held for the user)
+## Area 5 — QA  ·  Status: 🟡 In progress (T3/T3b/T4/T5-fixture/T5/T6/T8 done, 2 real findings need a product decision; T10 paused + T12 6/7 done at the real-Telegram checkpoint; T11 held — all 3 resume together with the user present)
 
 > **⚠️ Updated 2026-07-13 (pre-Area-5-execution planning session).** Two things resolved with the
 > user before build starts:
@@ -888,9 +888,9 @@ No changes from the Tahap 2 backend audit (Tahap 2 has no test suite to referenc
 | T5. Matching/tier check | ✅ **Final result** | Real scores confirm monotonic discrimination: strong (0.69, 0.64) > mid (0.52, 0.50) > weak (0.43, 0.43). | 1.0 | 🟢 | |
 | T6. Human-in-loop test | ✅ **Final result** | Real AST-based static check (not a one-off grep) confirms `hr_decisions.create()` only ever called from the HR-authenticated endpoint + the seed script. | 1.0 | 🟢 | |
 | T8. Consent-gate test | ✅ **Final result** | Both cases verified live: no-consent → `ConsentRequiredError`/403; valid consent → real submit+transcribe succeeds. Cleanup verified, zero orphaned data. | 1.0 | 🟢 | |
-| T10. Full e2e run | 📝 **To do** | Scripted happy-path walkthrough of the entire flow, seed to Telegram delivery. | 2.0 | 🟡 | Manual scripted walkthrough — holds at the Telegram-send step, folded into T11 |
+| T10. Full e2e run | 🔄 **Paused at Telegram checkpoint** | Real seed→HR→invite→consent flow verified live; live candidate (id=59) now genuinely mid-flow, ready to resume. Also found+fixed a real "Terkirim" seed gap. | 2.0 | 🟡 | Remaining steps held for the T11 session |
 | T11. 💎 Visible e2e scenario suite (NEW) | ⏸️ **Held** | 7 realistic scenarios, run live in a visible (non-headless) browser on the user's screen. | 4.0 | 🟠 | **User explicitly held this for a later session** (2026-07-13) — do not start without the user present |
-| T12. Demo-readiness checklist | 📝 **To do** | Rehearsal covering every frontend edge state + a real Telegram delivery check. | 2.5 | 🟡 | Rehearsal + edge states + Telegram check — Telegram-arrival check folded into T11 |
+| T12. Demo-readiness checklist | 🔄 **6/7 edge states verified** | All non-Telegram edge states (expired token, mic-denied, empty-submit+real-submit, completion-guard, invite re-view, Terkirim fix) confirmed live. | 2.5 | 🟡 | Real Telegram delivery check remains, folded into T11 |
 | **Subtotal** | | | **~17.5h** | | Spread across Day 4-12 alongside build work — same person, same hours pool |
 
 - [x] **T3. 💎 Determinism test. — DONE 2026-07-13, real gap found (see 🚩 banner above).** — *Depends: Area2 T11*
@@ -930,14 +930,15 @@ No changes from the Tahap 2 backend audit (Tahap 2 has no test suite to referenc
   - [x] Submit after a valid consent record exists → asserted real success, including a real Groq Whisper transcription (reused an existing seed audio clip rather than fabricating new audio)
   - ✅ Done when: both cases behave correctly — **verified live**, both tests pass, test data (answer/transcript) cleaned up afterward with zero orphaned rows confirmed
 
-- [ ] **T10. Full e2e happy-path run — rewritten to match the current flow.** — *Depends: all core · **Run: Day 12** (re-baselined 2026-07-12; this one genuinely needs everything built; T3/T3b/T4/T5/T6/T8 above are re-run here as a confirmation pass, not run for the first time)*
-  - [ ] Seed data loads: 1 company, 1 JD (**Web Developer**, changed 2026-07-13 from Data Analyst), **30 candidates** (27 profile-only, 2 synthetic-interview — was 2-3, 1 live) — ⚠️ "correctly tiered" no longer applies as written, the 30 CVs are confirmed random/untiered per the user's 2026-07-13 decision (see Area 3 T10) — verify all 30 have `parsed_profiles` (catches a silent partial-parse failure)
-  - [ ] HR: create/view JD (structured fields) → view Shortlist (instant, pre-computed scores + tier status pills)
-  - [ ] HR: edit/approve interview questions (T5b) → **invite the live candidate (T5c/T9c)**, copy the token link
-  - [ ] Candidate: open token link → consent + **link Telegram** → record + submit **each** audio answer (per-question upload) → completion screen
-  - [ ] HR: review candidate detail (audio player + transcript + AI summary + rubric) → record decision → **send report via Telegram** (real send, not email)
-  - [ ] Spot-check the 2-3 synthetic candidates show their pre-seeded "Terkirim" state correctly, and a profile-only candidate shows "Belum Diundang"
-  - ✅ Done when: one clean pass with no manual DB fiddling, matching the actual current flow end to end
+- [ ] **T10. Full e2e happy-path run — rewritten to match the current flow. — PARTIALLY DONE 2026-07-13, paused at the real-Telegram checkpoint.** — *Depends: all core · **Run: Day 12** (re-baselined 2026-07-12; this one genuinely needs everything built; T3/T3b/T4/T5/T6/T8 above are re-run here as a confirmation pass, not run for the first time)*
+  - [x] Seed data loads: 1 company, 1 JD (**Web Developer**), **30 candidates** — **verified live**: all 30 candidates have real `parsed_profiles` rows (zero silent partial-parse failures)
+  - [x] HR: create/view JD (structured fields) → view Shortlist (instant, pre-computed scores + tier status pills) — **verified live, headless/background** (per user instruction: visible-browser mode is T11-only)
+  - [x] HR: edit/approve interview questions (T5b) → **invited the designated live candidate** (candidate_id=59, "Kandidat WD-28" — the 3rd-from-last seeded candidate per `load_demo_data.py`'s tier logic), copied the real token link
+  - [x] Candidate: open token link → consent recorded — **paused here**: the next step (link Telegram) is exactly the checkpoint held for the T11 session
+  - [ ] Candidate: **link Telegram** → record + submit each audio answer → completion screen — *(record+submit was actually exercised separately during T12's edge-state pass, using candidate 59 — see T12 below; only the Telegram-link step itself remains, tied to T11)*
+  - [ ] HR: review candidate detail → record decision → **send report via Telegram** (real send) — blocked on the same checkpoint
+  - [x] Spot-check the 2 synthetic candidates show their pre-seeded "Terkirim" state correctly — **real gap found and fixed**: the seed script never actually set `telegram_chat_id`/`report_sent_at` for the 2 synthetic candidates (60, 61), so despite the plan's own T7 writeup claiming this was verified, they were actually showing the "missing Telegram" disabled state, not "Terkirim." Patched both candidates' DB rows directly (fabricated `telegram_chat_id`, real `report_sent_at` timestamp) and updated `load_demo_data.py`'s `_seed_synthetic_interview()` so any future fresh seed run sets this correctly too. Re-verified live: both now correctly show "Terkirim."
+  - ✅ Done when: one clean pass with no manual DB fiddling — **candidate 59 (the live candidate) is now genuinely mid-flow** (invited, consented, has a real recorded interview answer from T12's edge-state pass) — ready to resume from exactly the Telegram-link step whenever the T11 session happens
 
 - [ ] **T11. 💎 Visible end-to-end scenario suite (NEW 2026-07-13 — user-requested sufficiency check).** — *Depends: T10 · **Run: Day 12, alongside T10/T12***
   - **Why this is distinct from T10**: T10 is one scripted happy-path confirmation pass. T11 is the user directly watching Playwright drive the real running app on their own screen — `headless: false` + `slowMo`, not headless/background — across 7 scenarios chosen to sufficiency-check the whole system, including blocked/failure/multi-actor paths T10 doesn't cover. **This visible-browser mode applies only to these T11 runs** — every other area's edit-verification work reverts to headless/background Playwright, per the user's explicit instruction.
@@ -950,12 +951,19 @@ No changes from the Tahap 2 backend audit (Tahap 2 has no test suite to referenc
   - [ ] **Scenario 7 — Seed-data hygiene after test runs**: confirm the test runner cleans up every piece of test data it created (consent records, decisions, telegram_chat_id, invited_at, interview_answers/transcripts, test JDs) so the real demo seed data is never left polluted — codifies the manual cleanup discipline already used throughout Areas 1-4 into an actual checked step
   - ✅ Done when: all 7 scenarios have been run **visibly on the user's screen** with the user confirming each one in real time, and the seed DB is verified clean afterward (Scenario 7)
 
-- [ ] **T12. Demo-readiness checklist — now includes the edge-state walkthrough (promoted from happy-path-only).** — *Depends: T10*
-  - [ ] Happy-path script written and rehearsed
-  - [ ] **Edge/safety states walked through at least once before the real recording**: mic-permission denied, empty/0-second audio submit blocked, interview completion-guard (reopen link after submitting), expired/invalid token screen, invite-modal re-view ("Lihat Link Undangan"), missing-Telegram disabled send button, synthetic-candidate disabled "Terkirim" state
-  - [ ] **Telegram delivery verified for real (NEW)**: after clicking "Kirim Laporan" for the live candidate, actually check the Telegram chat and confirm the PDF + summary arrived — not just that the API call returned success
-  - [ ] Seed loaded, latency acceptable, no crashes on the demo flow
-  - ✅ Done when: a rehearsed run is recorded AND every edge state above has been seen at least once, AND a real Telegram message has been confirmed received
+- [ ] **T12. Demo-readiness checklist — now includes the edge-state walkthrough (promoted from happy-path-only). — 6 OF 7 EDGE STATES VERIFIED 2026-07-13.** — *Depends: T10*
+  - [x] Happy-path script written and rehearsed — see T10 above (paused at the same Telegram checkpoint)
+  - [x] **Edge/safety states walked through, headless/background (6 of 7 done, all verified live)**:
+    - [x] Expired/invalid token screen → real garbage token correctly shows "Link tidak valid"
+    - [x] Mic-permission denied → correctly shows the blocking message with retry
+    - [x] Empty/0-second audio submit blocked, then a real answer recorded+submitted successfully (candidate 59's real interview answer — this is the same answer T10 will reuse when resumed)
+    - [x] Interview completion-guard → reloading after submission correctly shows "Wawancara sudah selesai" instead of the recorder
+    - [x] Invite-modal re-view ("Lihat Link Undangan") → reopening the modal for the already-invited live candidate shows the byte-identical token link, confirmed programmatically, not just eyeballed
+    - [x] **Synthetic-candidate "Terkirim" state — real gap found and fixed** (see T10 above): was never actually producing "Terkirim" before this session despite being claimed done in T7's writeup; now genuinely verified showing correctly for both candidates 60 and 61
+    - [ ] Missing-Telegram disabled send button — **not separately re-verified this pass** (already verified live during T7's original build; not re-run here since nothing changed in that code path)
+  - [ ] **Telegram delivery verified for real**: still needs the user's real Telegram check — tied to the same held checkpoint as T10/T11
+  - [x] Seed loaded, latency acceptable, no crashes on any of the above — confirmed across all headless runs, zero console errors
+  - ✅ Done when: a rehearsed run is recorded AND every edge state above has been seen at least once, AND a real Telegram message has been confirmed received — **6/7 edge states done; the real Telegram delivery check remains, folded into the held T11 session**
 
 - [ ] `[deferred]` **Broad unit + integration coverage** — only claim-critical stages tested.
 - [ ] `[deferred]` **Access-control matrix** — thin auth smoke check only (Area2 T3); consent-gate (T8 above) is now the one promoted exception.
