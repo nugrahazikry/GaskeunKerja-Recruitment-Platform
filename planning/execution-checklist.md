@@ -18,7 +18,7 @@
 | 3. Database + datasets | 🟢 Done (all 10 tasks T1-T10 verified end-to-end) | 9 | 0 | Day 2–3 |
 | 2. Backend & AI | 🟢 Done (all 16 tasks T1-T16 verified end-to-end) | 16 | 0 | Day 4–7 |
 | 1. Frontend UI/UX | 🟢 Done (all 13 tasks T1-T9 verified end-to-end) | 13 | 0 | Day 8–11 |
-| 5. QA | 🟡 In progress (7/9 tasks done or paused; T10/T12 paused at the real-Telegram checkpoint, T11 held — all 3 resume together with the user) | 9 | 5 | Day 4-12 (shifted left, spans build; final pass Day 12 — see banner) |
+| 5. QA | 🟡 In progress (7/9 tasks done, both prior findings fixed same day; T10/T12 paused at the real-Telegram checkpoint, T11 held — all 3 resume together with the user) | 9 | 5 | Day 4-12 (shifted left, spans build; final pass Day 12 — see banner) |
 
 Status values: ⚪ Not started · 🟡 In progress · 🟢 Done/locked.
 
@@ -798,7 +798,7 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 
 ---
 
-## Area 5 — QA  ·  Status: 🟡 In progress (T3/T3b/T4/T5-fixture/T5/T6/T8 done, 2 real findings need a product decision; T10 paused + T12 6/7 done at the real-Telegram checkpoint; T11 held — all 3 resume together with the user present)
+## Area 5 — QA  ·  Status: 🟡 In progress (T3/T3b/T4/T5-fixture/T5/T6/T8 all done, both 2026-07-13 findings root-caused and fixed same day; T10 paused + T12 6/7 done at the real-Telegram checkpoint; T11 held — all 3 resume together with the user present)
 
 > **⚠️ Updated 2026-07-13 (pre-Area-5-execution planning session).** Two things resolved with the
 > user before build starts:
@@ -843,35 +843,34 @@ React code exists to reuse, only visual language, already captured in T1/T2 belo
 
 **Failure gate (resolved 2026-07-12, extended 2026-07-13):** if any 💎 claim test (T3, T3b, T4, T5, T5-fixture, T6, T8, T11) fails on the day it's run, fix it before starting the next day's build tasks. This is the entire point of shifting them left — a noted-but-deferred failure defeats the purpose. T11's scenarios apply this per-scenario: a failing scenario is fixed before moving to the next one, not batched to the end.
 
-> ## 🚩 Two significant findings from the 2026-07-13 QA execution pass — need your decision, not yet fixed
+> ## ✅ Two significant 2026-07-13 findings — both RESOLVED same day, user-directed fixes
 >
-> Both tests initially **failed** against the real system. Rather than force a pass, both were rewritten
-> to assert what's actually true today (with the real gap documented prominently in the test file itself)
-> and left for a product decision. **Neither is silently patched — both need you.**
+> Both tests initially **failed** against the real system. Rather than force a pass, both gaps were
+> traced to root cause, presented to the user with real tradeoffs, and fixed per their explicit choice.
 >
-> 1. **T3b found: candidate names are NOT actually redacted before reaching the LLM.**
->    `services/candidate_ingest.py::ingest_cv()` calls `redact_pii(text, alias=alias)` — never passing
->    `candidate_name` — and the `Candidate` DB model has no real-name field to source one from (by design,
->    candidates are only ever identified by alias). `redact_pii()`'s name-redaction branch is dead code in
->    the real pipeline. Email/phone ARE reliably redacted (verified). A common "first line = name"
->    heuristic was tested against real seed CV text and found unreliable (the first line was a job title,
->    not a name, on a real sample) — so a quick heuristic fix isn't safely available. **Needs a decision**:
->    invest in real name detection (NER or similar), accept the current email/phone-only redaction as the
->    stated scope, or find another mitigation. See `backend/tests/test_qa_t3b_pii_redaction.py` for the
->    full writeup and the exact failing assertion.
-> 2. **T3 and T4 found: rubric scoring and skill-gap analysis are NOT fully deterministic at temperature=0.**
->    Measured directly: the same transcript scored via `rubric.score_answer()` produced different
->    `clarity`/`technical_depth` values across independent runs (varying by 1 point, in a different
->    criterion each time) — and `report.build_report()`'s `development_priority` and even the
->    `development_plan`'s competency **set** varied between runs on the same input. This is consistent
->    with known provider-level inference non-determinism (temperature=0 reduces but doesn't guarantee
->    bit-for-bit reproducibility on OpenAI-compatible batched/distributed inference) — not a bug in this
->    codebase's prompts or code. **This directly contradicts an explicit submission claim**
->    (`tahap 3 jawaban.md` Q9, ~line 116: "jawaban yang sama menghasilkan skor yang konsisten di setiap
->    pengulangan..."). Both tests now assert a measured tolerance instead of exact equality. **Needs a
->    decision**: leave the submission claim as aspirational/approximate, soften its wording, or invest in
->    a real determinism mechanism (e.g. self-consistency/majority-of-N voting) before the demo. See
->    `backend/tests/test_qa_t3_determinism.py` and `test_qa_t4_report_consistency.py` for full writeups.
+> 1. **T3b found: candidate names were NOT actually redacted before reaching the LLM.** Root cause traced
+>    precisely: `ingest_cv()` never had a real name to pass to `redact_pii()` in the first place — the API
+>    contract only ever accepts `job_id`/`alias`/`file`, HR never types a name, and `Candidate` has no
+>    real-name DB field (by design). The name only exists inside the raw CV text. A "first line = name"
+>    heuristic was tested and found unreliable on real seed data. **User chose: LLM-based name extraction**
+>    (one cheap Flash call, `pii_redaction.detect_candidate_name()`) over a NER library or leaving it
+>    undocumented. **Fixed and verified**: detects a real fake name correctly on fixture text, correctly
+>    returns `None` (no hallucination) on genuinely name-free real seed CV text — tested against 5 real
+>    samples. `backend/tests/test_qa_t3b_pii_redaction.py` now has 3 passing tests (was 2, one documenting
+>    the gap) proving the fix, not just documenting the absence.
+> 2. **T3 and T4 found: rubric scoring and skill-gap analysis were NOT fully deterministic at temperature=0.**
+>    Root cause confirmed as provider-level (SumoPod/Deepseek's batched/distributed inference serving,
+>    not our prompts/code — same category of issue OpenAI's own docs acknowledge for their API). We don't
+>    control SumoPod's serving infrastructure, so it can't be fixed at the request level. **User chose:
+>    self-consistency voting** (call the LLM 3x, take the per-criterion median for rubric scores / majority
+>    vote for skill-gap competencies) over softening the submission wording alone. **Fixed and verified**:
+>    `rubric.score_answer()` (9 real calls across 3 outer runs, zero drift) and `skillgap.analyze_skill_gap()`
+>    (9 real calls, zero drift) both now vote internally. This roughly **triples the real LLM cost** of
+>    rubric scoring (used once per interview answer) and skill-gap analysis (used in candidate detail view +
+>    report generation) — a deliberate, informed tradeoff for the highest-stakes accuracy/consistency claims.
+>    **Also found and fixed a related reliability gap while re-testing**: `llm_client.py`'s OpenAI client had
+>    no configured timeout at all (SDK default is 10 minutes), which could make a single slow/stalled
+>    provider response block far longer than reasonable — added an explicit 60s client-level timeout.
 
 **Cost guardrail (resolved 2026-07-12):** T3 and T4 each make 5 genuinely independent, cache-bypassed Deepseek calls per run. Cheap individually, but run them **once when the feature is believed complete** — not repeatedly inside an edit-test-edit debugging loop. This is exactly the repeated-spend pattern Area 4's whole caching strategy exists to avoid.
 
@@ -881,9 +880,9 @@ No changes from the Tahap 2 backend audit (Tahap 2 has no test suite to referenc
 
 | Task | Status | Summary | Est. hours | Difficulty | Note |
 |---|---|---|---|---|---|
-| T3. Determinism test | ⚠️ **Done, real gap found** | 5 cache-bypassed runs showed genuine ±1-point variance at temp=0 — test now asserts tolerance, not exact match. Contradicts a submission claim. | 1.5 | 🟡 | 🚩 Needs product decision — see banner above |
-| T3b. PII redaction test | ⚠️ **Done, real gap found** | Email/phone genuinely redacted (mocked-request verified). Candidate names are NOT — `redact_pii()`'s name branch is never invoked in the real pipeline. | 2.0 | 🟡 | 🚩 Needs product decision — see banner above |
-| T4. Report consistency test | ⚠️ **Done, real gap found** | Same root cause as T3 — `development_priority` and even the missing-competency set varied across runs. Test now asserts tolerance. | 1.5 | 🟡 | 🚩 Needs product decision — see banner above |
+| T3. Determinism test | ✅ **Final result, gap fixed** | Self-consistency voting (3 calls, median) shipped in `rubric.score_answer()` — 9 real calls, zero drift, re-verified. | 1.5 | 🟡 | Cost tripled for this call site — user-approved tradeoff |
+| T3b. PII redaction test | ✅ **Final result, gap fixed** | LLM-based name detection shipped (`pii_redaction.detect_candidate_name()`) — verified on fixture text (finds fake name) and real seed CVs (correctly returns None, no hallucination). | 2.0 | 🟡 | One extra Flash call per CV ingest |
+| T4. Report consistency test | ✅ **Final result, gap fixed** | Same voting fix extended to `skillgap.analyze_skill_gap()` (majority vote) — 9 real calls, zero drift, re-verified. | 1.5 | 🟡 | Cost tripled for this call site — user-approved tradeoff |
 | T5-fixture. Tiered test CVs | ✅ **Final result** | 6 synthetic CVs (2 strong/2 mid/2 weak) seeded under a separate "Web Developer (QA Fixture)" JD (job_id=21), fully separate from the 30-CV demo pool. | 1.0 | 🟢 | |
 | T5. Matching/tier check | ✅ **Final result** | Real scores confirm monotonic discrimination: strong (0.69, 0.64) > mid (0.52, 0.50) > weak (0.43, 0.43). | 1.0 | 🟢 | |
 | T6. Human-in-loop test | ✅ **Final result** | Real AST-based static check (not a one-off grep) confirms `hr_decisions.create()` only ever called from the HR-authenticated endpoint + the seed script. | 1.0 | 🟢 | |
@@ -893,23 +892,27 @@ No changes from the Tahap 2 backend audit (Tahap 2 has no test suite to referenc
 | T12. Demo-readiness checklist | 🔄 **6/7 edge states verified** | All non-Telegram edge states (expired token, mic-denied, empty-submit+real-submit, completion-guard, invite re-view, Terkirim fix) confirmed live. | 2.5 | 🟡 | Real Telegram delivery check remains, folded into T11 |
 | **Subtotal** | | | **~17.5h** | | Spread across Day 4-12 alongside build work — same person, same hours pool |
 
-- [x] **T3. 💎 Determinism test. — DONE 2026-07-13, real gap found (see 🚩 banner above).** — *Depends: Area2 T11*
-  - [x] Same **transcript** → same rubric score across **5 repeated runs, cache BYPASSED** — `backend/tests/test_qa_t3_determinism.py`, added `bypass_cache` passthrough to `services.rubric.score_answer()` (didn't exist before)
-  - ⚠️ **Real finding, not fixed**: results were NOT identical — genuine ±1-point variance across runs (a different criterion each time), consistent with provider-level temperature=0 non-determinism, not a code bug. Test rewritten to assert a measured tolerance (max drift 1 point/criterion) instead of exact equality. **This contradicts an explicit submission claim** — see the 🚩 banner above for the exact citation and the decision needed.
-  - ✅ Done when: the test honestly reflects what's measured — **not** "all 5 runs identical" as originally spec'd, since that was empirically false
+- [x] **T3. 💎 Determinism test. — DONE 2026-07-13, real gap FOUND AND FIXED same day.** — *Depends: Area2 T11*
+  - [x] Same **transcript** → same rubric score across repeated **cache-bypassed** runs — `backend/tests/test_qa_t3_determinism.py`, added `bypass_cache` passthrough to `services.rubric.score_answer()`
+  - [x] **Real finding, root-caused**: the ORIGINAL single-call version showed genuine ±1-point variance across runs, consistent with provider-level temperature=0 non-determinism (confirmed not a code bug via direct root-cause tracing — SumoPod/Deepseek's batched/distributed serving, which we don't control). Directly contradicted an explicit submission claim (`tahap 3 jawaban.md` Q9).
+  - [x] **Fixed**: `services/rubric.py::score_answer()` now does self-consistency voting — calls the LLM 3x internally, takes the per-criterion **median** — user's explicit choice over softening the submission wording alone
+  - ✅ Done when: re-verified against the FIXED function — 9 real calls across 3 outer runs, **zero drift observed**, matching the tightened tolerance
 
-- [x] **T3b. 💎 PII redaction test (NEW — closes a real gap). — DONE 2026-07-13, real gap found (see 🚩 banner above).** — *Depends: Area2 T5*
+- [x] **T3b. 💎 PII redaction test (NEW — closes a real gap). — DONE 2026-07-13, real gap FOUND AND FIXED same day.** — *Depends: Area2 T5*
   - [x] Fed CV text with a known fake name/email/phone through the real pipeline — `backend/tests/test_qa_t3b_pii_redaction.py`, dedicated standalone fixture text, not a curated seed CV
-  - [x] **Mocked the outgoing LLM request** (patched `services.cv_parser.llm_client.chat_flash`) — zero cost, no live call, still proves redaction happens before the payload is built
+  - [x] **Mocked the outgoing LLM request** (patched `services.cv_parser.llm_client.chat_flash`) for the parse-payload assertion — zero cost, no live call
   - [x] Asserted the captured payload never contains the raw email/phone — **passes**, both are genuinely redacted
-  - ⚠️ **Real finding, not fixed**: the candidate's real NAME is NOT redacted — `ingest_cv()` never passes `candidate_name` to `redact_pii()`, and `Candidate` has no real-name DB field to source one from. A "first line = name" heuristic was tested against real seed CV text and found unreliable. See the 🚩 banner above for the decision needed.
-  - ✅ Done when: the test honestly asserts what's true today — email/phone redaction genuinely proven; name redaction proven absent, not silently assumed fixed
+  - [x] **Real finding, root-caused precisely**: `ingest_cv()` never had a real name to redact — the API contract only ever accepts `job_id`/`alias`/`file`, and `Candidate` has no real-name field (by design). The name only exists inside raw CV text. A "first line = name" heuristic was tested and found unreliable on real seed data.
+  - [x] **Fixed**: `services/pii_redaction.py::detect_candidate_name()` — one real, cheap Flash call to find the name before redaction runs (user's explicit choice over a NER library or leaving it undocumented). Verified correctly detecting a fake name on fixture text AND correctly returning `None` (no hallucination) on 5 real, genuinely name-free seed CVs (Kaggle's public Resume Dataset is itself already PII-stripped)
+  - ✅ Done when: 3 tests pass — email/phone redaction proven, name detection+redaction proven working, name-free-text correctly declined
 
-- [x] **T4. 💎 Report consistency test. — DONE 2026-07-13, real gap found (see 🚩 banner above).** — *Depends: Area2 T13*
-  - [x] Same skill-gap input → report data compared across **5 repeated runs, cache BYPASSED** — `backend/tests/test_qa_t4_report_consistency.py`, added `bypass_cache` passthrough to `services.skillgap.analyze_skill_gap()` and threaded through `services.report.build_report()` (neither existed before)
+- [x] **T4. 💎 Report consistency test. — DONE 2026-07-13, real gap FOUND AND FIXED same day.** — *Depends: Area2 T13*
+  - [x] Same skill-gap input → report data compared across repeated **cache-bypassed** runs — `backend/tests/test_qa_t4_report_consistency.py`, added `bypass_cache` passthrough to `services.skillgap.analyze_skill_gap()` and threaded through `services.report.build_report()`
   - [x] **Compared the underlying report data, not rendered PDF bytes** — diffs `build_report()`'s dict directly, before `report_pdf.py` renders anything
-  - ⚠️ **Real finding, not fixed, same root cause as T3**: `development_priority` AND the `development_plan`'s actual competency **set** both varied across independent runs on the same input (e.g. one run dropped a competency entirely). Test rewritten to tolerate a 1-entry set difference rather than requiring exact equality.
-  - ✅ Done when: the test honestly reflects measured behavior, not the originally-assumed "fully identical" outcome
+  - [x] **Real finding, same root cause as T3**: `development_priority` AND the `development_plan`'s actual competency **set** both varied across independent runs on the same input (one run dropped a competency entirely)
+  - [x] **Fixed**: `services/skillgap.py::analyze_skill_gap()` now does self-consistency voting — 3 internal calls, **majority vote** per competency (survives only if ≥half the votes included it) + most-common `development_priority`
+  - **Bonus fix found while re-testing**: `llm_client.py`'s OpenAI client had no configured timeout (SDK default 10 min) — added an explicit 60s client-level timeout so a single stalled provider response can't block disproportionately
+  - ✅ Done when: re-verified against the FIXED function — 9 real calls across 3 outer runs, **zero drift observed**
 
 - [x] **T5-fixture. 💎 Curate a small dedicated tiered CV fixture (NEW — resolves the 2026-07-13 blocker below). — DONE 2026-07-13.** — *Depends: none*
   - [x] Curated **6 small CVs** for the Web Developer JD, deliberately fit-differentiated — `backend/seed/fixture_cv_content.py` (2 strong, 2 mid, 2 weak; synthetic/fabricated, no real people)

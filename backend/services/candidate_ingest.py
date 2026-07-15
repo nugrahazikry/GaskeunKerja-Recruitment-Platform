@@ -1,5 +1,5 @@
-"""End-to-end CV ingest pipeline (Area 2 T5): extract -> merge captions -> redact PII ->
-parse structured profile -> save file + DB row.
+"""End-to-end CV ingest pipeline (Area 2 T5): extract -> merge captions -> detect name ->
+redact PII -> parse structured profile -> save file + DB row.
 """
 
 from sqlalchemy.orm import Session
@@ -18,7 +18,8 @@ def ingest_cv(db: Session, candidate_id: int, file_bytes: bytes, alias: str) -> 
     extraction = extract_pdf(file_bytes)
     merged_text = merge_pdf_text_and_captions(extraction)
 
-    redacted_text = pii_redaction.redact_pii(merged_text, alias=alias)
+    candidate_name = pii_redaction.detect_candidate_name(merged_text)
+    redacted_text = pii_redaction.redact_pii(merged_text, alias=alias, candidate_name=candidate_name)
 
     parsed = cv_parser.parse_cv_text(redacted_text, alias=alias)
 

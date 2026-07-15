@@ -30,13 +30,10 @@ def _build_criteria_text() -> str:
     return "\n\n".join(parts)
 
 
-def score_answer(question: str, transcript: str, bypass_cache: bool = False) -> dict:
-    """Deepseek Pro, temperature=0 (enforced by chat_pro) -> rubric scores + summary.
+_VOTES = 3  # self-consistency sample count — see score_answer() docstring
 
-    bypass_cache is exposed for Area 5 QA T3 (determinism test) — a test that hits the
-    Area 4 disk cache after its first call would just replay the same response and prove
-    nothing about the LLM's actual determinism.
-    """
+
+def _score_once(question: str, transcript: str, bypass_cache: bool) -> dict:
     prompt = _SCORING_PROMPT.format(
         question=question, transcript=transcript, criteria_descriptions=_build_criteria_text()
     )
@@ -70,4 +67,49 @@ def score_answer(question: str, transcript: str, bypass_cache: bool = False) -> 
         "technical_depth": _clamp_score(parsed.get("technical_depth")),
         "technical_depth_rationale": parsed.get("technical_depth_rationale", ""),
         "summary": parsed.get("summary", ""),
+    }
+
+
+def _median_index(values: list[int]) -> int:
+    """Index of the median value in a small odd-length list (ties broken toward the
+    first occurrence) — used to pick one representative call's rationale/summary text
+    rather than inventing a blended one."""
+    sorted_pairs = sorted(range(len(values)), key=lambda i: values[i])
+    return sorted_pairs[len(values) // 2]
+
+
+def score_answer(question: str, transcript: str, bypass_cache: bool = False) -> dict:
+    """Deepseek Pro, temperature=0 (enforced by chat_pro) -> rubric scores + summary.
+
+    Self-consistency voting (added 2026-07-13, closes a real gap found during Area 5 QA
+    T3): temperature=0 alone does not guarantee identical output on batched/distributed
+    provider-side inference — measured directly, real ±1-point variance occurred across
+    independent calls on an identical transcript. Calling the LLM _VOTES times per answer
+    and taking the per-criterion MEDIAN is meaningfully more stable than trusting any
+    single call, without fully eliminating variance (that would require control over the
+    provider's serving infrastructure, which we don't have). The 2nd/3rd votes always
+    bypass the cache — otherwise they'd just replay vote 1's cached response and defeat
+    the entire purpose of voting.
+
+    bypass_cache controls whether VOTE 1 hits the cache; votes 2-3 are always independent.
+    """
+    votes = [_score_once(question, transcript, bypass_cache=bypass_cache)]
+    votes.extend(_score_once(question, transcript, bypass_cache=True) for _ in range(_VOTES - 1))
+
+    clarity_values = [v["clarity"] for v in votes]
+    relevance_values = [v["relevance"] for v in votes]
+    depth_values = [v["technical_depth"] for v in votes]
+
+    clarity_idx = _median_index(clarity_values)
+    relevance_idx = _median_index(relevance_values)
+    depth_idx = _median_index(depth_values)
+
+    return {
+        "clarity": sorted(clarity_values)[len(clarity_values) // 2],
+        "clarity_rationale": votes[clarity_idx]["clarity_rationale"],
+        "relevance": sorted(relevance_values)[len(relevance_values) // 2],
+        "relevance_rationale": votes[relevance_idx]["relevance_rationale"],
+        "technical_depth": sorted(depth_values)[len(depth_values) // 2],
+        "technical_depth_rationale": votes[depth_idx]["technical_depth_rationale"],
+        "summary": votes[clarity_idx]["summary"],
     }

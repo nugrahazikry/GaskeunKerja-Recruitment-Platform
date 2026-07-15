@@ -8,7 +8,7 @@ from services.retry import with_retry
 
 logger = logging.getLogger("llm_client")
 
-_client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
+_client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL, timeout=60.0)
 
 
 @with_retry(max_attempts=3, backoff_seconds=1.0)
