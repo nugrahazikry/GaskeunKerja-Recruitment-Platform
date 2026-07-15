@@ -3,25 +3,24 @@ import logging
 
 from openai import OpenAI
 
-from config import STT_API_KEY, STT_BASE_URL, VISION_MODEL, VISION_PROVIDER
+from config import LLM_API_KEY, LLM_BASE_URL, STT_API_KEY, STT_BASE_URL, VISION_MODEL, VISION_PROVIDER
 
 logger = logging.getLogger("vision_client")
 
-# Vision is served via Groq, reusing the same base_url/key already set up for STT (Area 4 T3b) —
-# SumoPod's deepseek-v4-pro was verified 2026-07-13 to NOT support vision (see plan.md decision log).
-_client = OpenAI(api_key=STT_API_KEY, base_url=STT_BASE_URL)
+# Provider switched 2026-07-15: vision now defaults to SumoPod's gemini/gemini-2.5-flash-lite
+# (verified working via a real test call — image_tokens=258 confirmed real image ingestion,
+# not the silent-failure behavior seen with SumoPod's deepseek-v4-pro on 2026-07-13). ~14%
+# cheaper per image than the previous Groq Llama 4 Scout default. Groq is kept available as
+# VISION_PROVIDER=groq for rollback, reusing the same client already set up for STT.
+_groq_client = OpenAI(api_key=STT_API_KEY, base_url=STT_BASE_URL)
+_sumopod_client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
 
 _TRANSCRIBE_PROMPT = (
-    "Gambar ini adalah halaman CV yang dipindai (scan), tanpa teks yang bisa diekstrak langsung. "
-    "Baca dan tuliskan ulang SEMUA teks yang terlihat pada gambar ini secara verbatim (apa adanya), "
-    "termasuk nama, kontak, riwayat pekerjaan, pendidikan, dan keterampilan. "
-    "Jangan meringkas atau menafsirkan — hanya transkripsikan teksnya."
-)
-
-_DESCRIBE_PROMPT = (
-    "Gambar ini muncul pada halaman CV yang sudah memiliki teks lain. "
-    "Jelaskan secara singkat apa isi gambar ini (misalnya logo, foto profil, ikon, atau diagram) "
-    "dalam satu atau dua kalimat."
+    "Gambar ini berasal dari sebuah halaman CV. Baca dan tuliskan ulang SEMUA teks yang "
+    "terlihat pada gambar ini secara verbatim (apa adanya), termasuk nama, kontak, riwayat "
+    "pekerjaan, pendidikan, dan keterampilan, jika ada. Jika gambar ini murni dekoratif "
+    "(misalnya logo, foto profil, atau ikon) tanpa teks yang bisa dibaca, katakan bahwa "
+    "tidak ada teks yang ditemukan — jangan mengarang teks yang tidak benar-benar ada."
 )
 
 
@@ -31,11 +30,15 @@ def _image_to_data_url(image_bytes: bytes, mime_type: str = "image/png") -> str:
 
 
 def _caption(image_bytes: bytes, prompt: str, mime_type: str = "image/png") -> str:
-    if VISION_PROVIDER != "groq":
-        raise ValueError(f"Unsupported VISION_PROVIDER: {VISION_PROVIDER} (only 'groq' is implemented)")
+    if VISION_PROVIDER == "sumopod":
+        client = _sumopod_client
+    elif VISION_PROVIDER == "groq":
+        client = _groq_client
+    else:
+        raise ValueError(f"Unsupported VISION_PROVIDER: {VISION_PROVIDER} (use 'sumopod' or 'groq')")
 
     data_url = _image_to_data_url(image_bytes, mime_type)
-    response = _client.chat.completions.create(
+    response = client.chat.completions.create(
         model=VISION_MODEL,
         messages=[
             {
@@ -60,10 +63,7 @@ def _caption(image_bytes: bytes, prompt: str, mime_type: str = "image/png") -> s
 
 
 def transcribe_image(image_bytes: bytes, mime_type: str = "image/png") -> str:
-    """Verbatim read-out — use for images on pages with no extractable text (likely scanned)."""
+    """Verbatim read-out of any embedded CV image, called unconditionally on every
+    embedded image regardless of whether its page also has separately-extracted text
+    (2026-07-15 fix — see pdf_captioning.py's docstring for the real leak this closes)."""
     return _caption(image_bytes, _TRANSCRIBE_PROMPT, mime_type)
-
-
-def describe_image(image_bytes: bytes, mime_type: str = "image/png") -> str:
-    """Short caption — use for images on pages that already have extracted text (logos, photos, icons)."""
-    return _caption(image_bytes, _DESCRIBE_PROMPT, mime_type)

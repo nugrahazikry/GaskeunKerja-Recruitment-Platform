@@ -7,10 +7,22 @@ logger = logging.getLogger("pdf_captioning")
 
 
 def merge_pdf_text_and_captions(extraction: PdfExtractionResult) -> str:
-    """Merge per-page text with vision-LLM captions of embedded images.
+    """Merge per-page text with vision-LLM transcriptions of embedded images.
 
-    Images on empty-text pages (likely scanned) get a verbatim transcription;
-    images on pages that already have text get a short descriptive caption.
+    Every embedded image is transcribed verbatim (2026-07-15, fixed a real leak found by
+    testing against the user's own real CVs) — no image is ever just "described" based on
+    whether its page also has typed text. The previous page-has-text heuristic assumed an
+    image alongside real text must be decorative (logo/photo), but a real CV was found
+    where the page had a short typed summary AND the full CV content was ALSO embedded as
+    an image on that same page — the old logic silently dropped the entire image's content
+    because the page "already had text." Always-transcribe has no such blind spot: a
+    genuinely decorative image (headshot, logo) just costs one vision call that comes back
+    with little or no extractable text, which is a negligible real cost (~$0.0002/image on
+    the current SumoPod gemini-2.5-flash-lite provider) compared to the risk of silently
+    losing real CV content again.
+
+    If a page has NO embedded image at all, vision is never called for that page — this
+    only affects pages where pypdf's own image detector actually found something.
     """
     parts: list[str] = []
 
@@ -20,10 +32,7 @@ def merge_pdf_text_and_captions(extraction: PdfExtractionResult) -> str:
 
     for image in extraction.images:
         try:
-            if image.page_number in extraction.empty_text_pages:
-                caption = vision_client.transcribe_image(image.image_bytes)
-            else:
-                caption = vision_client.describe_image(image.image_bytes)
+            caption = vision_client.transcribe_image(image.image_bytes)
         except Exception as e:
             logger.warning("caption failed for page %d: %s", image.page_number, e)
             continue
