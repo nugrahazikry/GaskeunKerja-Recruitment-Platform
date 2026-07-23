@@ -7,12 +7,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 import models  # noqa: F401  (registers all models on Base.metadata)
+from config import TELEGRAM_ENABLED
 from db.session import create_all
 from db.vector_store import create_collections
+from services.job_folder_watcher import run_job_folder_watcher
 from routers import (
     auth,
     candidate_detail,
     candidates,
+    dashboard,
     decisions,
     interview_answers,
     interview_questions,
@@ -67,6 +70,7 @@ app.include_router(rubric.router)
 app.include_router(decisions.router)
 app.include_router(report.router)
 app.include_router(candidate_detail.router)
+app.include_router(dashboard.router)
 
 
 @app.exception_handler(HTTPException)
@@ -101,7 +105,9 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 def on_startup():
     create_all()
     create_collections()
-    asyncio.create_task(run_telegram_poller())
+    if TELEGRAM_ENABLED:
+        asyncio.create_task(run_telegram_poller())
+    asyncio.create_task(run_job_folder_watcher())
 
 
 @app.get("/health")

@@ -1,0 +1,371 @@
+/* Caps the interview Q&A list (transcript + video per question) so many questions don't push the
+   report's height out — same "scroll instead of grow" pattern as CvProfileSections's
+   .profile-scroll-* classes. */
+.report-page .report-interview-scroll {
+  max-height: 640px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Question display for each Wawancara entry — a teal callout box (same look as the candidate-facing
+   .consent-box question display in CandidateInterviewPage.tsx) instead of a single plain bold line,
+   so the question reads as its own distinct element rather than blending into the surrounding text. */
+.report-page .report-question-box {
+  background: var(--teal-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 16px;
+  margin-bottom: 16px;
+}
+
+.report-page .report-question-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--teal);
+  margin-bottom: 10px;
+}
+
+.report-page .report-question-text {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+/* Forces the video area to 16:9 regardless of the recorded clip's own aspect ratio (camera
+   captures at 4:3), via object-fit so playback fills the frame without distortion. */
+.report-page .report-video-frame {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border-radius: 8px;
+  background: #111;
+  overflow: hidden;
+}
+
+.report-page .report-video-frame video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Per-answer rubric breakdown table. Header row reuses the GapPanel/.section-bar-header colored-bar
+   look (teal, uppercase, bold, letter-spaced) for the column names, matching "Sesuai Kebutuhan" etc.
+   The outer border/radius/clipping lives on this wrapper (not the <table> itself) — border-collapse
+   on a bordered+rounded <table> drops the outline in some browsers, so the wrapper owns it instead,
+   the same way GapPanel's own card border wraps its header+body. */
+.report-page .rubric-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.report-page .rubric-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.report-page .rubric-table th,
+.report-page .rubric-table td {
+  font-size: inherit;
+}
+
+.report-page .rubric-table th {
+  background: var(--teal-soft);
+  color: var(--teal);
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Shared with .answer-summary-label below so the label column lines up between the two tables. */
+.report-page .rubric-table th:first-child,
+.report-page .rubric-table td:first-child,
+.report-page .answer-summary-label {
+  width: 160px;
+}
+
+.report-page .rubric-table td {
+  padding: 10px 14px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  vertical-align: top;
+  border-top: 1px solid var(--border);
+}
+
+.report-page .rubric-table td:first-child {
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.report-page .rubric-table td:last-child {
+  white-space: nowrap;
+}
+
+/* Saran Perbaikan CV (ATS) table — same colored-header-bar table pattern as .rubric-table, but a
+   fresh class rather than reusing it directly: .rubric-table's first/last-child rules (fixed
+   160px width, nowrap, bold) were written for a short "Aspek"/"Skor" column, which would truncate
+   these two long CV-sentence columns instead of wrapping them. */
+.report-page .ats-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.report-page .ats-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.82rem;
+}
+
+.report-page .ats-table th {
+  background: var(--gold-soft);
+  color: var(--gold);
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: 50%;
+}
+
+.report-page .ats-table td {
+  padding: 10px 14px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  vertical-align: top;
+  border-top: 1px solid var(--border);
+  word-break: break-word;
+}
+
+.report-page .ats-table td:first-child {
+  border-right: 1px solid var(--border);
+}
+
+/* Transkrip Asli / Ringkasan AI as a 2-row label+value table (label column highlighted, value
+   column justified) instead of plain labeled paragraphs — same wrapper-owns-the-outline pattern as
+   .rubric-table-wrap above. */
+.report-page .answer-summary-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.report-page .answer-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.report-page .answer-summary-table td {
+  padding: 10px 14px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  text-align: justify;
+  vertical-align: top;
+  border-top: 1px solid var(--border);
+}
+
+.report-page .answer-summary-table tr:first-child td {
+  border-top: none;
+}
+
+.report-page .answer-summary-table .answer-summary-label {
+  background: var(--teal-soft);
+  color: var(--teal);
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  border-right: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.report-page .report-split2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.report-page .report-strength-grid,
+.report-page .report-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.report-page .report-strength-card,
+.report-page .report-resource-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  background: var(--surface);
+}
+
+.report-page .report-strength-card strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.86rem;
+}
+
+.report-page .report-strength-card p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.report-page .report-resource-comp {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.report-page .report-resource-card strong {
+  display: block;
+  font-size: 0.86rem;
+  margin-bottom: 2px;
+}
+
+.report-page .report-resource-card p {
+  margin: 2px 0;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.report-page .report-resource-card a {
+  font-size: 0.78rem;
+  color: var(--teal);
+  font-weight: 700;
+}
+
+/* "Estimasi Waktu Upskilling" — one distinct box per skill (competency/area), pill badge as the
+   header, effort tiers nested inside as sub-groups. Each box's body scrolls independently once a
+   skill accumulates many plans across its 3 tiers, so the section doesn't grow unbounded. */
+.report-page .upskilling-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+  gap: 16px;
+}
+
+.report-page .upskilling-skill-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-page .upskilling-skill-badge {
+  align-self: flex-start;
+  margin: 18px 0 0 18px;
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  box-shadow: var(--shadow-card);
+}
+
+.report-page .upskilling-skill-badge.tone-info {
+  background: var(--teal);
+}
+
+.report-page .upskilling-skill-badge.tone-danger {
+  background: var(--danger);
+}
+
+.report-page .upskilling-skill-body {
+  margin: 12px 12px 12px;
+  padding: 14px 14px 4px;
+  border-radius: var(--radius-md);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.report-page .upskilling-skill-body.tone-info {
+  background: var(--teal-soft);
+}
+
+.report-page .upskilling-skill-body.tone-danger {
+  background: var(--danger-soft);
+}
+
+.report-page .upskilling-tier-label {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.report-page .upskilling-tier-group + .upskilling-tier-group {
+  margin-top: 22px;
+}
+
+/* Same-hue shade ramp per tier (light -> dark = low -> high effort), so tiers read as a gradient
+   of intensity within whichever tone (teal/red) the surrounding section already uses, instead of
+   three identical-looking chips. */
+.report-page .upskilling-tier-label.tone-info.tier-low_effort {
+  background: #3d8f7f;
+}
+.report-page .upskilling-tier-label.tone-info.tier-medium_effort {
+  background: var(--teal);
+}
+.report-page .upskilling-tier-label.tone-info.tier-high_effort {
+  background: #0a4a40;
+}
+
+.report-page .upskilling-tier-label.tone-danger.tier-low_effort {
+  background: #c96257;
+}
+.report-page .upskilling-tier-label.tone-danger.tier-medium_effort {
+  background: var(--danger);
+}
+.report-page .upskilling-tier-label.tone-danger.tier-high_effort {
+  background: #7a251d;
+}
+
+.report-page .upskilling-tier-items {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.report-page .upskilling-item-card {
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.report-page .upskilling-item-card strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.84rem;
+}
+
+.report-page .upskilling-item-card p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  line-height: 1.6;
+}

@@ -45,7 +45,7 @@ def embed_candidate_profile(db: Session, candidate_id: int) -> None:
 
 
 def embed_jd_competencies(db: Session, job_id: int) -> None:
-    competencies = repo.jd_competencies.list(db, job_id=job_id)
+    competencies = repo.jd_competencies.list(db, job_id=job_id, status="active")
     if not competencies:
         return
 

@@ -1,0 +1,56 @@
+.color-panel {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+
+.color-panel-header {
+  padding: 10px 16px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.color-panel-body {
+  padding: 14px 16px;
+  background: var(--surface);
+}
+
+.color-panel-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.86rem;
+  color: var(--ink-2);
+  line-height: 1.8;
+}
+
+.color-panel-teal .color-panel-header {
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+}
+.color-panel-teal {
+  border-color: var(--teal);
+}
+
+.color-panel-gold .color-panel-header {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+.color-panel-gold {
+  border-color: var(--gold);
+}
+
+.color-panel-success .color-panel-header {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.color-panel-success {
+  border-color: var(--success);
+}
+
+/* A form field (TextField/BulletListField) nested inside already gets padding from
+   .color-panel-body — its own bottom margin would just add unwanted extra space. */
+.color-panel-body .field {
+  margin-bottom: 0;
+}

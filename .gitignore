@@ -26,6 +26,11 @@ storage/
 # The 2 test audio clips in seed/raw/audio/ (the user's own voice) are the one exception, already tracked.
 seed/raw/cv/
 
+# Real candidate CVs used to test the job-folder ingest pipeline (backend/seed/job_folders.py) —
+# same personal-data concern as seed/raw/cv/ above, never commit to a public repo.
+backend/seed/job_lists/*/
+!backend/seed/job_lists/.gitkeep
+
 # Editor / OS
 .vscode/
 .DS_Store

@@ -48,7 +48,19 @@ export interface paths {
         };
         /** Get Job */
         get: operations["get_job_jobs__job_id__get"];
-        /** Update Job */
+        /**
+         * Update Job
+         * @description Round-3 follow-up #9 (2026-07-19): editing an existing job's text fields no longer
+         *     re-extracts/re-stores competencies at all (previously called _extract_and_store_competencies
+         *     here, same as create_job). Real problem this closes: skill-gap analysis for already-scored
+         *     candidates is computed against a job's competency list at analysis time — if HR could freely
+         *     edit that list afterward (this endpoint used to reopen the full add/dismiss/restore review
+         *     modal on every edit save too, see JobsListPage.tsx), every existing candidate's skill-gap/score
+         *     would silently go stale relative to the new list, with no auto-invalidation mechanism to catch
+         *     up (a known, previously-documented gap — see T17-followup's stale-competency-list note).
+         *     Competencies are now a one-time decision made at CREATE time only (create_job, unchanged) —
+         *     editing a job's description afterward is purely a text update.
+         */
         put: operations["update_job_jobs__job_id__put"];
         post?: never;
         /**
@@ -62,6 +74,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{job_id}/permanent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Hard Delete Job
+         * @description Real, irreversible cascade delete — separate from the existing soft-close DELETE above
+         *     (kept as-is). Round-2 polish (2026-07-17), user-confirmed tradeoff: this destroys audit
+         *     history for the job. No ORM cascade exists anywhere in this schema (confirmed by reading
+         *     every model file), so the cascade is hand-written here in FK-safe order, plus on-disk
+         *     CV/audio/report file cleanup per candidate.
+         */
+        delete: operations["hard_delete_job_jobs__job_id__permanent_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{job_id}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Job Reports
+         * @description Every GENUINELY invited candidate for this job with their interview/decision pipeline stage
+         *     — powers the Laporan page (#15 + Round 12/13/14 follow-up). Round 13: candidates who haven't
+         *     even been invited yet are excluded entirely (not just coarsely labeled "Menunggu Wawancara") —
+         *     Laporan is about tracking invited candidates through interview -> decision, not surfacing the
+         *     whole uninvited CV pool, which is the Kandidat page's job.
+         *
+         *     Round 14 follow-up (real bug, user-reported): `invited_at`/`contact_email` are NOT proof of a
+         *     real invite — `invited_at` is set the moment HR opens the invite modal (token generation), and
+         *     `contact_email` can be added/edited long after with no send action ever happening. The only
+         *     real signal that an invite email was actually dispatched is `invite_email_sent_at`
+         *     (routers/candidates.py::send_candidate_invite_email) — filtering on that instead mirrors the
+         *     identical fix in routers/matching.py and CandidateDetailPage.tsx/ShortlistPage.tsx's status
+         *     logic.
+         */
+        get: operations["list_job_reports_jobs__job_id__reports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/jobs/{job_id}/competencies": {
         parameters: {
             query?: never;
@@ -69,10 +137,57 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Job Competencies */
+        /**
+         * Get Job Competencies
+         * @description Defaults to active-only (what's actually required). include_dismissed=true returns the
+         *     full list including the "recommended pool" — used by CompetencyEditor's restore section.
+         */
         get: operations["get_job_competencies_jobs__job_id__competencies_get"];
         put?: never;
-        post?: never;
+        /**
+         * Add Competency
+         * @description HR adds a custom competency the AI extraction missed — created directly as active.
+         */
+        post: operations["add_competency_jobs__job_id__competencies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{job_id}/competencies/{competency_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss Competency
+         * @description Never deletes the row — flips it to 'dismissed' so it stops counting as required
+         *     everywhere (matching, report, candidate detail all filter to status='active') while staying
+         *     visible/restorable as a recommendation (#4/#7).
+         */
+        post: operations["dismiss_competency_jobs__job_id__competencies__competency_id__dismiss_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{job_id}/competencies/{competency_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Competency */
+        post: operations["restore_competency_jobs__job_id__competencies__competency_id__restore_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -91,6 +206,21 @@ export interface paths {
         /**
          * Create Candidate
          * @description HR/seed-side only for MVP — not a public candidate-facing endpoint (see Area 1 T8 note).
+         *
+         *     Round-3 follow-up #8 (2026-07-19): CV upload now runs BOTH pipelines synchronously — CV
+         *     extraction (ingest_cv, unchanged) AND skill-gap analysis + match scoring (compute_match_score,
+         *     newly wired in here). Previously compute_match_score() was only ever called from one-off seed
+         *     scripts (load_demo_data.py/load_t5_fixture.py), never from this live endpoint — a real
+         *     candidate uploaded through the running app never got a match_scores row at all, and so never
+         *     appeared on the Shortlist page (get_ranked_candidates only lists candidates that already have
+         *     one). This makes upload the primary path for scoring; the self-heal fallback in
+         *     get_or_compute_skill_gap() remains as a defensive backstop for edge cases (e.g. a JD's
+         *     competencies changing after upload), not the primary mechanism going forward.
+         *
+         *     Synchronous by explicit choice over a background task: adds ~25-30s (5 LLM calls) on top of
+         *     CV-parsing's existing latency, but keeps this endpoint fully consistent with ingest_cv's
+         *     already-synchronous style — no new background-task/error-reporting infra needed this late in
+         *     the build.
          */
         post: operations["create_candidate_candidates_post"];
         delete?: never;
@@ -142,6 +272,27 @@ export interface paths {
         get: operations["get_candidate_detail_candidates__candidate_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/candidates/{candidate_id}/send-invite-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Candidate Invite Email
+         * @description Round-3 Task 19: emails the already-issued invite link (built client-side, same as the
+         *     copy-link box) to the candidate's CV-extracted contact_email.
+         */
+        post: operations["send_candidate_invite_email_candidates__candidate_id__send_invite_email_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -224,10 +375,23 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Generate Job Questions
-         * @description Generates 2-3 draft questions from the JD via Flash. Replaces any existing draft questions.
+         * Generate Job Question
+         * @description Stateless (2026-07-19 follow-up, user-requested): generates ONE question TEXT via Flash and
+         *     returns it WITHOUT writing anything to the database. AI-suggested drafts now live purely in
+         *     frontend state until HR clicks "Setujui & Kunci Pertanyaan" (PUT /questions then POST
+         *     /questions/approve) — matching how manually-typed drafts (via "+ Tambah Pertanyaan") already
+         *     only ever get persisted at that point.
+         *
+         *     Generates exactly ONE question per call, not a batch — a single-prompt "generate all N, stay
+         *     distinct" attempt was tried first but the user found the real-world results still
+         *     inconsistent/mixed/unrelated. The frontend now calls this endpoint once per requested question,
+         *     IN ORDER, accumulating results into body.existing_questions on each subsequent call (so
+         *     distinctness is enforced by construction) — deliberately client-driven rather than looped
+         *     server-side so the UI can show live per-question progress. body.hint carries that specific
+         *     slot's own current text (a real finding: discarding it and generating a generic JD-grounded
+         *     question produced results with no connection to what HR had actually written for that slot).
          */
-        post: operations["generate_job_questions_jobs__job_id__questions_generate_post"];
+        post: operations["generate_job_question_jobs__job_id__questions_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -249,6 +413,49 @@ export interface paths {
          */
         put: operations["update_job_questions_jobs__job_id__questions_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{job_id}/questions/{question_id}/duration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Question Duration
+         * @description Per-question time limit (2026-07-19 follow-up, replacing the earlier job-wide-only design)
+         *     — editable independent of draft/approved status, mirroring the job-level duration PATCH's
+         *     immediate-save pattern. Doesn't touch question_text/order_index/status, so it never needs a
+         *     reopen even on an approved (locked) question.
+         */
+        patch: operations["update_question_duration_jobs__job_id__questions__question_id__duration_patch"];
+        trace?: never;
+    };
+    "/jobs/{job_id}/questions/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reopen Job Questions
+         * @description Flips already-approved questions back to draft so HR can add/edit before re-approving.
+         */
+        post: operations["reopen_job_questions_jobs__job_id__questions_reopen_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -285,7 +492,9 @@ export interface paths {
         /**
          * List Candidate Questions
          * @description Candidate-facing (token-authenticated). Only ever returns approved questions —
-         *     candidates never see drafts.
+         *     candidates never see drafts. Each question now carries its own HR-set time limit
+         *     (2026-07-19 follow-up, replacing the earlier job-wide-only duration) — the video recorder
+         *     reads duration_seconds off the current question, not a single job-level value.
          */
         get: operations["list_candidate_questions_candidates__candidate_id__questions_get"];
         put?: never;
@@ -309,6 +518,20 @@ export interface paths {
          * Submit Interview Answer
          * @description Candidate-facing (token-authenticated, not HR JWT). Consent-gated: 403 without a
          *     consent_records row for this candidate.
+         *
+         *     Round-3 follow-up #22 (2026-07-19): only saves the video synchronously now — transcription +
+         *     rubric scoring (the slow part, 10-20+ seconds per answer) run afterward as a BackgroundTask,
+         *     so this response returns as soon as the file is on disk. User-reported problem this fixes:
+         *     with all 4 answers now uploaded sequentially at the end of the interview (T17-followup #21),
+         *     the candidate was stuck watching "Mengunggah jawaban N dari 4..." for the FULL synchronous
+         *     pipeline time of every single answer, back to back.
+         *
+         *     2026-07-22 (user decision, reversing an earlier attempt at a blocking "please wait" screen):
+         *     the candidate is released the moment their video data is confirmed stored — not once the
+         *     LLM chain (transcription/scoring/summary/upskilling plan) finishes. That pipeline now runs
+         *     fully invisibly in the background; only HR-facing surfaces (Laporan list, report page) gate on
+         *     it actually completing (routers/jobs.py's processing_complete, routers/report.py's
+         *     _require_report_ready).
          */
         post: operations["submit_interview_answer_candidates__candidate_id__answers_post"];
         delete?: never;
@@ -390,6 +613,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/candidates/{candidate_id}/report/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Candidate Report Pdf
+         * @description HR-facing PDF preview ("Lihat Laporan") — direct mirror of candidate_detail.py's
+         *     get_candidate_cv: generates the same PDF build_report()/render_report_pdf() would email, but
+         *     renders it fresh in-memory for viewing instead of writing it to storage/reports/ (that write
+         *     only happens as a side effect of actually sending, in services.delivery.send_report).
+         */
+        get: operations["get_candidate_report_pdf_candidates__candidate_id__report_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/candidates/{candidate_id}/send-report": {
         parameters: {
             query?: never;
@@ -432,6 +678,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/candidates/{candidate_id}/reanalyze-skill-gap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reanalyze Skill Gap
+         * @description Manual escape hatch (Round-2 polish, A1's scope guard): skill-gap is normally computed once
+         *     at match time and read from the persisted row. This forces a fresh recompute for the rare case
+         *     a JD's competencies changed after the candidate was already matched — no automatic invalidation
+         *     is built for that case this round (match_scores itself isn't auto-invalidated on JD edit
+         *     either), so this button is the deliberate manual alternative.
+         *
+         *     Round-3 follow-up (2026-07-19): the ranking score is now DERIVED from this same skill-gap
+         *     analysis (services/matching.py), so re-analyzing here would otherwise leave match_scores stale
+         *     relative to the freshly recomputed matched/proficiency data — this now also refreshes the
+         *     match score and this job's ranking, not just the skill-gap narrative.
+         */
+        post: operations["reanalyze_skill_gap_candidates__candidate_id__reanalyze_skill_gap_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/candidates/{candidate_id}/contact-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Contact Email
+         * @description Round-3 Task 19: contact_email is normally auto-captured from the CV at ingest, but a CV
+         *     without a detectable email (or a wrong extraction) leaves HR needing a manual override.
+         */
+        patch: operations["update_contact_email_candidates__candidate_id__contact_email_patch"];
+        trace?: never;
+    };
+    "/candidates/{candidate_id}/send-decision-notice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Candidate Decision Notice
+         * @description Round-3 Task 19: manual-trigger accept/reject notice email — never automatic on decision,
+         *     to avoid accidental sends while HR is still testing/adjusting a decision.
+         */
+        post: operations["send_candidate_decision_notice_candidates__candidate_id__send_decision_notice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/candidates/{candidate_id}/cv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Candidate Cv
+         * @description Streams the candidate's original uploaded CV PDF (Round-3 Task 18) — direct mirror of
+         *     get_answer_audio below. HR-scoped like every other candidate-detail endpoint. The raw PDF
+         *     contains real PII (name/email/phone) by design — this is an HR-facing view, not redacted,
+         *     same as the existing raw_cv_path storage already was.
+         */
+        get: operations["get_candidate_cv_candidates__candidate_id__cv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/candidates/{candidate_id}/answers/{answer_id}/audio": {
         parameters: {
             query?: never;
@@ -441,10 +781,36 @@ export interface paths {
         };
         /**
          * Get Answer Audio
-         * @description Streams the stored answer audio file for the HR-facing player. HR-scoped like
-         *     every other candidate-detail endpoint — never publicly reachable.
+         * @description Streams the stored answer recording for the HR-facing player. HR-scoped like every other
+         *     candidate-detail endpoint — never publicly reachable.
+         *
+         *     Round-3 Task 21: recordings are now video+audio webm (camera interview redesign), served as
+         *     video/webm — a browser <video> element plays an audio-only webm from before this change
+         *     just fine (blank frame, working controls), so no branching by candidate/recording age.
          */
         get: operations["get_answer_audio_candidates__candidate_id__answers__answer_id__audio_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Dashboard Stats
+         * @description Company-scoped recruitment overview aggregated in Python (the generic repository
+         *     only supports equality-filter list queries — no COUNT/GROUP BY). Pipeline-stage
+         *     derivation follows the same row-presence rules as routers/matching.py.
+         */
+        get: operations["get_dashboard_stats_dashboard_stats_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -484,6 +850,8 @@ export interface components {
             audio_url: string;
             /** Transcript Text */
             transcript_text: string;
+            /** Summary Text */
+            summary_text: string | null;
             /** Rubric Scores */
             rubric_scores: components["schemas"]["RubricScoreOut"][];
         };
@@ -493,8 +861,17 @@ export interface components {
             answer_id: number;
             /** Audio Path */
             audio_path: string;
-            /** Transcript Text */
-            transcript_text: string;
+        };
+        /** AttentionItem */
+        AttentionItem: {
+            /** Type */
+            type: string;
+            /** Label */
+            label: string;
+            /** Job Id */
+            job_id?: number | null;
+            /** Candidate Id */
+            candidate_id?: number | null;
         };
         /** Body_create_candidate_candidates_post */
         Body_create_candidate_candidates_post: {
@@ -541,6 +918,8 @@ export interface components {
             token: string | null;
             /** Token Expires At */
             token_expires_at: string | null;
+            /** Contact Email */
+            contact_email: string | null;
         };
         /** CandidateFullDetailOut */
         CandidateFullDetailOut: {
@@ -552,12 +931,26 @@ export interface components {
             job_id: number;
             /** Job Title */
             job_title: string;
+            /** Match Score */
+            match_score: number | null;
             /** Skills */
             skills: string[];
+            /** Skills Implicit */
+            skills_implicit: unknown[];
             /** Experience */
             experience: unknown[];
             /** Qualifications */
             qualifications: unknown[];
+            /** Cv Summary */
+            cv_summary: string | null;
+            /** Education History */
+            education_history: unknown[];
+            /** Certifications */
+            certifications: unknown[];
+            /** Featured Projects */
+            featured_projects: unknown[];
+            /** Organization Experience */
+            organization_experience: unknown[];
             skill_gap: components["schemas"]["SkillGapOut"] | null;
             /** Answers */
             answers: components["schemas"]["AnswerDetailOut"][];
@@ -570,6 +963,22 @@ export interface components {
             has_telegram_link: boolean;
             /** Report Sent */
             report_sent: boolean;
+            /** Cv Url */
+            cv_url: string | null;
+            /** Contact Email */
+            contact_email: string | null;
+            /** Has Email */
+            has_email: boolean;
+            /** Education Level */
+            education_level: string | null;
+            /** Major */
+            major: string | null;
+            /** Meets Education */
+            meets_education: boolean | null;
+            /** Invited */
+            invited: boolean;
+            /** Invite Email Sent */
+            invite_email_sent: boolean;
         };
         /** CandidateOut */
         CandidateOut: {
@@ -588,15 +997,21 @@ export interface components {
             question_text: string;
             /** Order Index */
             order_index: number;
+            /** Duration Seconds */
+            duration_seconds: number;
         };
         /**
          * CandidateSelfOut
          * @description Candidate-facing self-info, resolved by token — powers Area 1 T3's route guards
          *     (expired/invalid token, consent-required redirect) without exposing HR-only fields.
+         *     `alias` is safe to include: it's the anonymized display name (e.g. "Kandidat WD-28"),
+         *     never the candidate's real name — see the project's PII-redaction design.
          */
         CandidateSelfOut: {
             /** Id */
             id: number;
+            /** Alias */
+            alias: string;
             /** Job Title */
             job_title: string;
             /** Has Consent */
@@ -606,6 +1021,23 @@ export interface components {
             /** Interview Completed */
             interview_completed: boolean;
         };
+        /** CompetencyAddRequest */
+        CompetencyAddRequest: {
+            /** Competency Name */
+            competency_name: string;
+            /**
+             * Importance Level
+             * @default 1
+             */
+            importance_level: number;
+        };
+        /** CompetencyGap */
+        CompetencyGap: {
+            /** Competency Name */
+            competency_name: string;
+            /** Missing Pct */
+            missing_pct: number;
+        };
         /** CompetencyOut */
         CompetencyOut: {
             /** Id */
@@ -614,6 +1046,19 @@ export interface components {
             competency_name: string;
             /** Importance Level */
             importance_level: number;
+            /** Status */
+            status: string;
+            /** Source */
+            source: string;
+        };
+        /** CompetencyStatus */
+        CompetencyStatus: {
+            /** Competency Name */
+            competency_name: string;
+            /** Matched */
+            matched: boolean;
+            /** Proficiency */
+            proficiency: number | null;
         };
         /** ConsentOut */
         ConsentOut: {
@@ -629,6 +1074,56 @@ export interface components {
             /** Consent Text Version */
             consent_text_version: string;
         };
+        /** ContactEmailIn */
+        ContactEmailIn: {
+            /** Contact Email */
+            contact_email: string;
+        };
+        /** ContactEmailOut */
+        ContactEmailOut: {
+            /** Candidate Id */
+            candidate_id: number;
+            /** Contact Email */
+            contact_email: string | null;
+        };
+        /** DashboardStatsOut */
+        DashboardStatsOut: {
+            /** Company Name */
+            company_name: string;
+            /** Active Jobs */
+            active_jobs: number;
+            /** Closed Jobs */
+            closed_jobs: number;
+            /** Total Candidates */
+            total_candidates: number;
+            /** Belum Diundang */
+            belum_diundang: number;
+            /** Menunggu Wawancara */
+            menunggu_wawancara: number;
+            /** Selesai Wawancara */
+            selesai_wawancara: number;
+            /** Decisions Advance */
+            decisions_advance: number;
+            /** Decisions Reject */
+            decisions_reject: number;
+            /** Decisions Pending */
+            decisions_pending: number;
+            /** Reports Sent */
+            reports_sent: number;
+            /** Avg Match Score */
+            avg_match_score: number | null;
+            /** Per Job */
+            per_job: components["schemas"]["PerJobStat"][];
+            /** Attention */
+            attention: components["schemas"]["AttentionItem"][];
+            score_distribution: components["schemas"]["ScoreDistribution"];
+            /** Conversion By Job */
+            conversion_by_job: components["schemas"]["JobConversion"][];
+            /** Competency Gaps */
+            competency_gaps: components["schemas"]["CompetencyGap"][];
+            /** Decisions By Job */
+            decisions_by_job: components["schemas"]["JobDecisionBreakdown"][];
+        };
         /** DecisionRequest */
         DecisionRequest: {
             /** Candidate Id */
@@ -638,10 +1133,38 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** GenerateQuestionRequest */
+        GenerateQuestionRequest: {
+            /** Hint */
+            hint?: string | null;
+            /**
+             * Existing Questions
+             * @default []
+             */
+            existing_questions: string[];
+        };
+        /** GeneratedQuestionOut */
+        GeneratedQuestionOut: {
+            /** Question */
+            question: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** InterviewAnswerOut */
+        InterviewAnswerOut: {
+            /** Question Text */
+            question_text: string;
+            /** Summary Text */
+            summary_text: string | null;
+            /** Transcript Text */
+            transcript_text: string | null;
+            /** Video Url */
+            video_url: string;
+            /** Rubric Scores */
+            rubric_scores: components["schemas"]["RubricScoreOut"][];
         };
         /** InterviewSummaryOut */
         InterviewSummaryOut: {
@@ -658,6 +1181,19 @@ export interface components {
             token: string;
             /** Token Expires At */
             token_expires_at: string;
+            /** Contact Email */
+            contact_email: string | null;
+        };
+        /** JobConversion */
+        JobConversion: {
+            /** Job Id */
+            job_id: number;
+            /** Title */
+            title: string;
+            /** Invited Count */
+            invited_count: number;
+            /** Completed Count */
+            completed_count: number;
         };
         /** JobCreateRequest */
         JobCreateRequest: {
@@ -670,12 +1206,27 @@ export interface components {
             /** Qualifications */
             qualifications: string;
         };
-        /** JobOut */
-        JobOut: {
+        /** JobDecisionBreakdown */
+        JobDecisionBreakdown: {
+            /** Job Id */
+            job_id: number;
+            /** Title */
+            title: string;
+            /** Advance Count */
+            advance_count: number;
+            /** Reject Count */
+            reject_count: number;
+            /** Pending Count */
+            pending_count: number;
+        };
+        /** JobListItemOut */
+        JobListItemOut: {
             /** Id */
             id: number;
             /** Company Id */
             company_id: number;
+            /** Company Name */
+            company_name: string;
             /** Title */
             title: string;
             /** Responsibilities */
@@ -684,8 +1235,76 @@ export interface components {
             requirements: string;
             /** Qualifications */
             qualifications: string;
+            /** Required Education Level */
+            required_education_level: string | null;
+            /** Required Major */
+            required_major: string | null;
             /** Status */
             status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Candidate Count */
+            candidate_count: number;
+            /** Question Status */
+            question_status: string;
+            /** Belum Diundang */
+            belum_diundang: number;
+            /** Menunggu Wawancara */
+            menunggu_wawancara: number;
+            /** Selesai Wawancara */
+            selesai_wawancara: number;
+            /** Diputuskan */
+            diputuskan: number;
+        };
+        /** JobOut */
+        JobOut: {
+            /** Id */
+            id: number;
+            /** Company Id */
+            company_id: number;
+            /** Company Name */
+            company_name: string;
+            /** Title */
+            title: string;
+            /** Responsibilities */
+            responsibilities: string;
+            /** Requirements */
+            requirements: string;
+            /** Qualifications */
+            qualifications: string;
+            /** Required Education Level */
+            required_education_level: string | null;
+            /** Required Major */
+            required_major: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** JobReportListItemOut */
+        JobReportListItemOut: {
+            /** Candidate Id */
+            candidate_id: number;
+            /** Alias */
+            alias: string;
+            /** Interview Completed */
+            interview_completed: boolean;
+            /** Processing Complete */
+            processing_complete: boolean;
+            /** Decision */
+            decision: string | null;
+            /** Decided At */
+            decided_at: string | null;
+            /** Match Score */
+            match_score: number | null;
+            /** Report Sent */
+            report_sent: boolean;
         };
         /** JobUpdateRequest */
         JobUpdateRequest: {
@@ -697,6 +1316,13 @@ export interface components {
             requirements: string;
             /** Qualifications */
             qualifications: string;
+        };
+        /** KeyStrengthOut */
+        KeyStrengthOut: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -727,12 +1353,50 @@ export interface components {
             rank: number;
             /** Competency Breakdown */
             competency_breakdown: Record<string, never>;
+            /** Competency Status */
+            competency_status: components["schemas"]["CompetencyStatus"][];
+            /** Latest Role */
+            latest_role: string | null;
             /** Invited */
             invited: boolean;
             /** Interview Completed */
             interview_completed: boolean;
             /** Decided */
             decided: boolean;
+            /** Cv Url */
+            cv_url: string | null;
+            /** Education Level */
+            education_level: string | null;
+            /** Major */
+            major: string | null;
+            /** Meets Education */
+            meets_education: boolean | null;
+            /** Has Email */
+            has_email: boolean;
+            /** Invite Email Sent */
+            invite_email_sent: boolean;
+            /** Skill Gap Ready */
+            skill_gap_ready: boolean;
+        };
+        /** PerJobStat */
+        PerJobStat: {
+            /** Job Id */
+            job_id: number;
+            /** Title */
+            title: string;
+            /** Status */
+            status: string;
+            /** Candidate Count */
+            candidate_count: number;
+            /** Interviewed Count */
+            interviewed_count: number;
+            /** Decided Count */
+            decided_count: number;
+        };
+        /** QuestionDurationRequest */
+        QuestionDurationRequest: {
+            /** Duration Seconds */
+            duration_seconds: number;
         };
         /** QuestionOut */
         QuestionOut: {
@@ -746,6 +1410,8 @@ export interface components {
             order_index: number;
             /** Status */
             status: string;
+            /** Duration Seconds */
+            duration_seconds: number;
         };
         /** QuestionUpdateItem */
         QuestionUpdateItem: {
@@ -755,11 +1421,72 @@ export interface components {
             question_text: string;
             /** Order Index */
             order_index: number;
+            /** Duration Seconds */
+            duration_seconds?: number | null;
         };
         /** QuestionsUpdateRequest */
         QuestionsUpdateRequest: {
             /** Questions */
             questions: components["schemas"]["QuestionUpdateItem"][];
+        };
+        /** ReportOut */
+        ReportOut: {
+            /** Candidate Alias */
+            candidate_alias: string;
+            /** Job Title */
+            job_title: string;
+            /** Decision */
+            decision: string | null;
+            /** Gap Summary */
+            gap_summary: string;
+            /** Development Priority */
+            development_priority: string | null;
+            /** Matched Competencies */
+            matched_competencies: string[];
+            /** Missing Competencies */
+            missing_competencies: string[];
+            /** Key Strengths */
+            key_strengths: components["schemas"]["KeyStrengthOut"][];
+            /** Resume Action Items */
+            resume_action_items: components["schemas"]["ResumeActionItemOut"][];
+            /** Interview Key Strengths */
+            interview_key_strengths: components["schemas"]["KeyStrengthOut"][];
+            /** Interview Feedback */
+            interview_feedback: components["schemas"]["KeyStrengthOut"][];
+            upskilling_plan: components["schemas"]["UpskillingSectionOut"];
+            /** Interview Overall Score */
+            interview_overall_score: number | null;
+            /** Interview Answers */
+            interview_answers: components["schemas"]["InterviewAnswerOut"][];
+            /** Cv Summary */
+            cv_summary: string | null;
+            /** Skills */
+            skills: string[];
+            /** Skills Implicit */
+            skills_implicit: unknown[];
+            /** Experience */
+            experience: unknown[];
+            /** Qualifications */
+            qualifications: unknown[];
+            /** Education Level */
+            education_level: string | null;
+            /** Major */
+            major: string | null;
+            /** Education History */
+            education_history: unknown[];
+            /** Certifications */
+            certifications: unknown[];
+            /** Featured Projects */
+            featured_projects: unknown[];
+            /** Organization Experience */
+            organization_experience: unknown[];
+        };
+        /** ResumeActionItemOut */
+        ResumeActionItemOut: {
+            /** Original */
+            original: string;
+            /** Improved */
+            improved: string;
         };
         /** RubricScoreOut */
         RubricScoreOut: {
@@ -769,6 +1496,17 @@ export interface components {
             score: number;
             /** Rationale */
             rationale: string;
+        };
+        /** ScoreDistribution */
+        ScoreDistribution: {
+            /** Bucket 0 40 */
+            bucket_0_40: number;
+            /** Bucket 40 60 */
+            bucket_40_60: number;
+            /** Bucket 60 80 */
+            bucket_60_80: number;
+            /** Bucket 80 100 */
+            bucket_80_100: number;
         };
         /** ScoreOut */
         ScoreOut: {
@@ -781,14 +1519,62 @@ export interface components {
             /** Summary */
             summary: string;
         };
+        /** SendInviteEmailRequest */
+        SendInviteEmailRequest: {
+            /** Invite Link */
+            invite_link: string;
+        };
         /** SkillGapOut */
         SkillGapOut: {
             /** Gap Summary */
             gap_summary: string;
             /** Missing Competencies */
             missing_competencies: string[];
+            /** Matched Competencies */
+            matched_competencies: string[];
             /** Development Priority */
             development_priority: string | null;
+            /** Key Strengths */
+            key_strengths: components["schemas"]["KeyStrengthOut"][];
+            /** Resume Action Items */
+            resume_action_items: components["schemas"]["ResumeActionItemOut"][];
+            /** Interview Key Strengths */
+            interview_key_strengths: components["schemas"]["KeyStrengthOut"][];
+            /** Interview Feedback */
+            interview_feedback: components["schemas"]["KeyStrengthOut"][];
+        };
+        /** UpskillingItemOut */
+        UpskillingItemOut: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+        };
+        /** UpskillingPlanOut */
+        UpskillingPlanOut: {
+            /** Low Effort */
+            low_effort: components["schemas"]["UpskillingItemOut"][];
+            /** Medium Effort */
+            medium_effort: components["schemas"]["UpskillingItemOut"][];
+            /** High Effort */
+            high_effort: components["schemas"]["UpskillingItemOut"][];
+        };
+        /** UpskillingSectionOut */
+        UpskillingSectionOut: {
+            /**
+             * Kompetensi Belum Terpenuhi
+             * @default {}
+             */
+            kompetensi_belum_terpenuhi: {
+                [key: string]: components["schemas"]["UpskillingPlanOut"];
+            };
+            /**
+             * Area Pengembangan Wawancara
+             * @default {}
+             */
+            area_pengembangan_wawancara: {
+                [key: string]: components["schemas"]["UpskillingPlanOut"];
+            };
         };
         /** ValidationError */
         ValidationError: {
@@ -876,7 +1662,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JobOut"][];
+                    "application/json": components["schemas"]["JobListItemOut"][];
                 };
             };
             /** @description Validation Error */
@@ -1028,7 +1814,7 @@ export interface operations {
             };
         };
     };
-    get_job_competencies_jobs__job_id__competencies_get: {
+    hard_delete_job_jobs__job_id__permanent_delete: {
         parameters: {
             query?: never;
             header: {
@@ -1047,7 +1833,180 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_job_reports_jobs__job_id__reports_get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobReportListItemOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_job_competencies_jobs__job_id__competencies_get: {
+        parameters: {
+            query?: {
+                include_dismissed?: boolean;
+            };
+            header: {
+                authorization: string;
+            };
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": components["schemas"]["CompetencyOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_competency_jobs__job_id__competencies_post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompetencyAddRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetencyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dismiss_competency_jobs__job_id__competencies__competency_id__dismiss_post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                job_id: number;
+                competency_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetencyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_competency_jobs__job_id__competencies__competency_id__restore_post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                job_id: number;
+                competency_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetencyOut"];
                 };
             };
             /** @description Validation Error */
@@ -1162,6 +2121,43 @@ export interface operations {
             };
         };
     };
+    send_candidate_invite_email_candidates__candidate_id__send_invite_email_post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                candidate_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendInviteEmailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_candidate_self_candidates__candidate_id__self_get: {
         parameters: {
             query: {
@@ -1263,7 +2259,7 @@ export interface operations {
             };
         };
     };
-    generate_job_questions_jobs__job_id__questions_generate_post: {
+    generate_job_question_jobs__job_id__questions_generate_post: {
         parameters: {
             query?: never;
             header: {
@@ -1274,7 +2270,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateQuestionRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1282,7 +2282,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QuestionOut"][];
+                    "application/json": components["schemas"]["GeneratedQuestionOut"];
                 };
             };
             /** @description Validation Error */
@@ -1345,6 +2345,77 @@ export interface operations {
                 "application/json": components["schemas"]["QuestionsUpdateRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_question_duration_jobs__job_id__questions__question_id__duration_patch: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                job_id: number;
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuestionDurationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_job_questions_jobs__job_id__questions_reopen_post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -1588,6 +2659,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_candidate_report_pdf_candidates__candidate_id__report_pdf_get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                candidate_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": unknown;
                 };
             };
@@ -1668,6 +2772,142 @@ export interface operations {
             };
         };
     };
+    reanalyze_skill_gap_candidates__candidate_id__reanalyze_skill_gap_post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                candidate_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillGapOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_contact_email_candidates__candidate_id__contact_email_patch: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                candidate_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactEmailIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactEmailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_candidate_decision_notice_candidates__candidate_id__send_decision_notice_post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                candidate_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_candidate_cv_candidates__candidate_id__cv_get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                candidate_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_answer_audio_candidates__candidate_id__answers__answer_id__audio_get: {
         parameters: {
             query?: never;
@@ -1689,6 +2929,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_stats_dashboard_stats_get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardStatsOut"];
                 };
             };
             /** @description Validation Error */

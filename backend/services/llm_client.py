@@ -8,7 +8,16 @@ from services.retry import with_retry
 
 logger = logging.getLogger("llm_client")
 
-_client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL, timeout=60.0)
+# 2026-07-22: was 60.0 — too short specifically for generate_upskilling_plan's batched call
+# (services/skillgap.py), which can ask for up to ~48 structured title+description items in one
+# completion (6 per missing competency/interview-feedback area) vs. ~5 items for every other LLM
+# call in this app. Confirmed via real logs: that call alone timed out 3/3 retry attempts across
+# two separate runs for the same candidate, while every other (smaller-output) call in the same
+# pipeline consistently finished in ~40s under the old 60s timeout. Raising this is safe for the
+# fast calls too — it only gives slow-but-otherwise-healthy completions more room to finish instead
+# of being cut off; the candidate-facing "please wait" screen (CandidateInterviewPage.tsx) already
+# polls indefinitely and reassures the user past 60s, so there's no UX reason to keep this tight.
+_client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL, timeout=180.0)
 
 
 @with_retry(max_attempts=3, backoff_seconds=1.0)

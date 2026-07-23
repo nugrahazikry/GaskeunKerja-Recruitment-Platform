@@ -3,9 +3,9 @@ import { api } from "../api/client";
 
 type CandidateSelf = {
   id: number;
+  alias: string;
   job_title: string;
   has_consent: boolean;
-  has_telegram_link: boolean;
   interview_completed: boolean;
 };
 

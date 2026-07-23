@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import { TextField } from "../components/FormField";
 import { ErrorState } from "../components/ErrorState";
@@ -26,34 +25,64 @@ export function LoginPage() {
       return;
     }
     setHrToken(data.access_token);
-    navigate("/jobs");
+    navigate("/dashboard");
   }
 
   return (
-    <div style={{ maxWidth: 400, margin: "80px auto", padding: "0 16px" }}>
-      <Card>
-        <h1>Masuk</h1>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          width: 360,
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-md)",
+          padding: "32px 30px",
+          boxShadow: "0 4px 18px rgba(15, 40, 35, 0.08)",
+        }}
+      >
+        <div style={{ textAlign: "center", marginBottom: 22 }}>
+          <div className="brand" style={{ fontSize: "1.25rem" }}>
+            Gaskeun<span>Kerja</span>
+          </div>
+          <p style={{ color: "var(--muted)", fontSize: "0.78rem", margin: "4px 0 0" }}>
+            Platform Rekrutmen untuk Bisnis
+          </p>
+        </div>
+        <form onSubmit={handleSubmit}>
           <TextField
             id="email"
-            label="Email"
+            label="Email Perusahaan"
             type="email"
+            placeholder="hr@contohsejahtera.co.id"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <TextField
             id="password"
-            label="Password"
+            label="Kata Sandi"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && <ErrorState message={error} />}
-          <Button type="submit" variant="primary" disabled={loading}>
+          <Button type="submit" variant="primary" block disabled={loading}>
             {loading ? "Memproses..." : "Masuk"}
           </Button>
         </form>
-      </Card>
+        <p
+          className="hint"
+          style={{ textAlign: "center", marginTop: 14 }}
+        >
+          Hanya HR/Recruiter yang memiliki akun. Kandidat mengakses lewat tautan undangan.
+        </p>
+      </div>
     </div>
   );
 }

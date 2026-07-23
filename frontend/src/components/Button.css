@@ -1,35 +1,59 @@
 .btn {
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  padding: var(--space-2) var(--space-4);
+  border: none;
+  padding: 9px 16px;
   border-radius: var(--radius-sm);
-  border: 1px solid transparent;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: var(--font-body);
   cursor: pointer;
   transition: filter 0.15s ease;
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  background: var(--border);
+  color: var(--muted);
   cursor: not-allowed;
 }
 
 .btn:not(:disabled):hover {
-  filter: brightness(0.94);
+  filter: brightness(0.96);
 }
 
 .btn-primary {
-  background: var(--color-teal-700);
-  color: white;
+  background: var(--teal);
+  color: #fff;
 }
 
 .btn-secondary {
-  background: var(--color-surface);
-  color: var(--color-teal-700);
-  border-color: var(--color-border);
+  background: var(--gold-soft);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+}
+
+.btn-ghost {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--ink);
 }
 
 .btn-danger {
-  background: var(--color-danger);
-  color: white;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.btn-info {
+  background: var(--teal-soft);
+  color: var(--teal);
+  border: 1px solid var(--teal);
+}
+
+.btn-success {
+  background: var(--success-soft);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.btn-block {
+  width: 100%;
 }

@@ -102,8 +102,8 @@ def _seed_synthetic_interview(db, candidate, question, audio_clip_path: Path, se
     transcript_text = transcribe(audio_path)
     repo.transcripts.create(db, answer_id=answer.id, transcript_text=transcript_text)
 
-    scored = score_and_persist_answer(db, answer.id)
-    compute_and_persist_interview_summary(db, candidate.id, [scored["summary"]])
+    score_and_persist_answer(db, answer.id)
+    compute_and_persist_interview_summary(db, candidate.id)
 
     decision_row = repo.hr_decisions.create(
         db, candidate_id=candidate.id, decision=decision, decided_by=hr_id, notes="Seed data — synthetic candidate"

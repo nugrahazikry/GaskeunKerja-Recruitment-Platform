@@ -1,7 +1,7 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(16, 32, 29, 0.4);
+  background: rgba(20, 30, 28, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9,26 +9,62 @@
 }
 
 .modal-panel {
-  background: var(--color-surface);
+  background: #fff;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-5);
-  min-width: 420px;
+  padding: 24px 26px;
+  width: 420px;
   max-width: 90vw;
+  box-shadow: 0 12px 32px rgba(15, 40, 35, 0.22);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-4);
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.modal-header h2,
+.modal-panel h3 {
+  font-family: var(--font-heading);
+  margin: 0;
+  font-size: 1.05rem;
 }
 
 .modal-close {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
-  color: var(--color-ink-500);
+  color: var(--muted);
+  padding: 0;
+  margin-left: 12px;
+}
+
+.modal-body {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.link-box {
+  margin: 16px 0;
+}
+
+.link-box input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  background: var(--teal-soft);
+  font-family: ui-monospace, Consolas, monospace;
 }

@@ -6,6 +6,20 @@
   font-size: 14px;
 }
 
+.spinner-with-label-stacked {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-2);
+  padding: 12px 0;
+}
+
+.spinner-with-label-stacked .spinner {
+  width: 28px;
+  height: 28px;
+  border-width: 3px;
+}
+
 .spinner {
   width: 18px;
   height: 18px;

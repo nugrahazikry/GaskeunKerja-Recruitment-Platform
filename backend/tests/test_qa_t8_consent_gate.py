@@ -74,13 +74,20 @@ def test_submit_with_valid_consent_succeeds():
         assert result["answer_id"] is not None
         assert result["transcript_text"] != ""
     finally:
-        # Clean up the answer/transcript this test created, leave the consent record
-        # (harmless, fixture-only data) and the audio file on disk (small, test-owned dir).
-        # Delete transcripts BEFORE their parent interview_answers rows (FK order).
+        # Clean up the answer/transcript/rubric_scores/interview_summary this test created
+        # (submit_answer now auto-scores and, once all approved questions are answered,
+        # persists an interview summary - 2026-07-15 T11 Scenario 6 fix), leave the consent
+        # record (harmless, fixture-only data) and the audio file on disk (test-owned dir).
+        # Delete children BEFORE their parent interview_answers rows (FK order).
         answers = repo.interview_answers.list(db, candidate_id=candidate.id)
         for answer in answers:
             for transcript in repo.transcripts.list(db, answer_id=answer.id):
                 db.delete(transcript)
+            for rubric_row in repo.rubric_scores.list(db, answer_id=answer.id):
+                db.delete(rubric_row)
+        db.commit()
+        for summary in repo.interview_summaries.list(db, candidate_id=candidate.id):
+            db.delete(summary)
         db.commit()
         for answer in answers:
             db.delete(answer)

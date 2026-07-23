@@ -15,6 +15,7 @@ from models.job import JDCompetency, Job
 from models.match_score import MatchScore
 from models.parsed_profile import ParsedProfile
 from models.reference import CompetencyFramework, ResourceLibrary
+from models.skill_gap_result import SkillGapResult
 
 __all__ = [
     "AuditLog",
@@ -33,5 +34,6 @@ __all__ = [
     "ParsedProfile",
     "ResourceLibrary",
     "RubricScore",
+    "SkillGapResult",
     "Transcript",
 ]

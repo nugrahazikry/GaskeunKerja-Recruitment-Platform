@@ -1,0 +1,243 @@
+.profile-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.profile-section-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.profile-section-icon.accent-teal {
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+.profile-section-icon.accent-gold {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+.profile-section-icon.accent-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.profile-section-icon.accent-warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.profile-section-icon.accent-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.profile-section-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.profile-section-sub {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* Title style matching GapPanel's .gap-panel-header bar (see below) — a full-bleed colored header
+   bar instead of the icon+serif row above, used on both the candidate detail and laporan pages for
+   Ringkasan Analisis Keahlian/Kekuatan Utama/Wawancara. Negative-margins by exactly .card's own
+   padding (18px 20px, see Card.css) so the bar reaches the card's edges and can share its
+   border-radius, instead of floating inset like the icon+serif header does. */
+.section-bar-header {
+  margin: -18px -20px 14px -20px;
+  padding: 12px 20px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+}
+
+.section-bar-header.tone-info {
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+.section-bar-header.tone-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.section-bar-header.tone-warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.section-bar-header.tone-gold {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+.section-bar-header.tone-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.profile-summary-quote {
+  margin: 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--teal);
+  font-size: 0.88rem;
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+
+.profile-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  /* Round 6 (2026-07-19): every usage of this grid is followed by another top-level section —
+     giving the grid itself the spacing (instead of hunting each call site) fixes "too tight"
+     consistently everywhere it's used (skills panels, gap panels, education/cert rows, etc). */
+  margin-bottom: 20px;
+}
+
+.profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-list-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.profile-list-item strong {
+  font-size: 0.86rem;
+}
+
+.profile-list-item p {
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.profile-experience-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profile-action-original {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.profile-action-improved {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--teal);
+  font-weight: 600;
+}
+
+/* Round-3 follow-up #6 (2026-07-19): capped-height scroll containers so long CV data (many jobs,
+   many bullets, many skills) doesn't push the page height out of control — "max N visible before
+   scroll" per the user's request, approximated via pixel heights rather than exact item counts
+   since item height varies with content. */
+.profile-scroll-2 {
+  max-height: 560px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Round 5 (2026-07-19): Education/Certifications/Projects/Organization entries were shrunk to a
+   compact 2-row format (title + "institution · period · gpa" on one line), so their scroll cap is
+   correspondingly smaller than work experience's — ~2 entries visible (~80px each) before scroll. */
+.profile-scroll-2-small {
+  max-height: 170px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.profile-bullet-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  max-height: 150px;
+  overflow-y: auto;
+  font-size: 0.86rem;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.profile-bullet-list li {
+  margin-bottom: 4px;
+}
+
+/* Round 3 (2026-07-19): GapPanel — bordered box with a colored full-width header bar (like a
+   table's thead) + white chip body, matching the reference "Skill gap analysis prod_v1" project's
+   .skill-panel/.a4-gap-panel structure exactly (see GapPanel.tsx for the source pointer). Replaces
+   the earlier Round 2 chip-in-a-plain-box attempt, which the user flagged as still not matching. */
+.gap-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.gap-panel-header {
+  padding: 12px 16px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+
+.gap-panel-body {
+  padding: 14px 16px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+}
+
+.gap-panel-scrollable {
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+.gap-panel-success .gap-panel-header {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.gap-panel-warning .gap-panel-header {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.gap-panel-info .gap-panel-header {
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+
+.profile-scroll-3 {
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+@media (max-width: 860px) {
+  .profile-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}

@@ -76,6 +76,15 @@ def detect_candidate_name(cv_text: str) -> str | None:
     return name.strip()
 
 
+def detect_candidate_email(text: str) -> str | None:
+    """Round-3 Task 19: finds the candidate's real email in the raw (pre-redaction) CV text, so
+    it can be captured onto candidates.contact_email BEFORE redact_pii() scrubs it. Reuses the
+    same deterministic regex redact_pii() uses — no LLM call needed, this is just detection
+    instead of substitution. Returns the first match, or None if no email is present."""
+    match = _EMAIL_RE.search(text)
+    return match.group(0) if match else None
+
+
 def redact_pii(text: str, alias: str, candidate_name: str | None = None) -> str:
     """Replace email, phone numbers, and (if known) the candidate's name with alias.
 

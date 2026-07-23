@@ -1,0 +1,54 @@
+.bullet-list-field .bullet-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.bullet-list-field .bullet-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bullet-list-field .bullet-dot {
+  color: var(--muted);
+  font-size: 0.9rem;
+  flex: none;
+  width: 10px;
+  text-align: center;
+}
+
+.bullet-list-field .bullet-row input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 0.84rem;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: #fff;
+}
+
+.bullet-list-field .bullet-row input:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(15, 107, 92, 0.12);
+}
+
+.bullet-list-field .bullet-remove {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--danger);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bullet-list-field .bullet-remove:hover {
+  background: var(--danger-soft);
+}

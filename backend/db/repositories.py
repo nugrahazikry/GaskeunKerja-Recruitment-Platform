@@ -16,6 +16,7 @@ from models import (
     ParsedProfile,
     ResourceLibrary,
     RubricScore,
+    SkillGapResult,
     Transcript,
 )
 
@@ -26,6 +27,7 @@ jd_competencies = Repository(JDCompetency)
 candidates = Repository(Candidate)
 parsed_profiles = Repository(ParsedProfile)
 match_scores = Repository(MatchScore)
+skill_gap_results = Repository(SkillGapResult)
 interview_questions = Repository(InterviewQuestion)
 interview_answers = Repository(InterviewAnswer)
 transcripts = Repository(Transcript)

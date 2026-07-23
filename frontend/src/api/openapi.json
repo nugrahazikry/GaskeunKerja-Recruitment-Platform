@@ -1,1 +1,4492 @@
-{"openapi":"3.1.0","info":{"title":"GaskeunKerja for Business — MVP","version":"0.1.0"},"paths":{"/auth/login":{"post":{"tags":["auth"],"summary":"Login","operationId":"login_auth_login_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/jobs":{"post":{"tags":["jobs"],"summary":"Create Job","operationId":"create_job_jobs_post","parameters":[{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/JobCreateRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/JobOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"get":{"tags":["jobs"],"summary":"List Jobs","operationId":"list_jobs_jobs_get","parameters":[{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/JobOut"},"title":"Response List Jobs Jobs Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/jobs/{job_id}":{"get":{"tags":["jobs"],"summary":"Get Job","operationId":"get_job_jobs__job_id__get","parameters":[{"name":"job_id","in":"path","required":true,"schema":{"type":"integer","title":"Job Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/JobOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"put":{"tags":["jobs"],"summary":"Update Job","operationId":"update_job_jobs__job_id__put","parameters":[{"name":"job_id","in":"path","required":true,"schema":{"type":"integer","title":"Job Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/JobUpdateRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/JobOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"delete":{"tags":["jobs"],"summary":"Close Job","description":"Soft-delete: sets status='closed'. Never a real SQL DELETE — avoids FK errors\nagainst candidates/interviews/audit_log and preserves audit history.","operationId":"close_job_jobs__job_id__delete","parameters":[{"name":"job_id","in":"path","required":true,"schema":{"type":"integer","title":"Job Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/JobOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/jobs/{job_id}/competencies":{"get":{"tags":["jobs"],"summary":"Get Job Competencies","operationId":"get_job_competencies_jobs__job_id__competencies_get","parameters":[{"name":"job_id","in":"path","required":true,"schema":{"type":"integer","title":"Job Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/CompetencyOut"},"title":"Response Get Job Competencies Jobs  Job Id  Competencies Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates":{"post":{"tags":["candidates"],"summary":"Create Candidate","description":"HR/seed-side only for MVP — not a public candidate-facing endpoint (see Area 1 T8 note).","operationId":"create_candidate_candidates_post","parameters":[{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"requestBody":{"required":true,"content":{"multipart/form-data":{"schema":{"$ref":"#/components/schemas/Body_create_candidate_candidates_post"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CandidateOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}/invite":{"post":{"tags":["candidates"],"summary":"Invite Candidate","description":"Generates a fresh, meaningful invite token — only callable once the job's\ninterview questions are approved (T9b). Regenerates the placeholder token set at\nCV-upload time (T5), which was never meant as a real invite link.\n\nRe-invite-safe (Area 1 T5c): if the candidate was already invited and hasn't\nstarted the interview yet, calling this again just issues a fresh token/expiry\nwithout erasing `invited_at` — the Shortlist's 'Belum diundang' status pill is\nkeyed off `invited_at`, not the token, so re-opening the invite modal never\nregresses a candidate back to 'not invited'.","operationId":"invite_candidate_candidates__candidate_id__invite_post","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/InviteOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}":{"get":{"tags":["candidates"],"summary":"Get Candidate Detail","description":"HR-facing, read-only. Lets the Shortlist's invite modal re-display an existing\nlink (Area 1 T5c) without ever calling POST /invite again just to view it.","operationId":"get_candidate_detail_candidates__candidate_id__get","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CandidateDetailOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}/self":{"get":{"tags":["candidates"],"summary":"Get Candidate Self","description":"Token-authenticated candidate self-info. A 401 here (invalid/expired token) is what\nArea 1 T3's frontend route guard renders as the shared 'link tidak valid / sudah\nkadaluarsa' screen.","operationId":"get_candidate_self_candidates__candidate_id__self_get","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}},{"name":"token","in":"query","required":true,"schema":{"type":"string","title":"Token"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CandidateSelfOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}/consent":{"post":{"tags":["candidates"],"summary":"Submit Consent","description":"Token-authenticated. Records PDP consent before the candidate can start the\ninterview (Area 1 T8 gate; enforced server-side already via services.consent in the\ninterview-answer submit path).","operationId":"submit_consent_candidates__candidate_id__consent_post","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ConsentRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ConsentOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/jobs/{job_id}/candidates":{"get":{"tags":["matching"],"summary":"Get Ranked Candidates","description":"Status pill derivation (Area 1 T5, resolved 2026-07-12): 'Belum diundang' /\n'Menunggu wawancara' / 'Selesai wawancara' are derived from row presence\n(invited_at, interview_answers, hr_decisions), never a stored status field.","operationId":"get_ranked_candidates_jobs__job_id__candidates_get","parameters":[{"name":"job_id","in":"path","required":true,"schema":{"type":"integer","title":"Job Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/MatchOut"},"title":"Response Get Ranked Candidates Jobs  Job Id  Candidates Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/jobs/{job_id}/questions/generate":{"post":{"tags":["interview_questions"],"summary":"Generate Job Questions","description":"Generates 2-3 draft questions from the JD via Flash. Replaces any existing draft questions.","operationId":"generate_job_questions_jobs__job_id__questions_generate_post","parameters":[{"name":"job_id","in":"path","required":true,"schema":{"type":"integer","title":"Job Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/QuestionOut"},"title":"Response Generate Job Questions Jobs  Job Id  Questions Generate Post"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/jobs/{job_id}/questions":{"get":{"tags":["interview_questions"],"summary":"List Job Questions","operationId":"list_job_questions_jobs__job_id__questions_get","parameters":[{"name":"job_id","in":"path","required":true,"schema":{"type":"integer","title":"Job Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/QuestionOut"},"title":"Response List Job Questions Jobs  Job Id  Questions Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"put":{"tags":["interview_questions"],"summary":"Update Job Questions","description":"HR edits/adds/removes draft questions. Only draft-status questions can be edited.","operationId":"update_job_questions_jobs__job_id__questions_put","parameters":[{"name":"job_id","in":"path","required":true,"schema":{"type":"integer","title":"Job Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/QuestionsUpdateRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/QuestionOut"},"title":"Response Update Job Questions Jobs  Job Id  Questions Put"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/jobs/{job_id}/questions/approve":{"post":{"tags":["interview_questions"],"summary":"Approve Job Questions","description":"Flips all draft questions to approved. Candidates only ever see approved questions.","operationId":"approve_job_questions_jobs__job_id__questions_approve_post","parameters":[{"name":"job_id","in":"path","required":true,"schema":{"type":"integer","title":"Job Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/QuestionOut"},"title":"Response Approve Job Questions Jobs  Job Id  Questions Approve Post"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}/questions":{"get":{"tags":["interview_answers"],"summary":"List Candidate Questions","description":"Candidate-facing (token-authenticated). Only ever returns approved questions —\ncandidates never see drafts.","operationId":"list_candidate_questions_candidates__candidate_id__questions_get","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}},{"name":"token","in":"query","required":true,"schema":{"type":"string","title":"Token"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/CandidateQuestionOut"},"title":"Response List Candidate Questions Candidates  Candidate Id  Questions Get"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}/answers":{"post":{"tags":["interview_answers"],"summary":"Submit Interview Answer","description":"Candidate-facing (token-authenticated, not HR JWT). Consent-gated: 403 without a\nconsent_records row for this candidate.","operationId":"submit_interview_answer_candidates__candidate_id__answers_post","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}}],"requestBody":{"required":true,"content":{"multipart/form-data":{"schema":{"$ref":"#/components/schemas/Body_submit_interview_answer_candidates__candidate_id__answers_post"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AnswerOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}/answers/{answer_id}/score":{"post":{"tags":["rubric"],"summary":"Score Candidate Answer","operationId":"score_candidate_answer_candidates__candidate_id__answers__answer_id__score_post","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}},{"name":"answer_id","in":"path","required":true,"schema":{"type":"integer","title":"Answer Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ScoreOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}/interview-summary":{"post":{"tags":["rubric"],"summary":"Build Interview Summary","operationId":"build_interview_summary_candidates__candidate_id__interview_summary_post","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/InterviewSummaryOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/decisions":{"post":{"tags":["decisions"],"summary":"Record Decision","description":"Records HR's final pass/reject decision. No code path anywhere finalizes a\ncandidate without this endpoint being explicitly called by a human — there is no\nautomatic-decision helper, scheduled job, or scoring threshold that writes here.","operationId":"record_decision_decisions_post","parameters":[{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/DecisionRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/routers__decisions__DecisionOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}/report":{"get":{"tags":["report"],"summary":"Get Candidate Report","operationId":"get_candidate_report_candidates__candidate_id__report_get","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}/send-report":{"post":{"tags":["report"],"summary":"Send Candidate Report","description":"HR triggers delivery with one click — PDF + summary auto-sent via Telegram.","operationId":"send_candidate_report_candidates__candidate_id__send_report_post","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}/detail":{"get":{"tags":["candidate_detail"],"summary":"Get Candidate Full Detail","description":"HR-facing candidate detail screen (Area 1 T7): parsed CV + skill-gap, per-answer\naudio/transcript/rubric, interview summary, decision status, report/Telegram state —\neverything the decision + report-delivery screen needs in one call.","operationId":"get_candidate_full_detail_candidates__candidate_id__detail_get","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CandidateFullDetailOut"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/candidates/{candidate_id}/answers/{answer_id}/audio":{"get":{"tags":["candidate_detail"],"summary":"Get Answer Audio","description":"Streams the stored answer audio file for the HR-facing player. HR-scoped like\nevery other candidate-detail endpoint — never publicly reachable.","operationId":"get_answer_audio_candidates__candidate_id__answers__answer_id__audio_get","parameters":[{"name":"candidate_id","in":"path","required":true,"schema":{"type":"integer","title":"Candidate Id"}},{"name":"answer_id","in":"path","required":true,"schema":{"type":"integer","title":"Answer Id"}},{"name":"authorization","in":"header","required":true,"schema":{"type":"string","title":"Authorization"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/health":{"get":{"summary":"Health","operationId":"health_health_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}}},"components":{"schemas":{"AnswerDetailOut":{"properties":{"answer_id":{"type":"integer","title":"Answer Id"},"question_text":{"type":"string","title":"Question Text"},"audio_url":{"type":"string","title":"Audio Url"},"transcript_text":{"type":"string","title":"Transcript Text"},"rubric_scores":{"items":{"$ref":"#/components/schemas/RubricScoreOut"},"type":"array","title":"Rubric Scores"}},"type":"object","required":["answer_id","question_text","audio_url","transcript_text","rubric_scores"],"title":"AnswerDetailOut"},"AnswerOut":{"properties":{"answer_id":{"type":"integer","title":"Answer Id"},"audio_path":{"type":"string","title":"Audio Path"},"transcript_text":{"type":"string","title":"Transcript Text"}},"type":"object","required":["answer_id","audio_path","transcript_text"],"title":"AnswerOut"},"Body_create_candidate_candidates_post":{"properties":{"job_id":{"type":"integer","title":"Job Id"},"alias":{"type":"string","title":"Alias"},"file":{"type":"string","format":"binary","title":"File"}},"type":"object","required":["job_id","alias","file"],"title":"Body_create_candidate_candidates_post"},"Body_submit_interview_answer_candidates__candidate_id__answers_post":{"properties":{"question_id":{"type":"integer","title":"Question Id"},"session":{"type":"string","title":"Session"},"token":{"type":"string","title":"Token"},"file":{"type":"string","format":"binary","title":"File"}},"type":"object","required":["question_id","session","token","file"],"title":"Body_submit_interview_answer_candidates__candidate_id__answers_post"},"CandidateDetailOut":{"properties":{"id":{"type":"integer","title":"Id"},"job_id":{"type":"integer","title":"Job Id"},"alias":{"type":"string","title":"Alias"},"invited":{"type":"boolean","title":"Invited"},"token":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Token"},"token_expires_at":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Token Expires At"}},"type":"object","required":["id","job_id","alias","invited","token","token_expires_at"],"title":"CandidateDetailOut","description":"HR-facing candidate detail, used by Area 1 T5c to re-view an existing invite link\nwithout calling POST /invite again — that endpoint always issues a fresh token, which\nwould silently invalidate a link already shared with the candidate mid-demo."},"CandidateFullDetailOut":{"properties":{"candidate_id":{"type":"integer","title":"Candidate Id"},"alias":{"type":"string","title":"Alias"},"job_id":{"type":"integer","title":"Job Id"},"job_title":{"type":"string","title":"Job Title"},"skills":{"items":{"type":"string"},"type":"array","title":"Skills"},"experience":{"items":{},"type":"array","title":"Experience"},"qualifications":{"items":{},"type":"array","title":"Qualifications"},"skill_gap":{"anyOf":[{"$ref":"#/components/schemas/SkillGapOut"},{"type":"null"}]},"answers":{"items":{"$ref":"#/components/schemas/AnswerDetailOut"},"type":"array","title":"Answers"},"interview_summary_text":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Interview Summary Text"},"interview_overall_score":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Interview Overall Score"},"decision":{"anyOf":[{"$ref":"#/components/schemas/routers__candidate_detail__DecisionOut"},{"type":"null"}]},"has_telegram_link":{"type":"boolean","title":"Has Telegram Link"},"report_sent":{"type":"boolean","title":"Report Sent"}},"type":"object","required":["candidate_id","alias","job_id","job_title","skills","experience","qualifications","skill_gap","answers","interview_summary_text","interview_overall_score","decision","has_telegram_link","report_sent"],"title":"CandidateFullDetailOut"},"CandidateOut":{"properties":{"id":{"type":"integer","title":"Id"},"job_id":{"type":"integer","title":"Job Id"},"alias":{"type":"string","title":"Alias"}},"type":"object","required":["id","job_id","alias"],"title":"CandidateOut"},"CandidateQuestionOut":{"properties":{"id":{"type":"integer","title":"Id"},"question_text":{"type":"string","title":"Question Text"},"order_index":{"type":"integer","title":"Order Index"}},"type":"object","required":["id","question_text","order_index"],"title":"CandidateQuestionOut"},"CandidateSelfOut":{"properties":{"id":{"type":"integer","title":"Id"},"job_title":{"type":"string","title":"Job Title"},"has_consent":{"type":"boolean","title":"Has Consent"},"has_telegram_link":{"type":"boolean","title":"Has Telegram Link"},"interview_completed":{"type":"boolean","title":"Interview Completed"}},"type":"object","required":["id","job_title","has_consent","has_telegram_link","interview_completed"],"title":"CandidateSelfOut","description":"Candidate-facing self-info, resolved by token — powers Area 1 T3's route guards\n(expired/invalid token, consent-required redirect) without exposing HR-only fields."},"CompetencyOut":{"properties":{"id":{"type":"integer","title":"Id"},"competency_name":{"type":"string","title":"Competency Name"},"importance_level":{"type":"number","title":"Importance Level"}},"type":"object","required":["id","competency_name","importance_level"],"title":"CompetencyOut"},"ConsentOut":{"properties":{"candidate_id":{"type":"integer","title":"Candidate Id"},"consent_given":{"type":"boolean","title":"Consent Given"}},"type":"object","required":["candidate_id","consent_given"],"title":"ConsentOut"},"ConsentRequest":{"properties":{"token":{"type":"string","title":"Token"},"consent_text_version":{"type":"string","title":"Consent Text Version"}},"type":"object","required":["token","consent_text_version"],"title":"ConsentRequest"},"DecisionRequest":{"properties":{"candidate_id":{"type":"integer","title":"Candidate Id"},"decision":{"type":"string","title":"Decision"},"notes":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Notes"}},"type":"object","required":["candidate_id","decision"],"title":"DecisionRequest"},"HTTPValidationError":{"properties":{"detail":{"items":{"$ref":"#/components/schemas/ValidationError"},"type":"array","title":"Detail"}},"type":"object","title":"HTTPValidationError"},"InterviewSummaryOut":{"properties":{"overall_score":{"type":"number","title":"Overall Score"},"ai_summary_text":{"type":"string","title":"Ai Summary Text"}},"type":"object","required":["overall_score","ai_summary_text"],"title":"InterviewSummaryOut"},"InviteOut":{"properties":{"candidate_id":{"type":"integer","title":"Candidate Id"},"token":{"type":"string","title":"Token"},"token_expires_at":{"type":"string","title":"Token Expires At"}},"type":"object","required":["candidate_id","token","token_expires_at"],"title":"InviteOut"},"JobCreateRequest":{"properties":{"title":{"type":"string","title":"Title"},"responsibilities":{"type":"string","title":"Responsibilities"},"requirements":{"type":"string","title":"Requirements"},"qualifications":{"type":"string","title":"Qualifications"}},"type":"object","required":["title","responsibilities","requirements","qualifications"],"title":"JobCreateRequest"},"JobOut":{"properties":{"id":{"type":"integer","title":"Id"},"company_id":{"type":"integer","title":"Company Id"},"title":{"type":"string","title":"Title"},"responsibilities":{"type":"string","title":"Responsibilities"},"requirements":{"type":"string","title":"Requirements"},"qualifications":{"type":"string","title":"Qualifications"},"status":{"type":"string","title":"Status"}},"type":"object","required":["id","company_id","title","responsibilities","requirements","qualifications","status"],"title":"JobOut"},"JobUpdateRequest":{"properties":{"title":{"type":"string","title":"Title"},"responsibilities":{"type":"string","title":"Responsibilities"},"requirements":{"type":"string","title":"Requirements"},"qualifications":{"type":"string","title":"Qualifications"}},"type":"object","required":["title","responsibilities","requirements","qualifications"],"title":"JobUpdateRequest"},"LoginRequest":{"properties":{"email":{"type":"string","title":"Email"},"password":{"type":"string","title":"Password"}},"type":"object","required":["email","password"],"title":"LoginRequest"},"LoginResponse":{"properties":{"access_token":{"type":"string","title":"Access Token"},"token_type":{"type":"string","title":"Token Type","default":"bearer"}},"type":"object","required":["access_token"],"title":"LoginResponse"},"MatchOut":{"properties":{"candidate_id":{"type":"integer","title":"Candidate Id"},"alias":{"type":"string","title":"Alias"},"overall_score":{"type":"number","title":"Overall Score"},"rank":{"type":"integer","title":"Rank"},"competency_breakdown":{"type":"object","title":"Competency Breakdown"},"invited":{"type":"boolean","title":"Invited"},"interview_completed":{"type":"boolean","title":"Interview Completed"},"decided":{"type":"boolean","title":"Decided"}},"type":"object","required":["candidate_id","alias","overall_score","rank","competency_breakdown","invited","interview_completed","decided"],"title":"MatchOut"},"QuestionOut":{"properties":{"id":{"type":"integer","title":"Id"},"job_id":{"type":"integer","title":"Job Id"},"question_text":{"type":"string","title":"Question Text"},"order_index":{"type":"integer","title":"Order Index"},"status":{"type":"string","title":"Status"}},"type":"object","required":["id","job_id","question_text","order_index","status"],"title":"QuestionOut"},"QuestionUpdateItem":{"properties":{"id":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Id"},"question_text":{"type":"string","title":"Question Text"},"order_index":{"type":"integer","title":"Order Index"}},"type":"object","required":["question_text","order_index"],"title":"QuestionUpdateItem"},"QuestionsUpdateRequest":{"properties":{"questions":{"items":{"$ref":"#/components/schemas/QuestionUpdateItem"},"type":"array","title":"Questions"}},"type":"object","required":["questions"],"title":"QuestionsUpdateRequest"},"RubricScoreOut":{"properties":{"criterion_name":{"type":"string","title":"Criterion Name"},"score":{"type":"integer","title":"Score"},"rationale":{"type":"string","title":"Rationale"}},"type":"object","required":["criterion_name","score","rationale"],"title":"RubricScoreOut"},"ScoreOut":{"properties":{"clarity":{"type":"integer","title":"Clarity"},"relevance":{"type":"integer","title":"Relevance"},"technical_depth":{"type":"integer","title":"Technical Depth"},"summary":{"type":"string","title":"Summary"}},"type":"object","required":["clarity","relevance","technical_depth","summary"],"title":"ScoreOut"},"SkillGapOut":{"properties":{"gap_summary":{"type":"string","title":"Gap Summary"},"missing_competencies":{"items":{"type":"string"},"type":"array","title":"Missing Competencies"},"development_priority":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Development Priority"}},"type":"object","required":["gap_summary","missing_competencies","development_priority"],"title":"SkillGapOut"},"ValidationError":{"properties":{"loc":{"items":{"anyOf":[{"type":"string"},{"type":"integer"}]},"type":"array","title":"Location"},"msg":{"type":"string","title":"Message"},"type":{"type":"string","title":"Error Type"}},"type":"object","required":["loc","msg","type"],"title":"ValidationError"},"routers__candidate_detail__DecisionOut":{"properties":{"decision":{"type":"string","title":"Decision"},"notes":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Notes"}},"type":"object","required":["decision","notes"],"title":"DecisionOut"},"routers__decisions__DecisionOut":{"properties":{"id":{"type":"integer","title":"Id"},"candidate_id":{"type":"integer","title":"Candidate Id"},"decision":{"type":"string","title":"Decision"},"decided_by":{"type":"integer","title":"Decided By"}},"type":"object","required":["id","candidate_id","decision","decided_by"],"title":"DecisionOut"}}}}
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GaskeunKerja for Business \u2014 MVP",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Create Job",
+        "operationId": "create_job_jobs_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "List Jobs",
+        "operationId": "list_jobs_jobs_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobListItemOut"
+                  },
+                  "title": "Response List Jobs Jobs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Get Job",
+        "operationId": "get_job_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Update Job",
+        "description": "Round-3 follow-up #9 (2026-07-19): editing an existing job's text fields no longer\nre-extracts/re-stores competencies at all (previously called _extract_and_store_competencies\nhere, same as create_job). Real problem this closes: skill-gap analysis for already-scored\ncandidates is computed against a job's competency list at analysis time \u2014 if HR could freely\nedit that list afterward (this endpoint used to reopen the full add/dismiss/restore review\nmodal on every edit save too, see JobsListPage.tsx), every existing candidate's skill-gap/score\nwould silently go stale relative to the new list, with no auto-invalidation mechanism to catch\nup (a known, previously-documented gap \u2014 see T17-followup's stale-competency-list note).\nCompetencies are now a one-time decision made at CREATE time only (create_job, unchanged) \u2014\nediting a job's description afterward is purely a text update.",
+        "operationId": "update_job_jobs__job_id__put",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Close Job",
+        "description": "Soft-delete: sets status='closed'. Never a real SQL DELETE \u2014 avoids FK errors\nagainst candidates/interviews/audit_log and preserves audit history.",
+        "operationId": "close_job_jobs__job_id__delete",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/permanent": {
+      "delete": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Hard Delete Job",
+        "description": "Real, irreversible cascade delete \u2014 separate from the existing soft-close DELETE above\n(kept as-is). Round-2 polish (2026-07-17), user-confirmed tradeoff: this destroys audit\nhistory for the job. No ORM cascade exists anywhere in this schema (confirmed by reading\nevery model file), so the cascade is hand-written here in FK-safe order, plus on-disk\nCV/audio/report file cleanup per candidate.",
+        "operationId": "hard_delete_job_jobs__job_id__permanent_delete",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/reports": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "List Job Reports",
+        "description": "Every GENUINELY invited candidate for this job with their interview/decision pipeline stage\n\u2014 powers the Laporan page (#15 + Round 12/13/14 follow-up). Round 13: candidates who haven't\neven been invited yet are excluded entirely (not just coarsely labeled \"Menunggu Wawancara\") \u2014\nLaporan is about tracking invited candidates through interview -> decision, not surfacing the\nwhole uninvited CV pool, which is the Kandidat page's job.\n\nRound 14 follow-up (real bug, user-reported): `invited_at`/`contact_email` are NOT proof of a\nreal invite \u2014 `invited_at` is set the moment HR opens the invite modal (token generation), and\n`contact_email` can be added/edited long after with no send action ever happening. The only\nreal signal that an invite email was actually dispatched is `invite_email_sent_at`\n(routers/candidates.py::send_candidate_invite_email) \u2014 filtering on that instead mirrors the\nidentical fix in routers/matching.py and CandidateDetailPage.tsx/ShortlistPage.tsx's status\nlogic.",
+        "operationId": "list_job_reports_jobs__job_id__reports_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobReportListItemOut"
+                  },
+                  "title": "Response List Job Reports Jobs  Job Id  Reports Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/competencies": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Get Job Competencies",
+        "description": "Defaults to active-only (what's actually required). include_dismissed=true returns the\nfull list including the \"recommended pool\" \u2014 used by CompetencyEditor's restore section.",
+        "operationId": "get_job_competencies_jobs__job_id__competencies_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "include_dismissed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Dismissed"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompetencyOut"
+                  },
+                  "title": "Response Get Job Competencies Jobs  Job Id  Competencies Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Add Competency",
+        "description": "HR adds a custom competency the AI extraction missed \u2014 created directly as active.",
+        "operationId": "add_competency_jobs__job_id__competencies_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompetencyAddRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetencyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/competencies/{competency_id}/dismiss": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Dismiss Competency",
+        "description": "Never deletes the row \u2014 flips it to 'dismissed' so it stops counting as required\neverywhere (matching, report, candidate detail all filter to status='active') while staying\nvisible/restorable as a recommendation (#4/#7).",
+        "operationId": "dismiss_competency_jobs__job_id__competencies__competency_id__dismiss_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "competency_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Competency Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetencyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/competencies/{competency_id}/restore": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Restore Competency",
+        "operationId": "restore_competency_jobs__job_id__competencies__competency_id__restore_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "competency_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Competency Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetencyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates": {
+      "post": {
+        "tags": [
+          "candidates"
+        ],
+        "summary": "Create Candidate",
+        "description": "HR/seed-side only for MVP \u2014 not a public candidate-facing endpoint (see Area 1 T8 note).\n\nRound-3 follow-up #8 (2026-07-19): CV upload now runs BOTH pipelines synchronously \u2014 CV\nextraction (ingest_cv, unchanged) AND skill-gap analysis + match scoring (compute_match_score,\nnewly wired in here). Previously compute_match_score() was only ever called from one-off seed\nscripts (load_demo_data.py/load_t5_fixture.py), never from this live endpoint \u2014 a real\ncandidate uploaded through the running app never got a match_scores row at all, and so never\nappeared on the Shortlist page (get_ranked_candidates only lists candidates that already have\none). This makes upload the primary path for scoring; the self-heal fallback in\nget_or_compute_skill_gap() remains as a defensive backstop for edge cases (e.g. a JD's\ncompetencies changing after upload), not the primary mechanism going forward.\n\nSynchronous by explicit choice over a background task: adds ~25-30s (5 LLM calls) on top of\nCV-parsing's existing latency, but keeps this endpoint fully consistent with ingest_cv's\nalready-synchronous style \u2014 no new background-task/error-reporting infra needed this late in\nthe build.",
+        "operationId": "create_candidate_candidates_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_candidate_candidates_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/invite": {
+      "post": {
+        "tags": [
+          "candidates"
+        ],
+        "summary": "Invite Candidate",
+        "description": "Generates a fresh, meaningful invite token \u2014 only callable once the job's\ninterview questions are approved (T9b). Regenerates the placeholder token set at\nCV-upload time (T5), which was never meant as a real invite link.\n\nRe-invite-safe (Area 1 T5c): if the candidate was already invited and hasn't\nstarted the interview yet, calling this again just issues a fresh token/expiry\nwithout erasing `invited_at` \u2014 the Shortlist's 'Belum diundang' status pill is\nkeyed off `invited_at`, not the token, so re-opening the invite modal never\nregresses a candidate back to 'not invited'.",
+        "operationId": "invite_candidate_candidates__candidate_id__invite_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}": {
+      "get": {
+        "tags": [
+          "candidates"
+        ],
+        "summary": "Get Candidate Detail",
+        "description": "HR-facing, read-only. Lets the Shortlist's invite modal re-display an existing\nlink (Area 1 T5c) without ever calling POST /invite again just to view it.",
+        "operationId": "get_candidate_detail_candidates__candidate_id__get",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/send-invite-email": {
+      "post": {
+        "tags": [
+          "candidates"
+        ],
+        "summary": "Send Candidate Invite Email",
+        "description": "Round-3 Task 19: emails the already-issued invite link (built client-side, same as the\ncopy-link box) to the candidate's CV-extracted contact_email.",
+        "operationId": "send_candidate_invite_email_candidates__candidate_id__send_invite_email_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendInviteEmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/self": {
+      "get": {
+        "tags": [
+          "candidates"
+        ],
+        "summary": "Get Candidate Self",
+        "description": "Token-authenticated candidate self-info. A 401 here (invalid/expired token) is what\nArea 1 T3's frontend route guard renders as the shared 'link tidak valid / sudah\nkadaluarsa' screen.",
+        "operationId": "get_candidate_self_candidates__candidate_id__self_get",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateSelfOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/consent": {
+      "post": {
+        "tags": [
+          "candidates"
+        ],
+        "summary": "Submit Consent",
+        "description": "Token-authenticated. Records PDP consent before the candidate can start the\ninterview (Area 1 T8 gate; enforced server-side already via services.consent in the\ninterview-answer submit path).",
+        "operationId": "submit_consent_candidates__candidate_id__consent_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/candidates": {
+      "get": {
+        "tags": [
+          "matching"
+        ],
+        "summary": "Get Ranked Candidates",
+        "description": "Status pill derivation (Area 1 T5, resolved 2026-07-12): 'Belum diundang' /\n'Menunggu wawancara' / 'Selesai wawancara' are derived from row presence\n(invited_at, interview_answers, hr_decisions), never a stored status field.",
+        "operationId": "get_ranked_candidates_jobs__job_id__candidates_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MatchOut"
+                  },
+                  "title": "Response Get Ranked Candidates Jobs  Job Id  Candidates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/questions/generate": {
+      "post": {
+        "tags": [
+          "interview_questions"
+        ],
+        "summary": "Generate Job Question",
+        "description": "Stateless (2026-07-19 follow-up, user-requested): generates ONE question TEXT via Flash and\nreturns it WITHOUT writing anything to the database. AI-suggested drafts now live purely in\nfrontend state until HR clicks \"Setujui & Kunci Pertanyaan\" (PUT /questions then POST\n/questions/approve) \u2014 matching how manually-typed drafts (via \"+ Tambah Pertanyaan\") already\nonly ever get persisted at that point.\n\nGenerates exactly ONE question per call, not a batch \u2014 a single-prompt \"generate all N, stay\ndistinct\" attempt was tried first but the user found the real-world results still\ninconsistent/mixed/unrelated. The frontend now calls this endpoint once per requested question,\nIN ORDER, accumulating results into body.existing_questions on each subsequent call (so\ndistinctness is enforced by construction) \u2014 deliberately client-driven rather than looped\nserver-side so the UI can show live per-question progress. body.hint carries that specific\nslot's own current text (a real finding: discarding it and generating a generic JD-grounded\nquestion produced results with no connection to what HR had actually written for that slot).",
+        "operationId": "generate_job_question_jobs__job_id__questions_generate_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateQuestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratedQuestionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/questions": {
+      "get": {
+        "tags": [
+          "interview_questions"
+        ],
+        "summary": "List Job Questions",
+        "operationId": "list_job_questions_jobs__job_id__questions_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionOut"
+                  },
+                  "title": "Response List Job Questions Jobs  Job Id  Questions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "interview_questions"
+        ],
+        "summary": "Update Job Questions",
+        "description": "HR edits/adds/removes draft questions. Only draft-status questions can be edited.",
+        "operationId": "update_job_questions_jobs__job_id__questions_put",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionsUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionOut"
+                  },
+                  "title": "Response Update Job Questions Jobs  Job Id  Questions Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/questions/{question_id}/duration": {
+      "patch": {
+        "tags": [
+          "interview_questions"
+        ],
+        "summary": "Update Question Duration",
+        "description": "Per-question time limit (2026-07-19 follow-up, replacing the earlier job-wide-only design)\n\u2014 editable independent of draft/approved status, mirroring the job-level duration PATCH's\nimmediate-save pattern. Doesn't touch question_text/order_index/status, so it never needs a\nreopen even on an approved (locked) question.",
+        "operationId": "update_question_duration_jobs__job_id__questions__question_id__duration_patch",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Question Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionDurationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/questions/reopen": {
+      "post": {
+        "tags": [
+          "interview_questions"
+        ],
+        "summary": "Reopen Job Questions",
+        "description": "Flips already-approved questions back to draft so HR can add/edit before re-approving.",
+        "operationId": "reopen_job_questions_jobs__job_id__questions_reopen_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionOut"
+                  },
+                  "title": "Response Reopen Job Questions Jobs  Job Id  Questions Reopen Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/questions/approve": {
+      "post": {
+        "tags": [
+          "interview_questions"
+        ],
+        "summary": "Approve Job Questions",
+        "description": "Flips all draft questions to approved. Candidates only ever see approved questions.",
+        "operationId": "approve_job_questions_jobs__job_id__questions_approve_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionOut"
+                  },
+                  "title": "Response Approve Job Questions Jobs  Job Id  Questions Approve Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/questions": {
+      "get": {
+        "tags": [
+          "interview_answers"
+        ],
+        "summary": "List Candidate Questions",
+        "description": "Candidate-facing (token-authenticated). Only ever returns approved questions \u2014\ncandidates never see drafts. Each question now carries its own HR-set time limit\n(2026-07-19 follow-up, replacing the earlier job-wide-only duration) \u2014 the video recorder\nreads duration_seconds off the current question, not a single job-level value.",
+        "operationId": "list_candidate_questions_candidates__candidate_id__questions_get",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CandidateQuestionOut"
+                  },
+                  "title": "Response List Candidate Questions Candidates  Candidate Id  Questions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/answers": {
+      "post": {
+        "tags": [
+          "interview_answers"
+        ],
+        "summary": "Submit Interview Answer",
+        "description": "Candidate-facing (token-authenticated, not HR JWT). Consent-gated: 403 without a\nconsent_records row for this candidate.\n\nRound-3 follow-up #22 (2026-07-19): only saves the video synchronously now \u2014 transcription +\nrubric scoring (the slow part, 10-20+ seconds per answer) run afterward as a BackgroundTask,\nso this response returns as soon as the file is on disk. User-reported problem this fixes:\nwith all 4 answers now uploaded sequentially at the end of the interview (T17-followup #21),\nthe candidate was stuck watching \"Mengunggah jawaban N dari 4...\" for the FULL synchronous\npipeline time of every single answer, back to back.\n\n2026-07-22 (user decision, reversing an earlier attempt at a blocking \"please wait\" screen):\nthe candidate is released the moment their video data is confirmed stored \u2014 not once the\nLLM chain (transcription/scoring/summary/upskilling plan) finishes. That pipeline now runs\nfully invisibly in the background; only HR-facing surfaces (Laporan list, report page) gate on\nit actually completing (routers/jobs.py's processing_complete, routers/report.py's\n_require_report_ready).",
+        "operationId": "submit_interview_answer_candidates__candidate_id__answers_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_submit_interview_answer_candidates__candidate_id__answers_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/answers/{answer_id}/score": {
+      "post": {
+        "tags": [
+          "rubric"
+        ],
+        "summary": "Score Candidate Answer",
+        "operationId": "score_candidate_answer_candidates__candidate_id__answers__answer_id__score_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "answer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Answer Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/interview-summary": {
+      "post": {
+        "tags": [
+          "rubric"
+        ],
+        "summary": "Build Interview Summary",
+        "operationId": "build_interview_summary_candidates__candidate_id__interview_summary_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewSummaryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/decisions": {
+      "post": {
+        "tags": [
+          "decisions"
+        ],
+        "summary": "Record Decision",
+        "description": "Records HR's final pass/reject decision. No code path anywhere finalizes a\ncandidate without this endpoint being explicitly called by a human \u2014 there is no\nautomatic-decision helper, scheduled job, or scoring threshold that writes here.",
+        "operationId": "record_decision_decisions_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/routers__decisions__DecisionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/report": {
+      "get": {
+        "tags": [
+          "report"
+        ],
+        "summary": "Get Candidate Report",
+        "operationId": "get_candidate_report_candidates__candidate_id__report_get",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/report/pdf": {
+      "get": {
+        "tags": [
+          "report"
+        ],
+        "summary": "Get Candidate Report Pdf",
+        "description": "HR-facing PDF preview (\"Lihat Laporan\") \u2014 direct mirror of candidate_detail.py's\nget_candidate_cv: generates the same PDF build_report()/render_report_pdf() would email, but\nrenders it fresh in-memory for viewing instead of writing it to storage/reports/ (that write\nonly happens as a side effect of actually sending, in services.delivery.send_report).",
+        "operationId": "get_candidate_report_pdf_candidates__candidate_id__report_pdf_get",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/send-report": {
+      "post": {
+        "tags": [
+          "report"
+        ],
+        "summary": "Send Candidate Report",
+        "description": "HR triggers delivery with one click \u2014 PDF + summary auto-sent via Telegram.",
+        "operationId": "send_candidate_report_candidates__candidate_id__send_report_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/detail": {
+      "get": {
+        "tags": [
+          "candidate_detail"
+        ],
+        "summary": "Get Candidate Full Detail",
+        "description": "HR-facing candidate detail screen (Area 1 T7): parsed CV + skill-gap, per-answer\naudio/transcript/rubric, interview summary, decision status, report/Telegram state \u2014\neverything the decision + report-delivery screen needs in one call.",
+        "operationId": "get_candidate_full_detail_candidates__candidate_id__detail_get",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateFullDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/reanalyze-skill-gap": {
+      "post": {
+        "tags": [
+          "candidate_detail"
+        ],
+        "summary": "Reanalyze Skill Gap",
+        "description": "Manual escape hatch (Round-2 polish, A1's scope guard): skill-gap is normally computed once\nat match time and read from the persisted row. This forces a fresh recompute for the rare case\na JD's competencies changed after the candidate was already matched \u2014 no automatic invalidation\nis built for that case this round (match_scores itself isn't auto-invalidated on JD edit\neither), so this button is the deliberate manual alternative.\n\nRound-3 follow-up (2026-07-19): the ranking score is now DERIVED from this same skill-gap\nanalysis (services/matching.py), so re-analyzing here would otherwise leave match_scores stale\nrelative to the freshly recomputed matched/proficiency data \u2014 this now also refreshes the\nmatch score and this job's ranking, not just the skill-gap narrative.",
+        "operationId": "reanalyze_skill_gap_candidates__candidate_id__reanalyze_skill_gap_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillGapOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/contact-email": {
+      "patch": {
+        "tags": [
+          "candidate_detail"
+        ],
+        "summary": "Update Contact Email",
+        "description": "Round-3 Task 19: contact_email is normally auto-captured from the CV at ingest, but a CV\nwithout a detectable email (or a wrong extraction) leaves HR needing a manual override.",
+        "operationId": "update_contact_email_candidates__candidate_id__contact_email_patch",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactEmailIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactEmailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/send-decision-notice": {
+      "post": {
+        "tags": [
+          "candidate_detail"
+        ],
+        "summary": "Send Candidate Decision Notice",
+        "description": "Round-3 Task 19: manual-trigger accept/reject notice email \u2014 never automatic on decision,\nto avoid accidental sends while HR is still testing/adjusting a decision.",
+        "operationId": "send_candidate_decision_notice_candidates__candidate_id__send_decision_notice_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/cv": {
+      "get": {
+        "tags": [
+          "candidate_detail"
+        ],
+        "summary": "Get Candidate Cv",
+        "description": "Streams the candidate's original uploaded CV PDF (Round-3 Task 18) \u2014 direct mirror of\nget_answer_audio below. HR-scoped like every other candidate-detail endpoint. The raw PDF\ncontains real PII (name/email/phone) by design \u2014 this is an HR-facing view, not redacted,\nsame as the existing raw_cv_path storage already was.",
+        "operationId": "get_candidate_cv_candidates__candidate_id__cv_get",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/candidates/{candidate_id}/answers/{answer_id}/audio": {
+      "get": {
+        "tags": [
+          "candidate_detail"
+        ],
+        "summary": "Get Answer Audio",
+        "description": "Streams the stored answer recording for the HR-facing player. HR-scoped like every other\ncandidate-detail endpoint \u2014 never publicly reachable.\n\nRound-3 Task 21: recordings are now video+audio webm (camera interview redesign), served as\nvideo/webm \u2014 a browser <video> element plays an audio-only webm from before this change\njust fine (blank frame, working controls), so no branching by candidate/recording age.",
+        "operationId": "get_answer_audio_candidates__candidate_id__answers__answer_id__audio_get",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "answer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Answer Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/stats": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Dashboard Stats",
+        "description": "Company-scoped recruitment overview aggregated in Python (the generic repository\nonly supports equality-filter list queries \u2014 no COUNT/GROUP BY). Pipeline-stage\nderivation follows the same row-presence rules as routers/matching.py.",
+        "operationId": "get_dashboard_stats_dashboard_stats_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardStatsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnswerDetailOut": {
+        "properties": {
+          "answer_id": {
+            "type": "integer",
+            "title": "Answer Id"
+          },
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "audio_url": {
+            "type": "string",
+            "title": "Audio Url"
+          },
+          "transcript_text": {
+            "type": "string",
+            "title": "Transcript Text"
+          },
+          "summary_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary Text"
+          },
+          "rubric_scores": {
+            "items": {
+              "$ref": "#/components/schemas/RubricScoreOut"
+            },
+            "type": "array",
+            "title": "Rubric Scores"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answer_id",
+          "question_text",
+          "audio_url",
+          "transcript_text",
+          "summary_text",
+          "rubric_scores"
+        ],
+        "title": "AnswerDetailOut"
+      },
+      "AnswerOut": {
+        "properties": {
+          "answer_id": {
+            "type": "integer",
+            "title": "Answer Id"
+          },
+          "audio_path": {
+            "type": "string",
+            "title": "Audio Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answer_id",
+          "audio_path"
+        ],
+        "title": "AnswerOut"
+      },
+      "AttentionItem": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "candidate_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "label"
+        ],
+        "title": "AttentionItem"
+      },
+      "Body_create_candidate_candidates_post": {
+        "properties": {
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "alias": {
+            "type": "string",
+            "title": "Alias"
+          },
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "alias",
+          "file"
+        ],
+        "title": "Body_create_candidate_candidates_post"
+      },
+      "Body_submit_interview_answer_candidates__candidate_id__answers_post": {
+        "properties": {
+          "question_id": {
+            "type": "integer",
+            "title": "Question Id"
+          },
+          "session": {
+            "type": "string",
+            "title": "Session"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "session",
+          "token",
+          "file"
+        ],
+        "title": "Body_submit_interview_answer_candidates__candidate_id__answers_post"
+      },
+      "CandidateDetailOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "alias": {
+            "type": "string",
+            "title": "Alias"
+          },
+          "invited": {
+            "type": "boolean",
+            "title": "Invited"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token"
+          },
+          "token_expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Expires At"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "job_id",
+          "alias",
+          "invited",
+          "token",
+          "token_expires_at",
+          "contact_email"
+        ],
+        "title": "CandidateDetailOut",
+        "description": "HR-facing candidate detail, used by Area 1 T5c to re-view an existing invite link\nwithout calling POST /invite again \u2014 that endpoint always issues a fresh token, which\nwould silently invalidate a link already shared with the candidate mid-demo."
+      },
+      "CandidateFullDetailOut": {
+        "properties": {
+          "candidate_id": {
+            "type": "integer",
+            "title": "Candidate Id"
+          },
+          "alias": {
+            "type": "string",
+            "title": "Alias"
+          },
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "job_title": {
+            "type": "string",
+            "title": "Job Title"
+          },
+          "match_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match Score"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills"
+          },
+          "skills_implicit": {
+            "items": {},
+            "type": "array",
+            "title": "Skills Implicit"
+          },
+          "experience": {
+            "items": {},
+            "type": "array",
+            "title": "Experience"
+          },
+          "qualifications": {
+            "items": {},
+            "type": "array",
+            "title": "Qualifications"
+          },
+          "cv_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Summary"
+          },
+          "education_history": {
+            "items": {},
+            "type": "array",
+            "title": "Education History"
+          },
+          "certifications": {
+            "items": {},
+            "type": "array",
+            "title": "Certifications"
+          },
+          "featured_projects": {
+            "items": {},
+            "type": "array",
+            "title": "Featured Projects"
+          },
+          "organization_experience": {
+            "items": {},
+            "type": "array",
+            "title": "Organization Experience"
+          },
+          "skill_gap": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SkillGapOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/AnswerDetailOut"
+            },
+            "type": "array",
+            "title": "Answers"
+          },
+          "interview_summary_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interview Summary Text"
+          },
+          "interview_overall_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interview Overall Score"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/routers__candidate_detail__DecisionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "has_telegram_link": {
+            "type": "boolean",
+            "title": "Has Telegram Link"
+          },
+          "report_sent": {
+            "type": "boolean",
+            "title": "Report Sent"
+          },
+          "cv_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Url"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "has_email": {
+            "type": "boolean",
+            "title": "Has Email"
+          },
+          "education_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Education Level"
+          },
+          "major": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Major"
+          },
+          "meets_education": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meets Education"
+          },
+          "invited": {
+            "type": "boolean",
+            "title": "Invited"
+          },
+          "invite_email_sent": {
+            "type": "boolean",
+            "title": "Invite Email Sent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "alias",
+          "job_id",
+          "job_title",
+          "match_score",
+          "skills",
+          "skills_implicit",
+          "experience",
+          "qualifications",
+          "cv_summary",
+          "education_history",
+          "certifications",
+          "featured_projects",
+          "organization_experience",
+          "skill_gap",
+          "answers",
+          "interview_summary_text",
+          "interview_overall_score",
+          "decision",
+          "has_telegram_link",
+          "report_sent",
+          "cv_url",
+          "contact_email",
+          "has_email",
+          "education_level",
+          "major",
+          "meets_education",
+          "invited",
+          "invite_email_sent"
+        ],
+        "title": "CandidateFullDetailOut"
+      },
+      "CandidateOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "alias": {
+            "type": "string",
+            "title": "Alias"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "job_id",
+          "alias"
+        ],
+        "title": "CandidateOut"
+      },
+      "CandidateQuestionOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "order_index": {
+            "type": "integer",
+            "title": "Order Index"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "question_text",
+          "order_index",
+          "duration_seconds"
+        ],
+        "title": "CandidateQuestionOut"
+      },
+      "CandidateSelfOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "alias": {
+            "type": "string",
+            "title": "Alias"
+          },
+          "job_title": {
+            "type": "string",
+            "title": "Job Title"
+          },
+          "has_consent": {
+            "type": "boolean",
+            "title": "Has Consent"
+          },
+          "has_telegram_link": {
+            "type": "boolean",
+            "title": "Has Telegram Link"
+          },
+          "interview_completed": {
+            "type": "boolean",
+            "title": "Interview Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "alias",
+          "job_title",
+          "has_consent",
+          "has_telegram_link",
+          "interview_completed"
+        ],
+        "title": "CandidateSelfOut",
+        "description": "Candidate-facing self-info, resolved by token \u2014 powers Area 1 T3's route guards\n(expired/invalid token, consent-required redirect) without exposing HR-only fields.\n`alias` is safe to include: it's the anonymized display name (e.g. \"Kandidat WD-28\"),\nnever the candidate's real name \u2014 see the project's PII-redaction design."
+      },
+      "CompetencyAddRequest": {
+        "properties": {
+          "competency_name": {
+            "type": "string",
+            "title": "Competency Name"
+          },
+          "importance_level": {
+            "type": "number",
+            "title": "Importance Level",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "competency_name"
+        ],
+        "title": "CompetencyAddRequest"
+      },
+      "CompetencyGap": {
+        "properties": {
+          "competency_name": {
+            "type": "string",
+            "title": "Competency Name"
+          },
+          "missing_pct": {
+            "type": "number",
+            "title": "Missing Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "competency_name",
+          "missing_pct"
+        ],
+        "title": "CompetencyGap"
+      },
+      "CompetencyOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "competency_name": {
+            "type": "string",
+            "title": "Competency Name"
+          },
+          "importance_level": {
+            "type": "number",
+            "title": "Importance Level"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "competency_name",
+          "importance_level",
+          "status",
+          "source"
+        ],
+        "title": "CompetencyOut"
+      },
+      "CompetencyStatus": {
+        "properties": {
+          "competency_name": {
+            "type": "string",
+            "title": "Competency Name"
+          },
+          "matched": {
+            "type": "boolean",
+            "title": "Matched"
+          },
+          "proficiency": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proficiency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "competency_name",
+          "matched",
+          "proficiency"
+        ],
+        "title": "CompetencyStatus"
+      },
+      "ConsentOut": {
+        "properties": {
+          "candidate_id": {
+            "type": "integer",
+            "title": "Candidate Id"
+          },
+          "consent_given": {
+            "type": "boolean",
+            "title": "Consent Given"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "consent_given"
+        ],
+        "title": "ConsentOut"
+      },
+      "ConsentRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "consent_text_version": {
+            "type": "string",
+            "title": "Consent Text Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "consent_text_version"
+        ],
+        "title": "ConsentRequest"
+      },
+      "ContactEmailIn": {
+        "properties": {
+          "contact_email": {
+            "type": "string",
+            "title": "Contact Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contact_email"
+        ],
+        "title": "ContactEmailIn"
+      },
+      "ContactEmailOut": {
+        "properties": {
+          "candidate_id": {
+            "type": "integer",
+            "title": "Candidate Id"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "contact_email"
+        ],
+        "title": "ContactEmailOut"
+      },
+      "DashboardStatsOut": {
+        "properties": {
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "active_jobs": {
+            "type": "integer",
+            "title": "Active Jobs"
+          },
+          "closed_jobs": {
+            "type": "integer",
+            "title": "Closed Jobs"
+          },
+          "total_candidates": {
+            "type": "integer",
+            "title": "Total Candidates"
+          },
+          "belum_diundang": {
+            "type": "integer",
+            "title": "Belum Diundang"
+          },
+          "menunggu_wawancara": {
+            "type": "integer",
+            "title": "Menunggu Wawancara"
+          },
+          "selesai_wawancara": {
+            "type": "integer",
+            "title": "Selesai Wawancara"
+          },
+          "decisions_advance": {
+            "type": "integer",
+            "title": "Decisions Advance"
+          },
+          "decisions_reject": {
+            "type": "integer",
+            "title": "Decisions Reject"
+          },
+          "decisions_pending": {
+            "type": "integer",
+            "title": "Decisions Pending"
+          },
+          "reports_sent": {
+            "type": "integer",
+            "title": "Reports Sent"
+          },
+          "avg_match_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Match Score"
+          },
+          "per_job": {
+            "items": {
+              "$ref": "#/components/schemas/PerJobStat"
+            },
+            "type": "array",
+            "title": "Per Job"
+          },
+          "attention": {
+            "items": {
+              "$ref": "#/components/schemas/AttentionItem"
+            },
+            "type": "array",
+            "title": "Attention"
+          },
+          "score_distribution": {
+            "$ref": "#/components/schemas/ScoreDistribution"
+          },
+          "conversion_by_job": {
+            "items": {
+              "$ref": "#/components/schemas/JobConversion"
+            },
+            "type": "array",
+            "title": "Conversion By Job"
+          },
+          "competency_gaps": {
+            "items": {
+              "$ref": "#/components/schemas/CompetencyGap"
+            },
+            "type": "array",
+            "title": "Competency Gaps"
+          },
+          "decisions_by_job": {
+            "items": {
+              "$ref": "#/components/schemas/JobDecisionBreakdown"
+            },
+            "type": "array",
+            "title": "Decisions By Job"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_name",
+          "active_jobs",
+          "closed_jobs",
+          "total_candidates",
+          "belum_diundang",
+          "menunggu_wawancara",
+          "selesai_wawancara",
+          "decisions_advance",
+          "decisions_reject",
+          "decisions_pending",
+          "reports_sent",
+          "avg_match_score",
+          "per_job",
+          "attention",
+          "score_distribution",
+          "conversion_by_job",
+          "competency_gaps",
+          "decisions_by_job"
+        ],
+        "title": "DashboardStatsOut"
+      },
+      "DecisionRequest": {
+        "properties": {
+          "candidate_id": {
+            "type": "integer",
+            "title": "Candidate Id"
+          },
+          "decision": {
+            "type": "string",
+            "title": "Decision"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "decision"
+        ],
+        "title": "DecisionRequest"
+      },
+      "GenerateQuestionRequest": {
+        "properties": {
+          "hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint"
+          },
+          "existing_questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Existing Questions",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "GenerateQuestionRequest"
+      },
+      "GeneratedQuestionOut": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "GeneratedQuestionOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InterviewAnswerOut": {
+        "properties": {
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "summary_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary Text"
+          },
+          "transcript_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transcript Text"
+          },
+          "video_url": {
+            "type": "string",
+            "title": "Video Url"
+          },
+          "rubric_scores": {
+            "items": {
+              "$ref": "#/components/schemas/RubricScoreOut"
+            },
+            "type": "array",
+            "title": "Rubric Scores"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_text",
+          "summary_text",
+          "transcript_text",
+          "video_url",
+          "rubric_scores"
+        ],
+        "title": "InterviewAnswerOut"
+      },
+      "InterviewSummaryOut": {
+        "properties": {
+          "overall_score": {
+            "type": "number",
+            "title": "Overall Score"
+          },
+          "ai_summary_text": {
+            "type": "string",
+            "title": "Ai Summary Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "overall_score",
+          "ai_summary_text"
+        ],
+        "title": "InterviewSummaryOut"
+      },
+      "InviteOut": {
+        "properties": {
+          "candidate_id": {
+            "type": "integer",
+            "title": "Candidate Id"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "token_expires_at": {
+            "type": "string",
+            "title": "Token Expires At"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "token",
+          "token_expires_at",
+          "contact_email"
+        ],
+        "title": "InviteOut"
+      },
+      "JobConversion": {
+        "properties": {
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "invited_count": {
+            "type": "integer",
+            "title": "Invited Count"
+          },
+          "completed_count": {
+            "type": "integer",
+            "title": "Completed Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "title",
+          "invited_count",
+          "completed_count"
+        ],
+        "title": "JobConversion"
+      },
+      "JobCreateRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "responsibilities": {
+            "type": "string",
+            "title": "Responsibilities"
+          },
+          "requirements": {
+            "type": "string",
+            "title": "Requirements"
+          },
+          "qualifications": {
+            "type": "string",
+            "title": "Qualifications"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "responsibilities",
+          "requirements",
+          "qualifications"
+        ],
+        "title": "JobCreateRequest"
+      },
+      "JobDecisionBreakdown": {
+        "properties": {
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "advance_count": {
+            "type": "integer",
+            "title": "Advance Count"
+          },
+          "reject_count": {
+            "type": "integer",
+            "title": "Reject Count"
+          },
+          "pending_count": {
+            "type": "integer",
+            "title": "Pending Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "title",
+          "advance_count",
+          "reject_count",
+          "pending_count"
+        ],
+        "title": "JobDecisionBreakdown"
+      },
+      "JobListItemOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "company_id": {
+            "type": "integer",
+            "title": "Company Id"
+          },
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "responsibilities": {
+            "type": "string",
+            "title": "Responsibilities"
+          },
+          "requirements": {
+            "type": "string",
+            "title": "Requirements"
+          },
+          "qualifications": {
+            "type": "string",
+            "title": "Qualifications"
+          },
+          "required_education_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Education Level"
+          },
+          "required_major": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Major"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "candidate_count": {
+            "type": "integer",
+            "title": "Candidate Count"
+          },
+          "question_status": {
+            "type": "string",
+            "title": "Question Status"
+          },
+          "belum_diundang": {
+            "type": "integer",
+            "title": "Belum Diundang"
+          },
+          "menunggu_wawancara": {
+            "type": "integer",
+            "title": "Menunggu Wawancara"
+          },
+          "selesai_wawancara": {
+            "type": "integer",
+            "title": "Selesai Wawancara"
+          },
+          "diputuskan": {
+            "type": "integer",
+            "title": "Diputuskan"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_id",
+          "company_name",
+          "title",
+          "responsibilities",
+          "requirements",
+          "qualifications",
+          "required_education_level",
+          "required_major",
+          "status",
+          "created_at",
+          "candidate_count",
+          "question_status",
+          "belum_diundang",
+          "menunggu_wawancara",
+          "selesai_wawancara",
+          "diputuskan"
+        ],
+        "title": "JobListItemOut"
+      },
+      "JobOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "company_id": {
+            "type": "integer",
+            "title": "Company Id"
+          },
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "responsibilities": {
+            "type": "string",
+            "title": "Responsibilities"
+          },
+          "requirements": {
+            "type": "string",
+            "title": "Requirements"
+          },
+          "qualifications": {
+            "type": "string",
+            "title": "Qualifications"
+          },
+          "required_education_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Education Level"
+          },
+          "required_major": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Major"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_id",
+          "company_name",
+          "title",
+          "responsibilities",
+          "requirements",
+          "qualifications",
+          "required_education_level",
+          "required_major",
+          "status",
+          "created_at"
+        ],
+        "title": "JobOut"
+      },
+      "JobReportListItemOut": {
+        "properties": {
+          "candidate_id": {
+            "type": "integer",
+            "title": "Candidate Id"
+          },
+          "alias": {
+            "type": "string",
+            "title": "Alias"
+          },
+          "interview_completed": {
+            "type": "boolean",
+            "title": "Interview Completed"
+          },
+          "processing_complete": {
+            "type": "boolean",
+            "title": "Processing Complete"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "match_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match Score"
+          },
+          "report_sent": {
+            "type": "boolean",
+            "title": "Report Sent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "alias",
+          "interview_completed",
+          "processing_complete",
+          "decision",
+          "decided_at",
+          "match_score",
+          "report_sent"
+        ],
+        "title": "JobReportListItemOut"
+      },
+      "JobUpdateRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "responsibilities": {
+            "type": "string",
+            "title": "Responsibilities"
+          },
+          "requirements": {
+            "type": "string",
+            "title": "Requirements"
+          },
+          "qualifications": {
+            "type": "string",
+            "title": "Qualifications"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "responsibilities",
+          "requirements",
+          "qualifications"
+        ],
+        "title": "JobUpdateRequest"
+      },
+      "KeyStrengthOut": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description"
+        ],
+        "title": "KeyStrengthOut"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "LoginResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "LoginResponse"
+      },
+      "MatchOut": {
+        "properties": {
+          "candidate_id": {
+            "type": "integer",
+            "title": "Candidate Id"
+          },
+          "alias": {
+            "type": "string",
+            "title": "Alias"
+          },
+          "overall_score": {
+            "type": "number",
+            "title": "Overall Score"
+          },
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "competency_breakdown": {
+            "type": "object",
+            "title": "Competency Breakdown"
+          },
+          "competency_status": {
+            "items": {
+              "$ref": "#/components/schemas/CompetencyStatus"
+            },
+            "type": "array",
+            "title": "Competency Status"
+          },
+          "latest_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Role"
+          },
+          "invited": {
+            "type": "boolean",
+            "title": "Invited"
+          },
+          "interview_completed": {
+            "type": "boolean",
+            "title": "Interview Completed"
+          },
+          "decided": {
+            "type": "boolean",
+            "title": "Decided"
+          },
+          "cv_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Url"
+          },
+          "education_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Education Level"
+          },
+          "major": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Major"
+          },
+          "meets_education": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meets Education"
+          },
+          "has_email": {
+            "type": "boolean",
+            "title": "Has Email"
+          },
+          "invite_email_sent": {
+            "type": "boolean",
+            "title": "Invite Email Sent"
+          },
+          "skill_gap_ready": {
+            "type": "boolean",
+            "title": "Skill Gap Ready"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "alias",
+          "overall_score",
+          "rank",
+          "competency_breakdown",
+          "competency_status",
+          "latest_role",
+          "invited",
+          "interview_completed",
+          "decided",
+          "cv_url",
+          "education_level",
+          "major",
+          "meets_education",
+          "has_email",
+          "invite_email_sent",
+          "skill_gap_ready"
+        ],
+        "title": "MatchOut"
+      },
+      "PerJobStat": {
+        "properties": {
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "candidate_count": {
+            "type": "integer",
+            "title": "Candidate Count"
+          },
+          "interviewed_count": {
+            "type": "integer",
+            "title": "Interviewed Count"
+          },
+          "decided_count": {
+            "type": "integer",
+            "title": "Decided Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "title",
+          "status",
+          "candidate_count",
+          "interviewed_count",
+          "decided_count"
+        ],
+        "title": "PerJobStat"
+      },
+      "QuestionDurationRequest": {
+        "properties": {
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "duration_seconds"
+        ],
+        "title": "QuestionDurationRequest"
+      },
+      "QuestionOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "order_index": {
+            "type": "integer",
+            "title": "Order Index"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "title": "Duration Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "job_id",
+          "question_text",
+          "order_index",
+          "status",
+          "duration_seconds"
+        ],
+        "title": "QuestionOut"
+      },
+      "QuestionUpdateItem": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "order_index": {
+            "type": "integer",
+            "title": "Order Index"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_text",
+          "order_index"
+        ],
+        "title": "QuestionUpdateItem"
+      },
+      "QuestionsUpdateRequest": {
+        "properties": {
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionUpdateItem"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "questions"
+        ],
+        "title": "QuestionsUpdateRequest"
+      },
+      "ReportOut": {
+        "properties": {
+          "candidate_alias": {
+            "type": "string",
+            "title": "Candidate Alias"
+          },
+          "job_title": {
+            "type": "string",
+            "title": "Job Title"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision"
+          },
+          "gap_summary": {
+            "type": "string",
+            "title": "Gap Summary"
+          },
+          "development_priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Development Priority"
+          },
+          "matched_competencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched Competencies"
+          },
+          "missing_competencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Competencies"
+          },
+          "key_strengths": {
+            "items": {
+              "$ref": "#/components/schemas/KeyStrengthOut"
+            },
+            "type": "array",
+            "title": "Key Strengths"
+          },
+          "resume_action_items": {
+            "items": {
+              "$ref": "#/components/schemas/ResumeActionItemOut"
+            },
+            "type": "array",
+            "title": "Resume Action Items"
+          },
+          "interview_key_strengths": {
+            "items": {
+              "$ref": "#/components/schemas/KeyStrengthOut"
+            },
+            "type": "array",
+            "title": "Interview Key Strengths"
+          },
+          "interview_feedback": {
+            "items": {
+              "$ref": "#/components/schemas/KeyStrengthOut"
+            },
+            "type": "array",
+            "title": "Interview Feedback"
+          },
+          "upskilling_plan": {
+            "$ref": "#/components/schemas/UpskillingSectionOut"
+          },
+          "interview_overall_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interview Overall Score"
+          },
+          "interview_answers": {
+            "items": {
+              "$ref": "#/components/schemas/InterviewAnswerOut"
+            },
+            "type": "array",
+            "title": "Interview Answers"
+          },
+          "cv_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Summary"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills"
+          },
+          "skills_implicit": {
+            "items": {},
+            "type": "array",
+            "title": "Skills Implicit"
+          },
+          "experience": {
+            "items": {},
+            "type": "array",
+            "title": "Experience"
+          },
+          "qualifications": {
+            "items": {},
+            "type": "array",
+            "title": "Qualifications"
+          },
+          "education_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Education Level"
+          },
+          "major": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Major"
+          },
+          "education_history": {
+            "items": {},
+            "type": "array",
+            "title": "Education History"
+          },
+          "certifications": {
+            "items": {},
+            "type": "array",
+            "title": "Certifications"
+          },
+          "featured_projects": {
+            "items": {},
+            "type": "array",
+            "title": "Featured Projects"
+          },
+          "organization_experience": {
+            "items": {},
+            "type": "array",
+            "title": "Organization Experience"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_alias",
+          "job_title",
+          "decision",
+          "gap_summary",
+          "development_priority",
+          "matched_competencies",
+          "missing_competencies",
+          "key_strengths",
+          "resume_action_items",
+          "interview_key_strengths",
+          "interview_feedback",
+          "upskilling_plan",
+          "interview_overall_score",
+          "interview_answers",
+          "cv_summary",
+          "skills",
+          "skills_implicit",
+          "experience",
+          "qualifications",
+          "education_level",
+          "major",
+          "education_history",
+          "certifications",
+          "featured_projects",
+          "organization_experience"
+        ],
+        "title": "ReportOut"
+      },
+      "ResumeActionItemOut": {
+        "properties": {
+          "original": {
+            "type": "string",
+            "title": "Original"
+          },
+          "improved": {
+            "type": "string",
+            "title": "Improved"
+          }
+        },
+        "type": "object",
+        "required": [
+          "original",
+          "improved"
+        ],
+        "title": "ResumeActionItemOut"
+      },
+      "RubricScoreOut": {
+        "properties": {
+          "criterion_name": {
+            "type": "string",
+            "title": "Criterion Name"
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          }
+        },
+        "type": "object",
+        "required": [
+          "criterion_name",
+          "score",
+          "rationale"
+        ],
+        "title": "RubricScoreOut"
+      },
+      "ScoreDistribution": {
+        "properties": {
+          "bucket_0_40": {
+            "type": "integer",
+            "title": "Bucket 0 40"
+          },
+          "bucket_40_60": {
+            "type": "integer",
+            "title": "Bucket 40 60"
+          },
+          "bucket_60_80": {
+            "type": "integer",
+            "title": "Bucket 60 80"
+          },
+          "bucket_80_100": {
+            "type": "integer",
+            "title": "Bucket 80 100"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bucket_0_40",
+          "bucket_40_60",
+          "bucket_60_80",
+          "bucket_80_100"
+        ],
+        "title": "ScoreDistribution"
+      },
+      "ScoreOut": {
+        "properties": {
+          "clarity": {
+            "type": "integer",
+            "title": "Clarity"
+          },
+          "relevance": {
+            "type": "integer",
+            "title": "Relevance"
+          },
+          "technical_depth": {
+            "type": "integer",
+            "title": "Technical Depth"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clarity",
+          "relevance",
+          "technical_depth",
+          "summary"
+        ],
+        "title": "ScoreOut"
+      },
+      "SendInviteEmailRequest": {
+        "properties": {
+          "invite_link": {
+            "type": "string",
+            "title": "Invite Link"
+          }
+        },
+        "type": "object",
+        "required": [
+          "invite_link"
+        ],
+        "title": "SendInviteEmailRequest"
+      },
+      "SkillGapOut": {
+        "properties": {
+          "gap_summary": {
+            "type": "string",
+            "title": "Gap Summary"
+          },
+          "missing_competencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Competencies"
+          },
+          "matched_competencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched Competencies"
+          },
+          "development_priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Development Priority"
+          },
+          "key_strengths": {
+            "items": {
+              "$ref": "#/components/schemas/KeyStrengthOut"
+            },
+            "type": "array",
+            "title": "Key Strengths"
+          },
+          "resume_action_items": {
+            "items": {
+              "$ref": "#/components/schemas/ResumeActionItemOut"
+            },
+            "type": "array",
+            "title": "Resume Action Items"
+          },
+          "interview_key_strengths": {
+            "items": {
+              "$ref": "#/components/schemas/KeyStrengthOut"
+            },
+            "type": "array",
+            "title": "Interview Key Strengths"
+          },
+          "interview_feedback": {
+            "items": {
+              "$ref": "#/components/schemas/KeyStrengthOut"
+            },
+            "type": "array",
+            "title": "Interview Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "gap_summary",
+          "missing_competencies",
+          "matched_competencies",
+          "development_priority",
+          "key_strengths",
+          "resume_action_items",
+          "interview_key_strengths",
+          "interview_feedback"
+        ],
+        "title": "SkillGapOut"
+      },
+      "UpskillingItemOut": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description"
+        ],
+        "title": "UpskillingItemOut"
+      },
+      "UpskillingPlanOut": {
+        "properties": {
+          "low_effort": {
+            "items": {
+              "$ref": "#/components/schemas/UpskillingItemOut"
+            },
+            "type": "array",
+            "title": "Low Effort"
+          },
+          "medium_effort": {
+            "items": {
+              "$ref": "#/components/schemas/UpskillingItemOut"
+            },
+            "type": "array",
+            "title": "Medium Effort"
+          },
+          "high_effort": {
+            "items": {
+              "$ref": "#/components/schemas/UpskillingItemOut"
+            },
+            "type": "array",
+            "title": "High Effort"
+          }
+        },
+        "type": "object",
+        "required": [
+          "low_effort",
+          "medium_effort",
+          "high_effort"
+        ],
+        "title": "UpskillingPlanOut"
+      },
+      "UpskillingSectionOut": {
+        "properties": {
+          "kompetensi_belum_terpenuhi": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/UpskillingPlanOut"
+            },
+            "type": "object",
+            "title": "Kompetensi Belum Terpenuhi",
+            "default": {}
+          },
+          "area_pengembangan_wawancara": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/UpskillingPlanOut"
+            },
+            "type": "object",
+            "title": "Area Pengembangan Wawancara",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "title": "UpskillingSectionOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "routers__candidate_detail__DecisionOut": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "title": "Decision"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision",
+          "notes"
+        ],
+        "title": "DecisionOut"
+      },
+      "routers__decisions__DecisionOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "candidate_id": {
+            "type": "integer",
+            "title": "Candidate Id"
+          },
+          "decision": {
+            "type": "string",
+            "title": "Decision"
+          },
+          "decided_by": {
+            "type": "integer",
+            "title": "Decided By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "candidate_id",
+          "decision",
+          "decided_by"
+        ],
+        "title": "DecisionOut"
+      }
+    }
+  }
+}

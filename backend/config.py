@@ -43,6 +43,16 @@ TELEGRAM_ENABLED = os.environ.get("TELEGRAM_ENABLED", "true").lower() == "true"
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME")
 
+# Round-3 Task 19: Gmail SMTP replaces Telegram as the candidate notification channel. Telegram
+# code stays intact (see TELEGRAM_ENABLED above) as a flag-guarded fallback — flip EMAIL_ENABLED
+# off and TELEGRAM_ENABLED on to roll back with no code change.
+EMAIL_ENABLED = os.environ.get("EMAIL_ENABLED", "false").lower() == "true"
+SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "465"))
+SMTP_USERNAME = os.environ.get("SMTP_USERNAME")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")  # Gmail App Password, not the account password
+SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USERNAME)
+
 DATABASE_URL = _require("DATABASE_URL")
 
 QDRANT_HOST = os.environ.get("QDRANT_HOST", "localhost")
