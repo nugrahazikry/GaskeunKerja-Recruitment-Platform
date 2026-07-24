@@ -3,6 +3,8 @@
 > **Tujuan dokumen ini:** referensi tunggal, sangat rinci, untuk mendukung tim mengisi/memverifikasi/mempertahankan jawaban di `tahap 3 jawaban.md` — baik saat finalisasi teks sebelum submit, maupun saat menjawab pertanyaan lisan judge. Setiap klaim di sini merujuk ke file sumber yang bisa dibuka ulang untuk verifikasi. **Dokumen ini tidak mengubah `tahap 3 jawaban.md`** — murni referensi pendukung.
 >
 > **Status per penyusunan dokumen ini:** implementasi MVP sudah **selesai** untuk kelima area eksekusi (Tooling, Database, Backend & AI, Frontend, QA) per tanggal terakhir tercatat 2026-07-15, termasuk QA end-to-end visible-browser testing (7 skenario) dan demo-readiness checklist (7/7 edge case). Satu item teknis non-blocking masih tertunda: persist hasil skill-gap analysis agar tidak dihitung ulang tiap kali halaman dibuka (dicatat di `execution-checklist.md` baris ~1358, belum dikerjakan per 2026-07-16+). **Draft `tahap 3 jawaban.md` ditulis lebih awal (sebelum status ini tercapai) sehingga sejumlah jawaban masih membingkai arsitektur sebagai rencana cloud, bukan realita lokal yang sudah terverifikasi.**
+>
+> **⚠️ Update 2026-07-23 (Round 2 & Round 3, terverifikasi langsung dari kode, bukan asumsi dari status di atas):** signifikan lebih banyak dibangun sejak 2026-07-15/16, termasuk **satu perubahan yang membalik klaim algoritma paling penting di dokumen ini** (formula matching, lihat A.5.1) dan **satu pembalikan keputusan tooling** (Telegram → Gmail SMTP, lihat A.5). Item "belum selesai" di atas (persist skill-gap) **sudah selesai** (2026-07-17/19). **Lihat BAGIAN A.7 (baru) untuk ringkasan lengkap delta ini sebelum memakai bagian manapun di dokumen ini untuk jawab judge** — beberapa baris di Bagian B (terutama Q13, Q15, Q16, Q17) dan di Bagian C sekarang mengandung klaim yang sudah tidak akurat dan ditandai `[SUPERSEDED 2026-07-23]` di tempatnya masing-masing.
 
 ---
 
@@ -120,7 +122,8 @@ Karena constraint waktu (build solo, ~13 hari efektif) dan keputusan **local-fir
 | Speech-to-Text | Google STT | **Groq `whisper-large-v3`** (`language=id`) | SumoPod (provider LLM) tidak punya STT |
 | LLM provider | Deepseek V4 generik | **SumoPod** (OpenAI-compatible) → `deepseek-v4-flash`/`deepseek-v4-pro` | Tetap Deepseek V4 — lewat provider SumoPod |
 | Vision/OCR CV scan | Cloud Vision (implisit) | **SumoPod `gemini-2.5-flash-lite`** (diverifikasi 2026-07-15, ganti dari Groq Llama-4-Scout, ~12-14% lebih murah) | `deepseek-v4-pro` SumoPod tidak mendukung vision (dites langsung, gagal) |
-| Pengiriman laporan | Email (rencana awal) | **Telegram Bot API** (`sendDocument`+`sendMessage`) | Email butuh setup SMTP + App Password + risiko spam; Telegram gratis, otomatis penuh, terverifikasi terkirim nyata |
+| Pengiriman laporan | Email (rencana awal) → sempat diganti Telegram Bot API → **[SUPERSEDED 2026-07-23] dibalik lagi ke Gmail SMTP** | **Gmail SMTP** (`EMAIL_ENABLED=true`) sebagai channel utama; **Telegram jadi fallback berpenanda flag** (`TELEGRAM_ENABLED=false`, kode masih ada, tinggal di-flip kalau Gmail gagal) | Tim awalnya pindah ke Telegram karena email butuh setup SMTP+App Password (lihat alasan lama di baris di bawah, dipertahankan untuk konteks sejarah) — **lalu dibalik lagi ke Gmail** (2026-07-19, "Round-3 Task 19", user-verified dengan App Password asli, real send terkonfirmasi ke inbox nyata) karena email adalah channel yang benar-benar dipakai HR/kandidat sehari-hari, bukan Telegram; keputusan desain flag-guarded (bukan hapus kode Telegram) sengaja dibuat supaya rollback instan tanpa ubah kode kalau Gmail SMTP bermasalah saat demo. **Bonus fitur baru ikut paket ini:** email keputusan (accept/reject) dan laporan pengembangan sekarang dikirim **dalam satu email gabungan** (2026-07-22), bukan dua pesan terpisah. |
+| ~~Pengiriman laporan (alasan pindah ke Telegram, versi lama — sudah tidak berlaku)~~ | ~~Email (rencana awal)~~ | ~~**Telegram Bot API** (`sendDocument`+`sendMessage`)~~ | ~~Email butuh setup SMTP + App Password + risiko spam; Telegram gratis, otomatis penuh, terverifikasi terkirim nyata~~ |
 | Keamanan cloud (Cloud Armor/LB/Secret Mgr) | Ada di rencana | Belum diimplementasi (di luar scope MVP lokal) | Rencana pasca-hackathon |
 | Enkripsi TLS/AES-256 | Diklaim di proposal | **Belum diimplementasi** — MVP jalan di HTTP plain (localhost), file tanpa enkripsi | Sengaja ditunda untuk MVP; wajib sebelum pilot data kandidat asli |
 
@@ -130,9 +133,25 @@ Karena constraint waktu (build solo, ~13 hari efektif) dan keputusan **local-fir
 
 ⚠️ **KGE/GNN (Knowledge Graph Embeddings/Graph Neural Network) yang disebut di proposal Tahap 2 dan blueprint Direction B TIDAK diimplementasikan sebagai KGE/GNN penuh.** (BVI §5.1, PLAN "Decisions RESOLVED" baris 93)
 
-Implementasi nyata: **semantic vector similarity (Qdrant cosine) + competency-graph boost ringan** — formula `0.7 × semantic_similarity + 0.3 × graph_boost`. Ini keputusan sadar: prototipe KGE Tahap 2 tidak pernah terintegrasi ke produksi (dan setelah audit — bahkan tidak pernah ada sama sekali di kode, lihat A.4), jadi dibangun ulang dengan pendekatan lebih sederhana namun **tetap explainable** (skor bisa dirunut ke kompetensi spesifik yang cocok, tersimpan di kolom `match_scores.competency_breakdown`).
+> **⚠️⚠️ [SUPERSEDED 2026-07-23] — formula di bawah ini SUDAH TIDAK DIPAKAI di kode nyata sejak 2026-07-19.** Paragraf asli (semantic vector similarity 0.7 + graph boost 0.3 via Qdrant) didokumentasikan sebelum perubahan Round-3. **Formula matching diganti total** — lihat kotak koreksi di bawah untuk versi yang benar-benar berjalan sekarang. Paragraf asli dipertahankan di bawah hanya sebagai catatan sejarah evolusi (blueprint KGE → v1 semantic+graph → v2 skill-gap-grounded), jangan dipakai sebagai fakta kini.
 
-**Klaim ke judge harus disesuaikan** — jangan bilang "KGE/GNN penuh berjalan", bilang "semantic similarity + competency-graph boost, hasil dari evaluasi bahwa KGE/GNN Tahap 2 tidak pernah terintegrasi produksi; pendekatan baru tetap menjaga sifat explainable yang sama."
+~~Implementasi nyata: **semantic vector similarity (Qdrant cosine) + competency-graph boost ringan** — formula `0.7 × semantic_similarity + 0.3 × graph_boost`. Ini keputusan sadar: prototipe KGE Tahap 2 tidak pernah terintegrasi ke produksi (dan setelah audit — bahkan tidak pernah ada sama sekali di kode, lihat A.4), jadi dibangun ulang dengan pendekatan lebih sederhana namun **tetap explainable** (skor bisa dirunut ke kompetensi spesifik yang cocok, tersimpan di kolom `match_scores.competency_breakdown`).~~
+
+> **✅ [KOREKSI 2026-07-23] Formula matching yang benar-benar berjalan sekarang** (`backend/services/matching.py`, diganti total 2026-07-19, ditune ulang 2x hari yang sama — verified langsung dari kode):
+>
+> Root cause penggantian: user menemukan kasus nyata di mana semantic similarity meranking kandidat rendah padahal halaman detail kandidat (skill-gap analysis yang sudah grounded) justru menunjukkan kompetensi yang dicari ("Cloud Deployment") memang dimiliki — semantic similarity adalah satu angka fuzzy atas SELURUH blob profil vs SELURUH blob JD, tidak bisa merefleksikan satu skill spesifik secara akurat, dan rawan false positive (mirip topik ≠ punya skill).
+>
+> Formula baru **menggunakan ulang skill-gap analysis yang sudah grounded** (`services/skillgap.py`, sumber yang sama persis dengan yang ditampilkan di halaman detail kandidat — bukan sistem kedua yang bisa berbeda pendapat):
+> ```
+> coverage_score = (jumlah kompetensi cocok / total kompetensi wajib) × 100
+> quality_score  = (rata-rata level proficiency kompetensi yang cocok / 3) × 100
+> overall_score  = 0.9 × coverage_score + 0.1 × quality_score
+> ```
+> Bobot 90/10 (coverage-dominant) adalah hasil 2 iterasi tuning sehari (mulai 70/30 → 80/20 → 90/10) setelah user menemukan versi awal (skor proporsional murni) membuat 1 kompetensi dengan level rendah menjatuhkan skor terlalu drastis meski cakupan (coverage) sudah tinggi.
+>
+> **Implikasi penting: Qdrant/vector embeddings SEKARANG TIDAK DIPAKAI di jalur scoring/matching yang live.** `embed_candidate_profile()`/`embed_jd_competencies()` (`services/candidate_embedding.py`) hanya masih dipanggil dari `seed/load_demo_data.py` (populate index untuk 30 kandidat demo) — endpoint live (`POST /candidates`, folder-drop ingestion) TIDAK memanggilnya sama sekali, dan `compute_match_score()` tidak membaca dari Qdrant sama sekali. Qdrant secara teknis masih berjalan (Docker container, index terisi dari seed) tapi **vestigial** untuk keputusan ranking — bukan lagi bagian aktif dari algoritma matching.
+>
+> **Klaim ke judge harus disesuaikan LAGI (bukan cuma "bukan KGE/GNN")** — jangan bilang "semantic similarity + graph boost 0.7/0.3" (itu versi lama, sudah diganti). Bilang: **"skill-gap-grounded coverage & quality scoring (90% cakupan kompetensi + 10% kualitas/level proficiency), memakai sumber data yang identik dengan yang ditampilkan ke HR di halaman detail kandidat — bukan sistem kedua yang berpotensi tidak sinkron. Vector embeddings (Qdrant) sempat dipakai di versi awal, diganti karena similarity blob-vs-blob tidak cukup presisi untuk satu skill spesifik."** Ini justru argumen *lebih* kuat untuk Q17 (transparansi) — satu sumber kebenaran (`skill_gap_results`), bukan dua sistem yang bisa berbeda pendapat.
 
 ### A.5.2 Deviasi sadar lain (BVI §5)
 
@@ -163,7 +182,7 @@ Ini bukan klaim kosong "sudah diuji" — QA menemukan bug **nyata** di sistem ya
 
 > **Poin penting untuk Q17/Q9:** klaim "temperature=0 untuk determinisme" di draft `tahap 3 jawaban.md` (Q16, Q17) **kurang tepat sendirian** — temperature=0 saja terbukti TIDAK cukup deterministik di level provider. Implementasi nyata **lebih kuat** dari yang diklaim draft: self-consistency voting (3x call + median/majority vote), bukan cuma temperature=0. Ini upgrade positif yang belum masuk draft — sebaiknya ditambahkan sebagai bukti rigor teknis.
 
-### A.6.2 Angka konkret implementasi (BVI baris 21, CHECKLIST)
+### A.6.2 Angka konkret implementasi (BVI baris 21, CHECKLIST — angka asli per 2026-07-15)
 
 - 17 tabel PostgreSQL (companies, hr_users, jobs, jd_competencies, candidates, parsed_profiles, match_scores, interview_questions, interview_answers, transcripts, rubric_scores, interview_summaries, hr_decisions, consent_records, audit_log, competency_framework, resource_library)
 - 2 koleksi Qdrant (`candidate_vectors`, `jd_vectors`)
@@ -174,11 +193,39 @@ Ini bukan klaim kosong "sudah diuji" — QA menemukan bug **nyata** di sistem ya
 - **6 kandidat fixture tiered tambahan (id 62-67, job_id=21)** khusus QA — 2 strong/2 mid/2 weak, membuktikan diskriminasi matching secara statistik
 - Biaya nyata: ≈$0.07 per 1x demo run penuh (30 kandidat), ≈$0.20 termasuk siklus pengulangan development, infra $0 (semua lokal)
 
+> **✅ [UPDATE 2026-07-23] Angka terverifikasi ulang langsung dari struktur folder kode (bukan dari catatan lama di atas):**
+> - **18 tabel PostgreSQL** — 17 di atas + `skill_gap_results` (baru, persist hasil skill-gap analysis)
+> - **12 router modul backend** (`backend/routers/*.py`): tambahan `dashboard.py`, `decisions.py`, `rubric.py`, `auth.py` sejak angka 9-10 di atas
+> - **32 modul service backend** (`backend/services/*.py`): tambahan besar sejak 23 — termasuk `job_folder_ingest.py`/`job_folder_watcher.py`/`job_folders.py` (ingest CV lewat folder-drop, alternatif ke upload manual/seed-only), `email_client.py` (Gmail SMTP), `education.py` (ekstraksi pendidikan), `llm_cache.py`/`retry.py` (cost/reliability hardening)
+> - **16 halaman frontend ter-routing**: tambahan `DashboardPage`, `JobDetailPage`, `JobReportsPage`, `ReportPage`, `ReportPdfPage`, `CandidateCvPage`, `CandidateCameraTestPage`, `NavRedirectPage` sejak 9; `JobFormPage` lama dihapus (digabung ke `JobsListPage`)
+> - Qdrant/2 koleksi: **secara teknis masih ada**, tapi vestigial untuk matching sejak formula diganti (lihat A.5.1) — hanya terisi dari seed script, tidak lagi dibaca jalur live
+> - Jangan pakai angka lama di atas ("17 tabel", "9 halaman", dst.) tanpa embel-embel tanggal — kalau ditanya judge angka pasti, pakai angka bagian ini.
+
 ### A.6.3 Item belum selesai (jujur, non-blocking)
 
-- **Persist skill-gap analysis** — saat ini dihitung ulang live setiap halaman detail kandidat dibuka (3 panggilan Deepseek Pro self-consistency voting tiap load), belum di-cache/persist ke DB. Dicatat sebagai next-step di CHECKLIST baris 1358-1373, belum dikerjakan. **Ini bukan bug fungsional** (sistem tetap bekerja benar), murni isu efisiensi biaya/latensi yang belum dioptimasi. Aman disebut sebagai "known follow-up" jika ditanya, tidak perlu disembunyikan.
+- ~~**Persist skill-gap analysis** — saat ini dihitung ulang live setiap halaman detail kandidat dibuka...~~ **✅ [SUPERSEDED 2026-07-23] SUDAH SELESAI.** `persist_skill_gap()`/`get_or_compute_skill_gap()` (`backend/services/skillgap.py`, "Round-2 polish, 2026-07-17") menulis hasil ke tabel baru `skill_gap_results` sekali, lalu `candidate_detail.py` membaca baris tersimpan alih-alih menghitung ulang. Desain akhir: **lazy self-healing per-kandidat** (dihitung sekali saat pertama kali dibuka/di-matching, bukan bulk-precompute semua kandidat di awal) — user secara eksplisit memilih ini dibanding menjalankan `seed.backfill_skill_gap` untuk semua 36 kandidat sekaligus (real biaya LLM, ~108 panggilan worst-case). Shortlist sekarang menampilkan badge "Data siap" (hijau) / "Belum diproses" (kuning) per kandidat berdasar `skill_gap_ready` (`routers/matching.py`), jadi HR tahu kandidat mana yang akan kena delay ~30 detik saat pertama dibuka. **Efek samping penting:** formula matching (A.5.1) sekarang bergantung sepenuhnya pada tabel ini — `compute_match_score()` memanggil `persist_skill_gap()` sebagai langkah pertama, bukan opsional.
 - TLS/enkripsi at-rest — sengaja ditunda untuk MVP lokal, wajib sebelum pilot data kandidat asli (sudah diakui jujur di draft Q13).
-- Live-mic sanity check oleh manusia sungguhan (bukan Playwright fake-device) — status di CHECKLIST Area 1 T6 masih "pending" pada satu baris (baris 701), meski sudah diverifikasi lewat Playwright fake-device + real audio round-trip.
+- Live-mic sanity check oleh manusia sungguhan (bukan Playwright fake-device) — status di CHECKLIST Area 1 T6 masih "pending" pada satu baris (baris 701), meski sudah diverifikasi lewat Playwright fake-device + real audio round-trip. **[Catatan 2026-07-23]** interview sekarang **video**, bukan audio saja (lihat A.7) — item ini sebaiknya dibaca sebagai "live camera+mic sanity check", bukan cuma mic.
+- **[BARU 2026-07-23]** Job-folder CV ingestion (`backend/services/job_folder_watcher.py`, `job_folder_ingest.py`) — kode lengkap dan terpasang (watcher jalan otomatis saat backend start, `main.py::on_startup`), tapi **belum tercatat sama sekali di `execution-checklist.md`** (bukan hanya belum "Done" — task ini belum ada sebagai entry). Belum ada verifikasi live browser/E2E tercatat untuk fitur ini secara spesifik seperti task-task lain. Jangan klaim ke judge sebagai "sudah di-QA end-to-end" tanpa kualifikasi ini.
+
+## A.7 Update Pasca-2026-07-15 (Round 2 & Round 3) — Ringkasan Delta, Terverifikasi Langsung dari Kode 2026-07-23
+
+Bagian ini ditulis dengan membaca kode nyata (`git log`, isi file `backend/services/*.py`, `backend/routers/*.py`, struktur folder) plus catatan tanggal di `planning/execution-checklist.md`, **bukan** dengan asumsi dari status A.6 di atas (yang berhenti di 2026-07-15). Dipakai untuk menjaga Bagian B/C tetap benar tanpa harus menulis ulang seluruh dokumen.
+
+| # | Perubahan | Sebelumnya (di dokumen ini) | Sekarang (terverifikasi) | Tanggal | Dampak ke jawaban judge |
+|---|---|---|---|---|---|
+| 1 | **Formula matching diganti total** | Semantic vector similarity (Qdrant) 0.7 + graph boost 0.3 | Skill-gap-grounded: 0.9×coverage + 0.1×quality, sumber data sama dengan detail kandidat | 2026-07-19 (2x re-tune hari sama) | **Tinggi** — Q13, Q15, Q16, Q17, C.1, C.2 semua kutip formula lama, semua sudah ditandai `[SUPERSEDED]` di tempatnya. Lihat A.5.1 untuk kalimat siap-pakai. |
+| 2 | **Qdrant/vector embeddings jadi vestigial** | Dipakai aktif untuk scoring | Container tetap jalan, index terisi dari seed script saja — jalur live (`POST /candidates`, folder-drop) tidak memanggilnya sama sekali | 2026-07-19 (konsekuensi #1) | Sedang — kalau judge tanya detail arsitektur Qdrant, jujur bahwa perannya sudah menyusut, bukan komponen aktif algoritma lagi. |
+| 3 | **Delivery laporan: Telegram → Gmail SMTP** | Telegram primer | Gmail SMTP primer (`EMAIL_ENABLED=true`), Telegram fallback flag-guarded (`TELEGRAM_ENABLED=false`) | 2026-07-19, user-verified real send | Sedang — A.5 tabel & C.1 sudah dikoreksi. Keputusan dibolak-balik sekali (email→Telegram→email), jujurkan evolusinya kalau ditanya. |
+| 4 | **Keputusan + laporan digabung 1 email** | Dua pesan terpisah (asumsi awal) | Satu email berisi kabar lolos/tidak sekaligus laporan pengembangan | 2026-07-22 | Rendah — detail UX, tidak mengubah klaim inti manapun. |
+| 5 | **Skill-gap analysis dipersist** | Dihitung ulang live tiap page load (item "belum selesai") | Disimpan di tabel baru `skill_gap_results`, dibaca ulang bukan dihitung ulang; lazy self-healing per kandidat (bukan bulk-precompute) | 2026-07-17 | Sedang — A.6.3 dikoreksi; ini memperkuat (bukan melemahkan) klaim efisiensi di Q13/Q20. |
+| 6 | **Interview: audio → video** | "Rekam audio (WebM/Opus)" | Rekam **video** (WebM, `video:true,audio:true`), + halaman uji kamera/mikrofon terpisah, countdown 5 detik, batas waktu per-pertanyaan (1/2/3 menit, auto-stop), ringkasan per-jawaban | 2026-07-19 ("T21", task terbesar di proyek — 14-18 jam) | **Tinggi** — setiap penyebutan "audio" di Q10/Q16 sudah dikoreksi jadi "video". Ini juga fitur yang lebih impresif untuk demo (lebih visual) — pertimbangkan menonjolkannya di Q16/Q18. |
+| 7 | **CV viewer + badge kesiapan data** | Tidak ada | Tombol "Lihat CV" di Detail Kandidat (buka PDF asli); badge hijau "Data siap"/kuning "Belum diproses" di Shortlist per kandidat | 2026-07-19 | Rendah-Sedang — bukti transparansi tambahan untuk Q17 kalau ada slot kata. |
+| 8 | **Dashboard HR ditambahkan** | Tidak disebut di alur Q10 | Halaman landing setelah login: funnel kandidat lintas-job (parsed→shortlist→interview→decided), daftar "perlu perhatian", distribusi skor | Tanggal tidak tercatat di planning docs — dibangun setelah T11/T12 | Rendah — pelengkap UX, bukan klaim algoritma. Bisa disebut di Q18 sebagai bukti produk terus diiterasi. |
+| 9 | **CV ingestion via folder-drop** | Hanya via `POST /candidates` manual/seed | HR bisa taruh PDF langsung di folder per-job (`backend/seed/job_lists/<job_id>_<slug>/`), diproses otomatis oleh watcher background (`main.py::on_startup`) atau skrip catch-up manual | **Belum tercatat di `execution-checklist.md` sama sekali** — dibangun setelah entri planning terakhir (≥2026-07-22) | Sedang — fitur nyata dan berfungsi (kode lengkap + endpoint dipakai jalur live), tapi **belum ada bukti QA/verifikasi live tercatat** seperti fitur-fitur lain. Jangan overclaim "sudah di-QA" untuk fitur ini spesifik. |
+| 10 | **Angka struktural naik** | 17 tabel / 9-10 router / 23 service / 9 halaman | 18 tabel / 12 router / 32 service / 16 halaman | Kumulatif | Rendah — hanya soal angka pasti kalau judge menanyakan skala kode; lihat A.6.2 untuk angka terbaru. |
+
+**Cara pakai bagian ini:** kalau membaca Bagian B/C di bawah dan menemukan klaim tentang matching formula, Qdrant, Telegram, audio recording, atau angka tabel/router/service/halaman — cek dulu apakah baris itu sudah punya anotasi `[SUPERSEDED 2026-07-23]` atau `[KOREKSI 2026-07-23]` di dekatnya. Kalau tidak, klaim tersebut kemungkinan besar masih akurat (tidak terdampak Round 2/3).
 
 ---
 
@@ -219,15 +266,22 @@ Ini bukan klaim kosong "sudah diuji" — QA menemukan bug **nyata** di sistem ya
 1. HR login (JWT) → CRUD JD penuh, scoped per company
 2. Deepseek V4 Flash ekstrak kompetensi dari JD
 3. CV diunggah → pypdf extract → deteksi halaman kosong → vision captioning (SumoPod Gemini) untuk halaman scan → **redaksi PII SEBELUM ke LLM** (nama/email/telepon dihapus) → Deepseek V4 Flash parsing
-4. Profil + kompetensi JD → vektor (SumoPod `gemini-embedding-001`, 1536-dim) → Qdrant → skor = 0.7×semantic + 0.3×graph_boost → shortlist explainable
+4. ~~Profil + kompetensi JD → vektor (SumoPod `gemini-embedding-001`, 1536-dim) → Qdrant → skor = 0.7×semantic + 0.3×graph_boost → shortlist explainable~~
 5. HR invite kandidat → token link unik (kandidat tanpa akun)
 6. Deepseek V4 Flash buat 2-3 pertanyaan → **HR edit/approve dulu (human-in-the-loop)** sebelum dikirim
-7. Kandidat buka token link → consent PDP → rekam audio (WebM/Opus) → Groq Whisper transkripsi (id) → Deepseek V4 Pro nilai vs rubrik tetap (3 kriteria, **self-consistency voting 3x**, bukan cuma temperature=0) + ringkasan
+7. ~~Kandidat buka token link → consent PDP → rekam audio (WebM/Opus) → Groq Whisper transkripsi (id) → Deepseek V4 Pro nilai vs rubrik tetap (3 kriteria, self-consistency voting 3x, bukan cuma temperature=0) + ringkasan~~
 8. HR lihat audio+transkrip+ringkasan+skor → keputusan akhir manusia (AI tidak pernah auto-tolak)
-9. Laporan pengembangan dirakit dari competency framework + resource library kurasi (deterministik) → PDF (ReportLab) → **Telegram** (sendDocument+sendMessage) — semua kandidat, lolos/tidak
+9. ~~Laporan pengembangan dirakit dari competency framework + resource library kurasi (deterministik) → PDF (ReportLab) → Telegram (sendDocument+sendMessage) — semua kandidat, lolos/tidak~~
 
 **Koreksi terpenting:** draft Q10 (JAWABAN baris 62) sudah cukup akurat secara alur, tapi tidak menyebut langkah "HR edit/approve pertanyaan" (human-in-the-loop di level pertanyaan, bukan cuma di level keputusan akhir) — ini detail kuat untuk Q17 (transparansi) yang sebaiknya disebut eksplisit jika ada slot kata tersisa.
 **Sumber:** BVI §3.1 (baris 48-80).
+
+> **✅ [KOREKSI 2026-07-23] Langkah 4, 7, 9 di atas sudah tidak akurat — versi yang benar-benar berjalan sekarang:**
+> 4. Profil + kompetensi JD → **skill-gap analysis grounded** (`services/skillgap.py`, matched/missing/proficiency per kompetensi) → skor = **0.9×coverage + 0.1×quality** (lihat A.5.1) → shortlist explainable, badge "Data siap"/"Belum diproses" per kandidat tergantung sudah di-cache atau belum. *(Vektor/Qdrant tidak lagi di jalur ini — lihat A.5.1.)* **CV juga bisa masuk lewat folder-drop** (HR taruh PDF di `backend/seed/job_lists/<job_id>_<slug>/`, watcher background otomatis proses), alternatif ke upload satu-per-satu.
+> 7. Kandidat buka token link → consent PDP → **uji kamera & mikrofon (halaman terpisah, preview live + meter level audio)** → per pertanyaan: countdown 5 detik → **rekam video** (WebM, `getUserMedia({video:true,audio:true})`) dengan batas waktu per-pertanyaan (1/2/3 menit, auto-stop) → Groq Whisper transkripsi audio-track (id) → Deepseek V4 Pro nilai vs rubrik tetap (3 kriteria, self-consistency voting 3x) + ringkasan per-jawaban
+> 9. Laporan pengembangan dirakit dari competency framework + resource library kurasi (deterministik) → PDF (ReportLab) → **email (Gmail SMTP)** sebagai channel utama — keputusan (lolos/tidak) dan laporan dikirim **dalam satu email gabungan**; Telegram tetap ada di kode sebagai fallback berpenanda flag, tidak aktif secara default.
+>
+> **Sumber:** lihat A.7 untuk ringkasan lengkap + rujukan baris kode.
 
 ## Q12 — Innovation Level
 **Status draft:** menyebut "Prototype Lanjutan menuju MVP" (JAWABAN baris 78).
@@ -241,9 +295,10 @@ Ini bukan klaim kosong "sudah diuji" — QA menemukan bug **nyata** di sistem ya
 - Database: **PostgreSQL 16 (Docker), 17 tabel, sudah dibangun & diverifikasi via query nyata** — bukan "akan migrasi ke BigQuery" sebagai hal yang belum jelas; jelaskan sebagai keputusan sadar MVP lokal dengan migrasi BigQuery sebagai langkah produksi terencana (bukan tergantung nasib).
 - Storage: filesystem lokal, path pointer di DB — bukan "GCS perlu di-resize".
 - Vector DB: Qdrant **sudah** berjalan Docker self-hosted dengan 2 koleksi aktif, bukan "perlu di-resize ke skala kecil" (sudah kecil by design, <10k vektor, sudah terverifikasi).
-- Matching: **semantic similarity + competency-graph boost** (0.7/0.3), BUKAN KGE/GNN penuh — lihat A.5.1, wajib dikoreksi karena ini klaim algoritma spesifik yang salah kalau dibiarkan.
-- AI Interview: BUKAN "belum dibangun, fokus 2 minggu ke depan" — **sudah dibangun dan diverifikasi end-to-end** (rekam audio, STT, rubric scoring, semua terverifikasi live termasuk pengiriman Telegram nyata).
+- Matching: **[SUPERSEDED 2026-07-23]** BUKAN "semantic similarity + competency-graph boost (0.7/0.3)" — itu versi v1, sudah diganti 2026-07-19. Versi nyata sekarang: **skill-gap-grounded coverage & quality scoring (90% cakupan kompetensi + 10% kualitas/proficiency)**, satu sumber data dengan yang ditampilkan di detail kandidat. BUKAN KGE/GNN penuh juga — lihat A.5.1 untuk detail lengkap dan kalimat siap-pakai ke judge.
+- AI Interview: BUKAN "belum dibangun, fokus 2 minggu ke depan" — **sudah dibangun dan diverifikasi end-to-end**. **[Update 2026-07-23]** interview sekarang berbasis **video** (bukan audio saja), dengan uji kamera/mikrofon terpisah, countdown, dan batas waktu per-pertanyaan; laporan dikirim lewat **Gmail SMTP** (bukan Telegram — lihat A.5).
 - Vision/OCR: SumoPod `gemini-2.5-flash-lite` (bukan disebut sama sekali di draft) — komponen nyata yang menangani CV hasil scan.
+- **[BARU 2026-07-23]** Skill-gap analysis kini **dipersist**, bukan dihitung ulang tiap page load (lihat A.6.3) — argumen efisiensi yang lebih kuat dari draft.
 **Koreksi kalimat spesifik:** ganti "Integrasi Qdrant Vector Database... perlu di-resize" dan "Infrastruktur akan bermigrasi dari rencana GKE penuh menjadi Cloud Run" dengan: "MVP berjalan 100% lokal (Docker Compose: PostgreSQL + Qdrant), migrasi ke Cloud Run/BigQuery/GCS direncanakan untuk fase pilot produksi — bukan pekerjaan tertunda, melainkan keputusan kecepatan-build yang disengaja untuk jendela hackathon."
 **Sumber:** BVI §2 (tabel deviasi lengkap), §3.2 (17 komponen teknis).
 
@@ -261,15 +316,17 @@ Ini bukan klaim kosong "sudah diuji" — QA menemukan bug **nyata** di sistem ya
 
 ## Q16 — Processing Pipeline and Engineering Depth *(maks 250 kata)* ⚠️ PRIORITAS TINGGI
 **Status draft:** JAWABAN baris 108 — sama seperti Q13, masih menyebut "REST API Gateway (FastAPI di Cloud Run)" dan alur berbasis komponen cloud sebagai kalau-sudah-berjalan.
-**Koreksi wajib:** ganti "Cloud Run" dengan "FastAPI/uvicorn (Docker Compose untuk mode finalisasi)"; ganti alur penyimpanan "BigQuery... GCS" dengan "PostgreSQL (Docker)... filesystem lokal"; ganti "Knowledge Graph Embeddings menghitung matching score" dengan formula nyata (semantic 0.7 + graph boost 0.3); tambahkan detail nyata yang hilang dari draft — **HR mengedit/menyetujui pertanyaan interview sebelum dikirim ke kandidat** (human-in-the-loop di level pertanyaan, bukan cuma di level keputusan akhir), dan **self-consistency voting** pada rubric scoring.
+**Koreksi wajib:** ganti "Cloud Run" dengan "FastAPI/uvicorn (Docker Compose untuk mode finalisasi)"; ganti alur penyimpanan "BigQuery... GCS" dengan "PostgreSQL (Docker)... filesystem lokal"; ganti "Knowledge Graph Embeddings menghitung matching score" dengan formula nyata; tambahkan detail nyata yang hilang dari draft — **HR mengedit/menyetujui pertanyaan interview sebelum dikirim ke kandidat** (human-in-the-loop di level pertanyaan, bukan cuma di level keputusan akhir), dan **self-consistency voting** pada rubric scoring.
+**⚠️ [SUPERSEDED 2026-07-23]** formula "semantic 0.7 + graph boost 0.3" yang disebutkan di atas **sudah tidak berlaku** — ganti dengan formula skill-gap-grounded 90% coverage + 10% quality (lihat A.5.1 untuk teks lengkap siap-pakai). Juga tambahkan: interview kini video bukan audio, delivery laporan kini email (Gmail) bukan Telegram (lihat A.7).
 **Fakta pipeline lengkap yang harus dipakai:** lihat Q10-11 di atas (9 langkah nyata dari BVI §3.1) — pipeline Q16 dan use-case Q10 harus konsisten satu sama lain, jangan sampai versi cloud vs versi lokal tercampur di dua jawaban berbeda.
 **Sumber:** BVI §3.1, §3.2.
 
 ## Q17 — Algorithm or Rule Quality and Decision Transparency *(maks 300 kata)*
 **Status draft:** solid secara prinsip ("assist, never decide", rubrik tetap, audit log) — argumen inti sudah benar dan tidak perlu diubah.
 **⚠️ Perkuat, jangan hanya perbaiki:** draft menyebut "temperature=0" (JAWABAN baris 116) sebagai mekanisme determinisme. **Ini sekarang bisa diperkuat signifikan** — QA (A.6.1) menemukan temperature=0 SENDIRIAN terbukti *tidak* cukup deterministik di level provider (SumoPod/Deepseek serving terdistribusi), sehingga tim menambahkan **self-consistency voting** (3 panggilan independen, ambil median untuk skor rubrik / majority vote untuk kompetensi skill-gap) — diverifikasi 9 panggilan nyata × 3 run terpisah, nol variasi (drift). Ini adalah bukti *rigor* teknis yang lebih kuat dari klaim asli — sangat disarankan ditambahkan sebagai kalimat baru menggantikan "temperature=0" saja.
-**Koreksi istilah:** "KGE" pada kalimat pembuka (JAWABAN baris 116) ganti dengan istilah presisi (lihat A.5.1).
-**Sumber:** A.6.1, CHECKLIST baris 1200-1213 (T3/T4 findings).
+**Koreksi istilah:** "KGE" pada kalimat pembuka (JAWABAN baris 116) ganti dengan istilah presisi (lihat A.5.1 — bukan cuma "bukan KGE", formulanya sendiri sudah berubah lagi per 2026-07-19, jangan pakai versi semantic+graph).
+**[Tambahan 2026-07-23]** argumen transparansi Q17 sekarang bisa diperkuat lagi: matching score dan skill-gap analysis di halaman detail kandidat memakai **satu sumber data yang sama persis** (`skill_gap_results`, bukan dua sistem terpisah yang bisa tidak sinkron) — ini bukti desain "explainable by construction", bukan cuma dijelaskan setelah fakta.
+**Sumber:** A.6.1, A.5.1, CHECKLIST baris 1200-1213 (T3/T4 findings).
 
 ## Q18 — User Flow, Usability Testing, and Product Iteration *(maks 250 kata)*
 **Status draft:** JAWABAN baris 124 menyebut rencana pengujian 2 minggu ke depan sebagai *akan dilakukan* — tapi ini **sudah terjadi dan jauh lebih ekstensif** dari yang diklaim draft.
@@ -313,7 +370,8 @@ Ini bukan klaim kosong "sudah diuji" — QA menemukan bug **nyata** di sistem ya
 |---|---|---|
 | "Ini kan cuma rencana, mana yang benar-benar jalan?" | 5 dari 5 area eksekusi (Tooling, DB, Backend&AI, Frontend, QA) selesai dan **diverifikasi lewat panggilan API/HTTP/DB nyata**, bukan mock. 17 tabel, 9+ router, 9 halaman frontend, 30+6 kandidat diproses lewat pipeline sungguhan. Bukan hanya kode ditulis — setiap task diverifikasi dengan bukti konkret. | A.6, BVI §1 |
 | "Kok masih pakai laptop lokal, bukan cloud sungguhan?" | Keputusan sadar untuk kecepatan build di jendela waktu hackathon (~13 hari solo), bukan keterbatasan desain. Infrastruktur cloud produksi (GKE/BigQuery/GCS) untuk Tahap 2 dan 3 **sama jenisnya** — yang membedakan adalah beban (load): puluhan klien B2B vs ribuan-puluhan ribu individu B2C. | BVI §4.2, INFRA §1 |
-| "KGE/GNN yang disebut di proposal itu beneran jalan?" | Tidak — setelah evaluasi, prototipe KGE Tahap 2 ternyata tidak pernah terintegrasi produksi (bahkan tidak ada di kode sama sekali). Diganti pendekatan lebih sederhana: semantic vector similarity + competency-graph boost (0.7/0.3), yang **tetap explainable** — terbukti mendiskriminasi kandidat kuat/sedang/lemah secara statistik nyata (gap 0.238 pada fixture tiered). Kejujuran soal ini lebih kredibel daripada klaim algoritma yang tidak sesuai kode. | A.5.1, A.6.1 |
+| "KGE/GNN yang disebut di proposal itu beneran jalan?" | Tidak — setelah evaluasi, prototipe KGE Tahap 2 ternyata tidak pernah terintegrasi produksi (bahkan tidak ada di kode sama sekali). Diganti pendekatan skill-gap-grounded: 90% cakupan kompetensi + 10% kualitas/proficiency, memakai sumber data yang identik dengan yang ditampilkan ke HR di halaman detail kandidat — **tetap explainable**, terbukti mendiskriminasi kandidat kuat/sedang/lemah secara statistik nyata (gap 0.238 pada fixture tiered, dites terhadap versi formula sebelumnya tapi properti diskriminasi tetap relevan). **[2026-07-23]** ini formula generasi ke-2 — generasi pertama (semantic vector + graph boost 0.7/0.3) sempat dibangun lalu diganti lagi setelah ditemukan kasus nyata di mana similarity blob-vs-blob salah rangking kandidat yang sebenarnya punya skill yang dicari. Kejujuran soal evolusi ini (bukan cuma "bukan KGE") lebih kredibel. | A.5.1, A.6.1 |
+| "Delivery laporan pakai apa, Telegram atau email?" | **[2026-07-23]** Gmail SMTP adalah channel utama (`EMAIL_ENABLED=true`), Telegram jadi fallback berpenanda flag (`TELEGRAM_ENABLED=false`, kode tetap ada, tinggal di-flip). Sempat sebaliknya (Telegram utama) di pertengahan build karena setup email dianggap lebih ribet — dibalik lagi setelah App Password Gmail asli diverifikasi bekerja nyata, dan email dinilai channel yang benar-benar dipakai HR/kandidat sehari-hari. | A.5, A.7 |
 | "Skor AI-nya konsisten nggak kalau diulang?" | Awalnya tidak — ditemukan sendiri lewat QA bahwa temperature=0 saja tidak cukup deterministik di level provider. Diperbaiki dengan self-consistency voting (3 panggilan, median/majority vote), diverifikasi nol variasi pada 9 panggilan nyata × 3 run. | A.6.1, Q17 |
 | "Reuse dari Tahap 2 katanya tinggi, buktinya?" | Setelah audit kode nyata: reuse sebenarnya terbatas pada pola (bukan kode) — ekstraksi teks CV, grounding skill-gap, generate PDF. Tahap 2 ternyata tidak pakai React, tidak pakai Deepseek (pakai Gemini), dan tidak ada auth/DB sama sekali. Kejujuran ini penting — jangan overclaim reuse. | A.4 |
 | "Kenapa email jadi Telegram?" | Email butuh setup SMTP+App Password dan berisiko kena filter spam saat demo langsung; Telegram gratis, otomatis penuh, dan file benar-benar terverifikasi terkirim (dites langsung, diterima nyata di akun Telegram). | A.5 (tabel deviasi) |
@@ -327,8 +385,8 @@ Ini bukan klaim kosong "sudah diuji" — QA menemukan bug **nyata** di sistem ya
 | Biaya MVP lokal saat ini | ≈$0.07/demo run, ≈$0.20 dengan pengulangan dev, infra $0 | Biaya **build/demo sekarang**, bukan proyeksi produksi |
 | Biaya proyeksi cloud produksi Direction B | ~$170-370/bulan (GCP) | Proyeksi **pilot/produksi masa depan**, bukan biaya sekarang |
 | Biaya proyeksi cloud Direction A (pembanding) | ~$800-1.750/bulan | Untuk kontras Tahap 2 vs Tahap 3 saja, bukan biaya nyata siapa pun sekarang |
-| Formula matching | 0.7 × semantic similarity + 0.3 × graph boost | Bukan KGE/GNN penuh |
-| Jumlah tabel DB | 17 tabel PostgreSQL | Docker lokal, bukan BigQuery aktif |
+| Formula matching | **[2026-07-23]** 0.9 × coverage_score + 0.1 × quality_score (skill-gap-grounded) — BUKAN LAGI 0.7×semantic + 0.3×graph_boost (versi lama, diganti 2026-07-19) | Bukan KGE/GNN penuh; Qdrant vestigial, tidak dipakai jalur live — lihat A.5.1 |
+| Jumlah tabel DB | **18 tabel PostgreSQL** (17 lama + `skill_gap_results`) | Docker lokal, bukan BigQuery aktif |
 | Jumlah kandidat seed | 30 (demo) + 6 (fixture tiered QA, job_id=21) | Dua kumpulan terpisah, tujuan berbeda |
 | Kriteria rubrik interview | 3 kriteria (kejelasan, relevansi, kedalaman teknis), skala 1-5 | Self-consistency voting 3x, bukan cuma temperature=0 |
 | Tanggal keputusan pivot Direction B | 2026-07-12 | — |
